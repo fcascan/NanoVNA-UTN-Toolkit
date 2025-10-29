@@ -251,8 +251,11 @@ class NanoVNAGraphics(QMainWindow):
         self.right_s_param    = config['s_param_tab2']
 
         # --- Marker visibility flags ---
-        self.show_marker1 = True
-        self.show_marker2 = True
+        self.show_graphic1_marker1 = True
+        self.show_graphic2_marker1 = True
+
+        self.show_graphic1_marker2 = False
+        self.show_graphic2_marker2 = False
 
         # --- Menu ---
         menu_bar = self.menuBar()
@@ -1219,7 +1222,7 @@ class NanoVNAGraphics(QMainWindow):
                     logging.info("[graphics_window._reset_markers_after_sweep] Updated left cursor to index 0 (leftmost)")
                     
                     # Force cursor visibility and redraw after data update
-                    if hasattr(self, 'cursor_left') and self.cursor_left and self.show_marker1:
+                    if hasattr(self, 'cursor_left') and self.cursor_left and self.show_graphic1_marker1:
                         self.cursor_left.set_visible(True)
                         if hasattr(self.cursor_left, 'get_data'):
                             x_data, y_data = self.cursor_left.get_data()
@@ -1235,7 +1238,7 @@ class NanoVNAGraphics(QMainWindow):
                     logging.info("[graphics_window._reset_markers_after_sweep] Updated right cursor to index 0 (leftmost)")
                     
                     # Force cursor visibility and redraw after data update
-                    if hasattr(self, 'cursor_right') and self.cursor_right and self.show_marker2:
+                    if hasattr(self, 'cursor_right') and self.cursor_right and self.show_graphic1_marker2:
                         self.cursor_right.set_visible(True)
                         if hasattr(self.cursor_right, 'get_data'):
                             x_data, y_data = self.cursor_right.get_data()
@@ -2630,13 +2633,26 @@ class NanoVNAGraphics(QMainWindow):
         menu = QMenu(self)
 
         view_menu = menu.addAction("View")
+
+        menu.addSeparator()
         
-        marker1_action = menu.addAction("Marker 1")
-        marker1_action.setCheckable(True)
-        marker1_action.setChecked(self.show_marker1)
-        marker2_action = menu.addAction("Marker 2")
-        marker2_action.setCheckable(True)
-        marker2_action.setChecked(self.show_marker2)
+        marker1_graphic1_action = menu.addAction("Marker 1 - Graphic 1")
+        marker1_graphic1_action.setCheckable(True)
+        marker1_graphic1_action.setChecked(self.show_graphic1_marker1)
+
+        marker1_graphic2_action = menu.addAction("Marker 1 - Graphic 2")
+        marker1_graphic2_action.setCheckable(True)
+        marker1_graphic2_action.setChecked(self.show_graphic2_marker1)
+
+        marker2_graphic1_action = menu.addAction("Marker 2 -Graphic 1")
+        marker2_graphic1_action.setCheckable(True)
+        marker2_graphic1_action.setChecked(False)
+        marker2_graphic1_action.setChecked(self.show_graphic1_marker2)
+
+        marker2_graphic2_action = menu.addAction("Marker 2 -Graphic 2")
+        marker2_graphic2_action.setCheckable(True)
+        marker2_graphic2_action.setChecked(False)
+        marker2_graphic2_action.setChecked(self.show_graphic2_marker2)
 
         # --- Lock markers action ---
         lock_markers_action = menu.addAction("Lock Markers ✓" if self.markers_locked else "Lock Markers")
@@ -2702,7 +2718,8 @@ class NanoVNAGraphics(QMainWindow):
             current_widget = current_widget.parent()
 
         current_state = getattr(self, target_attr, True) if target_attr else True
-        setattr(self, target_attr, current_state)
+        if target_attr is not None:
+            setattr(self, target_attr, current_state)
 
         if target_ax and target_fig:
             target_ax.grid(current_state)
@@ -2721,12 +2738,17 @@ class NanoVNAGraphics(QMainWindow):
         # --- Handle actions ---
         if selected_action == view_menu:
             self.open_view()
-        elif selected_action == marker1_action:
-            self.show_marker1 = not self.show_marker1
-            self.toggle_marker_visibility(0, self.show_marker1)
-        elif selected_action == marker2_action:
-            self.show_marker2 = not self.show_marker2
-            self.toggle_marker_visibility(1, self.show_marker2)
+        elif selected_action == marker1_graphic1_action:
+            self.show_graphic1_marker1 = not self.show_graphic1_marker1
+            self.toggle_marker_visibility(0, self.show_graphic1_marker1)
+        elif selected_action == marker1_graphic2_action:
+            self.show_graphic1_marker2 = not self.show_graphic2_marker1
+            self.toggle_marker_visibility(1, self.show_graphic2_marker1)
+
+        elif selected_action == marker2_graphic1_action:
+            self.show_graphic1_marker2 = not self.show_graphic1_marker2
+        elif selected_action == marker2_graphic2_action:
+            self.show_graphic2_marker2 = not self.show_graphic2_marker2
 
         elif selected_action == lock_markers_action:
             self.markers_locked = not self.markers_locked
@@ -2741,13 +2763,11 @@ class NanoVNAGraphics(QMainWindow):
                 self.update_right_cursor(val)
           
         elif selected_action == grid_action and target_ax and target_fig and target_attr:
-
             new_state = not getattr(self, target_attr, True)
-            setattr(self, target_attr, new_state)
-
+            if target_attr is not None:
+                setattr(self, target_attr, new_state)
             target_ax.grid(new_state)
             target_fig.canvas.draw_idle()
-
             grid_action.setText("Grid ✓" if new_state else "Grid")
 
         elif selected_action == export_action:
