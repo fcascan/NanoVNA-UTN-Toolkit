@@ -30,6 +30,7 @@ class SmithChartConfig:
         self.linewidth = 2
         self.markersize = 6
         self.marker_visible = True
+        self.marker_visible_2=False
         
         # Impedance
         self.z0 = 50
@@ -193,30 +194,21 @@ class SmithChartBuilder:
             zorder=self.config.center_line_zorder
         )
     
-    def add_cursor_marker(self, visible=None, color=None, size=None):
+    def add_cursor_marker(self, visible=None, visible_2=None, color=None, size=None):
         """Add cursor marker for interactive use."""
         if self.ax is None:
             return None
             
         visible = visible if visible is not None else self.config.marker_visible
+        visible_2 = visible_2 if visible_2 is not None else self.config.marker_visible_2
         color = color or self.config.marker_color
         size = size or self.config.markersize
         
         cursor, = self.ax.plot([], [], 'o', markersize=size, color=color, visible=visible)
-        return cursor
+        cursor_2, = self.ax.plot([], [], 'o', markersize=size, color=color, visible=visible_2)
 
-    def add_cursor_marker_2(self, visible=None, color=None, size=None):
-        """Add cursor marker for interactive use."""
-        if self.ax is None:
-            return None
-            
-        visible = visible if visible is not None else self.config.marker_visible
-        color = color or self.config.marker_color
-        size = size or self.config.markersize
-        
-        cursor, = self.ax.plot([], [], 'o', markersize=size, color=color, visible=visible)
-        return cursor
-    
+        return cursor, cursor_2
+
     def clear_and_redraw(self):
         """Clear axis and prepare for new plot."""
         if self.ax:
@@ -226,7 +218,6 @@ class SmithChartBuilder:
         """Refresh the canvas display."""
         if self.canvas:
             self.canvas.draw()
-
 
 class SmithChartManager:
     """High-level manager for Smith chart operations."""
@@ -276,9 +267,7 @@ class SmithChartManager:
         self.builder.add_legend([s_param], colors=[trace_color or self.config.trace_color])
         
         # Add cursor marker
-        cursor = self.builder.add_cursor_marker(color=marker_color)
-
-        cursor_2 = self.builder.add_cursor_marker_2(color=marker_color)
+        cursor, cursor_2 = self.builder.add_cursor_marker(color=marker_color)
         
         # Create canvas
         canvas = self.builder.create_canvas()
@@ -287,7 +276,7 @@ class SmithChartManager:
         if container_layout:
             container_layout.addWidget(canvas)
         
-        return fig, ax, canvas, cursor
+        return fig, ax, canvas, cursor, cursor_2
     
     def update_wizard_measurement(self, ax, freqs, s11_data, standard_name, 
                                  canvas=None, color_map=None):
