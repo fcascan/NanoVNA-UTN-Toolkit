@@ -878,7 +878,7 @@ class NanoVNAGraphics(QMainWindow):
 
         # =================== LEFT PANEL (EMPTY) ===================
         self.left_panel, self.fig_left, self.ax_left, self.canvas_left, \
-        self.slider_left, self.cursor_left, self.labels_left, self.update_cursor, self.update_left_data = \
+        self.slider_left, self.slider2_left, self.cursor_left, self.labels_left, self.update_cursor, self.update_left_data = \
             create_left_panel(
                 S_data=None,  # Force empty 
                 freqs=None,   # Force empty
@@ -893,7 +893,7 @@ class NanoVNAGraphics(QMainWindow):
 
         # =================== RIGHT PANEL (EMPTY) ===================
         self.right_panel, self.fig_right, self.ax_right, self.canvas_right, \
-        self.slider_right, self.cursor_right, self.labels_right, self.update_right_cursor, self.update_right_data = \
+        self.slider_right, self.slider2_right, self.cursor_right, self.labels_right, self.update_right_cursor, self.update_right_data = \
             create_right_panel(
                 settings=settings,
                 S_data=None,  # Force empty
@@ -2738,17 +2738,28 @@ class NanoVNAGraphics(QMainWindow):
         # --- Handle actions ---
         if selected_action == view_menu:
             self.open_view()
+
+        # --- Markers ---
+
         elif selected_action == marker1_graphic1_action:
             self.show_graphic1_marker1 = not self.show_graphic1_marker1
             self.toggle_marker_visibility(0, self.show_graphic1_marker1)
+
         elif selected_action == marker1_graphic2_action:
-            self.show_graphic1_marker2 = not self.show_graphic2_marker1
+            self.show_graphic2_marker1 = not self.show_graphic2_marker1
             self.toggle_marker_visibility(1, self.show_graphic2_marker1)
 
         elif selected_action == marker2_graphic1_action:
             self.show_graphic1_marker2 = not self.show_graphic1_marker2
+         
+            self.toggle_marker2_visibility(0, self.show_graphic1_marker2)
+
         elif selected_action == marker2_graphic2_action:
             self.show_graphic2_marker2 = not self.show_graphic2_marker2
+         
+            self.toggle_marker2_visibility(1, self.show_graphic2_marker2)
+
+        # --- Lock Markers ---
 
         elif selected_action == lock_markers_action:
             self.markers_locked = not self.markers_locked
@@ -2761,6 +2772,8 @@ class NanoVNAGraphics(QMainWindow):
                 val = self.slider_left.val
                 self.slider_right.set_val(val)
                 self.update_right_cursor(val)
+
+        # --- Grid ---
           
         elif selected_action == grid_action and target_ax and target_fig and target_attr:
             new_state = not getattr(self, target_attr, True)
@@ -2769,6 +2782,8 @@ class NanoVNAGraphics(QMainWindow):
             target_ax.grid(new_state)
             target_fig.canvas.draw_idle()
             grid_action.setText("Grid ✓" if new_state else "Grid")
+
+        # --- Export ---
 
         elif selected_action == export_action:
             self.open_export_dialog(event)
@@ -2968,6 +2983,44 @@ class NanoVNAGraphics(QMainWindow):
             cursor.figure.canvas.draw_idle()
         else:
             logging.warning(f"[graphics_window.toggle_marker_visibility] Cannot draw cursor {marker_index}, figure or canvas is None")
+
+    def toggle_marker2_visibility(self, marker_index, show_markers):
+        """
+        Move Marker 2 slider to the left of the corresponding canvas
+        without hiding or deactivating it.
+        """
+
+        if marker_index == 0:  
+            slider = self.slider_left
+            slider_2 = self.slider2_left
+            fig = self.fig_left
+        elif marker_index == 1: 
+            slider = self.slider_right
+            slider_2 = self.slider2_right
+            fig = self.fig_right
+        else:
+            logging.warning(f"[move_marker2_slider_left] Invalid marker_index {marker_index}")
+            return
+
+        if show_markers:
+
+            slider_2.ax.set_visible(True)
+            slider_2.set_active(True)
+
+            slider.ax.set_position([0.1, 0.04, 0.35, 0.03])
+
+            #slider_2.on_changed(lambda val: update_cursor(int(val), from_slider=True))
+
+            if slider.ax.figure is not None:
+                slider.ax.figure.canvas.draw_idle()
+            
+        elif not show_markers:
+
+            slider_2.set_val(0)
+            slider_2.ax.set_visible(False)
+            slider_2.set_active(False) 
+
+            slider.ax.set_position([0.25,0.04,0.5,0.03])
 
     # =================== SWEEP FUNCTIONALITY ===================
     

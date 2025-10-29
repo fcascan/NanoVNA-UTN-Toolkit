@@ -457,6 +457,13 @@ def create_left_panel(S_data, freqs, settings, graph_type="Smith Diagram", s_par
         slider.valtext.set_visible(False)  # Hide the value text
         slider.on_changed(lambda val: update_cursor(int(val), from_slider=True))
 
+        slider_ax_2 = fig.add_axes([0.55,0.04,0.35,0.03], facecolor='lightgray')
+        slider_2 = Slider(slider_ax_2, '', 0, len(freqs)-1, valinit=0, valstep=1)
+        slider_2.vline.set_visible(False)
+        slider_2.label.set_visible(False)
+        slider_2.valtext.set_visible(False)  # Hide the value text
+        slider_2.ax.set_visible(False)
+
     def freq_edited():
         try:
             freq_hz = parse_frequency_input(edit_value.text())
@@ -511,7 +518,7 @@ def create_left_panel(S_data, freqs, settings, graph_type="Smith Diagram", s_par
         edit_value.editingFinished.disconnect()
         edit_value.editingFinished.connect(freq_edited)
 
-    return left_panel, fig, ax, canvas, slider, cursor_graph, labels_dict, update_cursor, update_data_references
+    return left_panel, fig, ax, canvas, slider, slider_2, cursor_graph, labels_dict, update_cursor, update_data_references
 
 #############################################################################################
 # =================== RIGHT PANEL ========================================================= #
@@ -868,6 +875,13 @@ def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diag
     slider.valtext.set_visible(False)  # Hide the value text
     slider.on_changed(lambda val: update_cursor(int(val), from_slider=True))
 
+    slider_ax_2 = fig.add_axes([0.55,0.04,0.35,0.03], facecolor='lightgray')
+    slider_2 = Slider(slider_ax_2, '', 0, len(freqs)-1, valinit=0, valstep=1)
+    slider_2.vline.set_visible(False)
+    slider_2.label.set_visible(False)
+    slider_2.valtext.set_visible(False)  # Hide the value text
+    slider_2.ax.set_visible(False)
+
     # --- Conectar edición manual ---
     def freq_edited():
         try:
@@ -912,4 +926,4 @@ def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diag
         S_data = new_s_data
         freqs = new_freqs
 
-    return right_panel, fig, ax, canvas, slider, cursor_graph, labels_dict, update_cursor, update_data_references
+    return right_panel, fig, ax, canvas, slider, slider_2, cursor_graph, labels_dict, update_cursor, update_data_references
