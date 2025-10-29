@@ -3354,7 +3354,21 @@ class NanoVNAGraphics(QMainWindow):
 
         cursor.set_visible(show)
 
+        if marker_index == 0:  
+            slider = self.slider_left
+            slider_2 = self.slider_left_2
+            fig = self.fig_left
+        elif marker_index == 1: 
+            slider = self.slider_right
+            slider_2 = self.slider_right_2
+            fig = self.fig_right
+        else:
+            logging.warning(f"[move_marker2_slider_left] Invalid marker_index {marker_index}")
+            return
+
         if show:
+            slider_2.ax.set_position([0.55,0.04,0.35,0.03])
+
             slider.ax.set_visible(True)
             slider.set_active(True)
             if hasattr(marker, "slider_callback"):
@@ -3391,6 +3405,8 @@ class NanoVNAGraphics(QMainWindow):
             labels["z"].setText("Z: -- + j--")
             labels["il"].setText("IL: --")
             labels["vswr"].setText("VSWR: --")
+
+            slider_2.ax.set_position([0.25,0.04,0.5,0.03])
 
         # Only draw if cursor and figure are valid
         if cursor is not None and cursor.figure is not None and cursor.figure.canvas is not None:
