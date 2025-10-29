@@ -448,7 +448,7 @@ def create_left_panel(S_data, freqs, settings, graph_type="Smith Diagram", s_par
 
         edit_value.clearFocus()
 
-        settings.setValue("Cursor1/index", index)
+        settings.setValue("Cursor_1_1/index", index)
 
     def update_cursor_2(index, from_slider=False):
         import os
@@ -516,7 +516,7 @@ def create_left_panel(S_data, freqs, settings, graph_type="Smith Diagram", s_par
 
         edit_value.clearFocus()
 
-        settings.setValue("Cursor1/index", index)
+        settings.setValue("Cursor_2_1/index", index)
 
     # --- Slider ---
 
@@ -658,7 +658,7 @@ def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diag
         
         # Create Smith chart with custom configuration
         manager = SmithChartManager(config)
-        fig, ax, canvas, cursor_graph = manager.create_graphics_panel_smith_chart(
+        fig, ax, canvas, cursor_graph, cursor_graph_2 = manager.create_graphics_panel_smith_chart(
             s_data=S_data,
             freqs=freqs,
             s_param=s_param,
@@ -708,6 +708,7 @@ def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diag
         ax.grid(True, which='both', axis='both', color='white', linestyle='--', linewidth=0.5, alpha=0.3, zorder=1)
 
         cursor_graph, = ax.plot([], [], 'o', markersize=markersize, color=markercolor, visible=marker_visible)
+        cursor_graph_2, = ax.plot([], [], 'o', markersize=markersize, color=markercolor, visible=False)
 
     elif graph_type == "Phase":
         fig, ax = plt.subplots(figsize=(4,3))
@@ -749,6 +750,7 @@ def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diag
         ax.grid(True, which='both', axis='both', color='white', linestyle='--', linewidth=0.5, alpha=0.3, zorder=1)
         
         cursor_graph, = ax.plot([], [], 'o', markersize=markersize, color=markercolor, visible=marker_visible)
+        cursor_graph_2, = ax.plot([], [], 'o', markersize=markersize, color=markercolor, visible=False)
 
     # --- Info panel (Right side reorganized) ---
     info_panel = QWidget()
@@ -962,7 +964,75 @@ def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diag
 
         settings = QSettings(ruta_ini, QSettings.IniFormat)
 
-        settings.setValue("Cursor2/index", index)
+        settings.setValue("Cursor_1_2/index", index)
+
+    def update_cursor_2(index, from_slider=False):
+        import os
+        from PySide6.QtCore import QSettings
+
+        val_complex = S_data[index]
+        magnitude = abs(val_complex)
+        phase_deg = np.angle(val_complex, deg=True)
+
+        # === Leer modo de unidad desde Graphic1 en el INI ===
+        actual_dir = os.path.dirname(os.path.dirname(__file__))
+        ruta_ini = os.path.join(actual_dir, "graphics_windows", "ini", "config.ini")
+
+        settings = QSettings(ruta_ini, QSettings.IniFormat)
+
+        unit_mode = settings.value("Graphic1/db_times", "dB")
+
+        # === Actualizar cursor según graph_type y unidad ===
+        if graph_type == "Smith Diagram":
+            cursor_graph_2.set_data([np.real(val_complex)], [np.imag(val_complex)])
+
+        elif graph_type == "Magnitude":
+            if unit_mode == "dB":
+                mag_value = 20 * np.log10(magnitude)
+            elif unit_mode == "Power ratio":
+                mag_value = magnitude ** 2
+            elif unit_mode == "Voltage ratio":
+                mag_value = magnitude
+            else:
+                mag_value = magnitude
+
+            cursor_graph_2.set_xdata([freqs[index] * 1e-6])
+            cursor_graph_2.set_ydata([mag_value])
+
+        elif graph_type == "Phase":
+            cursor_graph_2.set_data([freqs[index] * 1e-6], [phase_deg])
+
+        # === Actualizar labels ===
+        freq_value, freq_unit = format_frequency_smart_split(freqs[index])
+        edit_value.setText(freq_value)
+
+        text_width = edit_value.fontMetrics().horizontalAdvance(edit_value.text())
+        edit_value.setFixedWidth(max(text_width + 10, 50))
+
+        labels_dict["unit"].setText(freq_unit)
+        labels_dict["val"].setText(
+            f"{s_param}: {np.real(val_complex):.3f} {'+' if np.imag(val_complex) >= 0 else '-'} j{abs(np.imag(val_complex)):.3f}"
+        )
+        labels_dict["mag"].setText(f"|{s_param}|: {magnitude:.3f}")
+        labels_dict["phase"].setText(f"Phase: {phase_deg:.2f}°")
+
+        z = (1 + val_complex) / (1 - val_complex)
+        labels_dict["z"].setText(f"Z: {np.real(z):.2f} + j{np.imag(z):.2f}")
+
+        il_db = -20 * np.log10(magnitude)
+        labels_dict["il"].setText(f"IL: {il_db:.2f} dB")
+
+        vswr_val = (1 + magnitude) / (1 - magnitude) if magnitude < 1 else np.inf
+        labels_dict["vswr"].setText(f"VSWR: {vswr_val:.2f}" if np.isfinite(vswr_val) else "VSWR: ∞")
+
+        fig.canvas.draw_idle()
+
+        if not from_slider:
+            slider_2.set_val(index)
+
+        edit_value.clearFocus()
+
+        settings.setValue("Cursor_2_2/index", index)
 
     # --- Slider ---
     slider_ax = fig.add_axes([0.25,0.04,0.5,0.03], facecolor='lightgray')
@@ -995,14 +1065,24 @@ def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diag
     update_cursor(0)
 
     # --- Cursor draggable ---
-    dragging = {"active": False}
+    dragging_1 = {"active": False}
+    dragging_2 = {"active": False}
+
     def on_pick(event):
         if event.artist == cursor_graph:
-            dragging["active"] = True
+            dragging_1["active"] = True
+        elif event.artist == cursor_graph_2:
+            dragging_2["active"] = True
+
     def on_release(event):
-        dragging["active"] = False
+        dragging_1["active"] = False
+        dragging_2["active"] = False
+
     def on_motion(event):
-        if dragging["active"] and event.inaxes == ax:
+        if event.inaxes != ax:
+            return
+
+        if dragging_1["active"]:
             if graph_type in ["Magnitude", "Phase"]:
                 mouse_x = event.xdata
                 index = np.argmin(np.abs(freqs*1e-6 - mouse_x))
@@ -1012,15 +1092,30 @@ def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diag
                 distances = np.abs(S_data - mouse_point)
                 index = np.argmin(distances)
                 update_cursor(index)
+
+        elif dragging_2["active"]:
+            if graph_type in ["Magnitude", "Phase"]:
+                mouse_x = event.xdata
+                index = np.argmin(np.abs(freqs*1e-6 - mouse_x))
+                update_cursor_2(index)
+            else:
+                mouse_point = complex(event.xdata, event.ydata)
+                distances = np.abs(S_data - mouse_point)
+                index = np.argmin(distances)
+                update_cursor_2(index)
+
+    # --- Conectar eventos ---
     cursor_graph.set_picker(5)
+    cursor_graph_2.set_picker(5)
+
     canvas.mpl_connect("pick_event", on_pick)
     canvas.mpl_connect("button_release_event", on_release)
     canvas.mpl_connect("motion_notify_event", on_motion)
-
+    
     # Function to update data references for new sweep data
     def update_data_references(new_s_data, new_freqs):
         nonlocal S_data, freqs
         S_data = new_s_data
         freqs = new_freqs
 
-    return right_panel, fig, ax, canvas, slider, slider_2, cursor_graph, labels_dict, update_cursor, update_data_references
+    return right_panel, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, update_cursor, update_cursor_2, update_data_references
