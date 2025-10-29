@@ -450,7 +450,7 @@ def create_left_panel(S_data, freqs, settings, graph_type="Smith Diagram", s_par
     # --- Slider ---
 
     if fig is not None:
-        slider_ax = fig.add_axes([0.25,0.01,0.5,0.03], facecolor='lightgray')
+        slider_ax = fig.add_axes([0.25,0.04,0.5,0.03], facecolor='lightgray')
         slider = Slider(slider_ax, '', 0, len(freqs)-1, valinit=0, valstep=1)
         slider.vline.set_visible(False)
         slider.label.set_visible(False)
@@ -861,7 +861,7 @@ def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diag
         settings.setValue("Cursor2/index", index)
 
     # --- Slider ---
-    slider_ax = fig.add_axes([0.25,0.01,0.5,0.03], facecolor='lightgray')
+    slider_ax = fig.add_axes([0.25,0.04,0.5,0.03], facecolor='lightgray')
     slider = Slider(slider_ax, '', 0, len(freqs)-1, valinit=0, valstep=1)
     slider.vline.set_visible(False)
     slider.label.set_visible(False)

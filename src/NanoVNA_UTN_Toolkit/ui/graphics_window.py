@@ -9,11 +9,11 @@ import skrf as rf
 
 import matplotlib.pyplot as plt
 
-plt.rcParams['mathtext.fontset'] = 'cm'   # Fuente Computer Modern
-plt.rcParams['text.usetex'] = False       # No requiere LaTeX externo
+plt.rcParams['mathtext.fontset'] = 'cm'  
+plt.rcParams['text.usetex'] = False       
 plt.rcParams['axes.labelsize'] = 12
-plt.rcParams['font.family'] = 'serif'     # Coincide con el estilo de LaTeX
-plt.rcParams['mathtext.rm'] = 'serif'     # Números y texto coherentes
+plt.rcParams['font.family'] = 'serif'    
+plt.rcParams['mathtext.rm'] = 'serif'     
 
 from pathlib import Path
 from PySide6.QtWidgets import QFileDialog, QMessageBox
@@ -2630,6 +2630,7 @@ class NanoVNAGraphics(QMainWindow):
         menu = QMenu(self)
 
         view_menu = menu.addAction("View")
+        
         marker1_action = menu.addAction("Marker 1")
         marker1_action.setCheckable(True)
         marker1_action.setChecked(self.show_marker1)
