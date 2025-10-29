@@ -534,8 +534,7 @@ def create_left_panel(S_data, freqs, settings, graph_type="Smith Diagram", s_par
         slider_2.label.set_visible(False)
         slider_2.valtext.set_visible(False)  # Hide the value text
         slider_2.ax.set_visible(False)
-        slider_2.on_changed(lambda val: update_cursor_2(int(val), from_slider=True))
-
+    
     def freq_edited():
         try:
             freq_hz = parse_frequency_input(edit_value.text())
@@ -612,8 +611,6 @@ def create_left_panel(S_data, freqs, settings, graph_type="Smith Diagram", s_par
                 pass
         edit_value.editingFinished.disconnect()
         edit_value.editingFinished.connect(freq_edited)
-
-    cursor_graph_2.set_visible(False)
 
     return left_panel, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, update_cursor, update_cursor_2, update_data_references
 
@@ -937,6 +934,7 @@ def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diag
 
         freq_value, freq_unit = format_frequency_smart_split(freqs[index])
         edit_value.setText(f"  {freq_value}")
+
         # Update field width when frequency changes from slider
         text_width = edit_value.fontMetrics().horizontalAdvance(edit_value.text())
         min_width = max(text_width + 10, 50)

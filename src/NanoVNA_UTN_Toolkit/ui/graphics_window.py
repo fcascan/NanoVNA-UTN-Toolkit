@@ -1222,6 +1222,15 @@ class NanoVNAGraphics(QMainWindow):
                     logging.info("[graphics_window._reset_markers_after_sweep] Reset right slider to index 0 (leftmost)")
                 except Exception as e:
                     logging.warning(f"[graphics_window._reset_markers_after_sweep] Could not reset right slider: {e}")
+
+            if hasattr(self, 'slider_right_2') and self.slider_right_2:
+                # Reset right slider to leftmost position  
+                try:
+                    self.slider_right_2.set_val(0)
+                    logging.info("[graphics_window._reset_markers_after_sweep] Reset right slider to index 0 (leftmost)")
+                except Exception as e:
+                    logging.warning(f"[graphics_window._reset_markers_after_sweep] Could not reset right slider: {e}")
+            
             
             # Reset ONLY marker field information - NOT the graphs themselves
             self._clear_marker_fields_only()
@@ -1316,8 +1325,8 @@ class NanoVNAGraphics(QMainWindow):
                         logging.info("[graphics_window._reset_markers_after_sweep] DELAYED: Updated left cursor info to index 0")
 
                     if hasattr(self, 'update_cursor_2') and callable(self.update_cursor_2):
-                        self.update_cursor(50)
-                        logging.info("[graphics_window._reset_markers_after_sweep] DELAYED: Updated left cursor info to index 0")
+                        self.update_cursor_2(0)
+                        logging.info("[graphics_window._reset_markers_after_sweep] DELAYED: Updated left 2 cursor info to index 0")
                     
                     if hasattr(self, 'update_right_cursor') and callable(self.update_right_cursor):
                         self.update_right_cursor(0)
@@ -1460,6 +1469,12 @@ class NanoVNAGraphics(QMainWindow):
                     logging.info("[graphics_window._reset_sliders_and_markers_for_graph_change] Reset right slider to index 0")
                 except Exception as e:
                     logging.warning(f"[graphics_window._reset_sliders_and_markers_for_graph_change] Could not reset right slider: {e}")
+            if hasattr(self, 'slider_right_2') and self.slider_right_2:
+                try:
+                    self.slider_right_2.set_val(0)
+                    logging.info("[graphics_window._reset_sliders_and_markers_for_graph_change] Reset right slider to index 0")
+                except Exception as e:
+                    logging.warning(f"[graphics_window._reset_sliders_and_markers_for_graph_change] Could not reset right slider: {e}")
             
             # Clear marker information fields
             self._clear_marker_fields_only()
@@ -1473,7 +1488,7 @@ class NanoVNAGraphics(QMainWindow):
                     logging.warning(f"[graphics_window._reset_sliders_and_markers_for_graph_change] Could not update left cursor: {e}")
             if hasattr(self, 'update_cursor_2') and callable(self.update_cursor_2):
                 try:
-                    self.update_cursor_2(50)
+                    self.update_cursor_2(0)
                     logging.info("[graphics_window._reset_sliders_and_markers_for_graph_change] Updated left cursor to index 0")
                 except Exception as e:
                     logging.warning(f"[graphics_window._reset_sliders_and_markers_for_graph_change] Could not update left cursor: {e}")
@@ -1495,7 +1510,7 @@ class NanoVNAGraphics(QMainWindow):
             # Make cursors visible
             if hasattr(self, 'cursor_left') and self.cursor_left:
                 self.cursor_left.set_visible(True)
-            if hasattr(self, 'cursor_left') and self.cursor_left_2:
+            if hasattr(self, 'cursor_left_2') and self.cursor_left_2:
                 self.cursor_left_2.set_visible(True)
             if hasattr(self, 'cursor_right') and self.cursor_right:
                 self.cursor_right.set_visible(True)
@@ -1528,6 +1543,13 @@ class NanoVNAGraphics(QMainWindow):
                             logging.info("[graphics_window._reset_sliders_and_markers_for_graph_change] DELAYED: Ensured right slider at position 0")
                         except Exception as e:
                             logging.warning(f"[graphics_window._reset_sliders_and_markers_for_graph_change] DELAYED: Could not set right slider: {e}")
+
+                    if hasattr(self, 'slider_right_2') and self.slider_right_2:
+                        try:
+                            self.slider_right_2.set_val(0)
+                            logging.info("[graphics_window._reset_sliders_and_markers_for_graph_change] DELAYED: Ensured right slider at position 0")
+                        except Exception as e:
+                            logging.warning(f"[graphics_window._reset_sliders_and_markers_for_graph_change] DELAYED: Could not set right slider: {e}")
                     
                     # Force cursor information update
                     if hasattr(self, 'update_cursor') and callable(self.update_cursor):
@@ -1539,7 +1561,7 @@ class NanoVNAGraphics(QMainWindow):
 
                     if hasattr(self, 'update_cursor_2') and callable(self.update_cursor_2):
                         try:
-                            self.update_cursor_2(50)
+                            self.update_cursor_2(0)
                             logging.info("[graphics_window._reset_sliders_and_markers_for_graph_change] DELAYED: Updated left cursor info to index 0")
                         except Exception as e:
                             logging.warning(f"[graphics_window._reset_sliders_and_markers_for_graph_change] DELAYED: Error updating left cursor: {e}")
@@ -1597,6 +1619,13 @@ class NanoVNAGraphics(QMainWindow):
                 except Exception as e:
                     logging.warning(f"[graphics_window._reset_sliders_before_sweep] Could not reset right slider: {e}")
             
+            if hasattr(self, 'slider_right_2') and self.slider_right_2:
+                try:
+                    self.slider_right_2.set_val(0)
+                    logging.info("[graphics_window._reset_sliders_and_markers_for_graph_change] DELAYED: Ensured right slider at position 0")
+                except Exception as e:
+                    logging.warning(f"[graphics_window._reset_sliders_and_markers_for_graph_change] DELAYED: Could not set right slider: {e}")
+            
             # CLEAR all marker information (DO NOT update cursor info - just clear it)
             self._clear_all_marker_fields()
             logging.info("[graphics_window._reset_sliders_before_sweep] Cleared all marker information display")
@@ -1638,6 +1667,13 @@ class NanoVNAGraphics(QMainWindow):
                     logging.info("[graphics_window._reset_sliders_after_reconnect] Reset right slider to index 0")
                 except Exception as e:
                     logging.warning(f"[graphics_window._reset_sliders_after_reconnect] Could not reset right slider: {e}")
+
+            if hasattr(self, 'slider_right_2') and self.slider_right_2:
+                try:
+                    self.slider_right_2.set_val(0)
+                    logging.info("[graphics_window._reset_sliders_after_reconnect] Reset right slider to index 0")
+                except Exception as e:
+                    logging.warning(f"[graphics_window._reset_sliders_after_reconnect] Could not reset right slider: {e}")
             
             # Update cursor information to show data for minimum position
             if hasattr(self, 'update_cursor') and callable(self.update_cursor):
@@ -1649,7 +1685,7 @@ class NanoVNAGraphics(QMainWindow):
 
             if hasattr(self, 'update_cursor_2') and callable(self.update_cursor_2):
                 try:
-                    self.update_cursor_2(50)
+                    self.update_cursor_2(0)
                     logging.info("[graphics_window._reset_sliders_after_reconnect] Updated left cursor info to index 0")
                 except Exception as e:
                     logging.warning(f"[graphics_window._reset_sliders_after_reconnect] Could not update left cursor: {e}")
@@ -1730,6 +1766,9 @@ class NanoVNAGraphics(QMainWindow):
                 new_cursor_2 = self.ax_left.plot(x_val_2, y_val_2, 'o', color=marker_color_left, markersize=5, markeredgewidth=2, visible=self.show_graphic1_marker2)[0]
                 self.cursor_left_2 = new_cursor_2
                 logging.info(f"[graphics_window._force_marker_visibility] Created new left cursor at ({x_val_2}, {y_val_2})")
+
+                if hasattr(self, 'slider_left_2') and self.slider_left_2:
+                    self.slider_left_2.on_changed(lambda val: self.update_cursor_2(int(val), from_slider=True))
                 
                 # Also update in markers list if it exists
                 if hasattr(self, 'markers') and self.markers:
@@ -1738,84 +1777,76 @@ class NanoVNAGraphics(QMainWindow):
                             marker['cursor_2'] = new_cursor_2
                                 
                     # Store the original update_cursor function and replace with a wrapper
-                    if hasattr(self, 'update_cursor') and not hasattr(self, '_original_update_cursor'):
-                        self._original_update_cursor = self.update_cursor
+                    if hasattr(self, 'update_cursor_2') and not hasattr(self, '_original_update_cursor_2'):
+                        self._original_update_cursor_2 = self.update_cursor_2
                         
-                        def cursor_left_wrapper(index, from_slider=False):
+                        def cursor_left_wrapper_2(index, from_slider=False):
                             # Call the original function first to update labels
-                            result = self._original_update_cursor(index, from_slider)
+                            result = self._original_update_cursor_2(index, from_slider)
                             
                             # Then update our visible cursor position 
                     
-                            if hasattr(self, 'update_cursor_2') and not hasattr(self, '_original_update_cursor_2'):
-                                self._original_update_cursor_2 = self.update_cursor_2
-                            
-                                def cursor_left_wrapper_2(index, from_slider=False):
-                                    # Call the original function first to update labels
-                                    result = self._original_update_cursor_2(index, from_slider)
+                            if hasattr(self, 'cursor_left') and self.cursor_left and hasattr(self.cursor_left, 'set_data'):
+                                try:
+                                    # Get current graph type and S parameter for left panel
+                                    actual_dir = os.path.dirname(os.path.dirname(__file__))  
+                                    ruta_ini = os.path.join(actual_dir, "ui","graphics_windows", "ini", "config.ini")
+                                    settings = QSettings(ruta_ini, QSettings.Format.IniFormat)
+                                    graph_type_left = settings.value("Tab1/GraphType1", "Smith Diagram")
+                                    s_param_left = settings.value("Tab1/SParameter", "S11")
                                     
-                                    # Then update our visible cursor position 
-                                    if hasattr(self, 'cursor_left_2') and self.cursor_left_2 and hasattr(self.cursor_left_2, 'set_data'):
-                                        try:
-                                            # Get current graph type and S parameter for left panel
-                                            actual_dir = os.path.dirname(os.path.dirname(__file__))  
-                                            ruta_ini = os.path.join(actual_dir, "ui","graphics_windows", "ini", "config.ini")
-                                            settings = QSettings(ruta_ini, QSettings.Format.IniFormat)
-                                            graph_type_left = settings.value("Tab1/GraphType1", "Smith Diagram")
-                                            s_param_left = settings.value("Tab1/SParameter", "S11")
-                                            
-                                            # Determine which S parameter data to use
-                                            s_data = None
-                                            if s_param_left == "S21" and hasattr(self, 's21') and self.s21 is not None:
-                                                s_data = self.s21
-                                            elif s_param_left == "S11" and hasattr(self, 's11') and self.s11 is not None:
-                                                s_data = self.s11
-                                            elif hasattr(self, 's21') and self.s21 is not None:
-                                                s_data = self.s21  # Default fallback to S21
-                                            elif hasattr(self, 's11') and self.s11 is not None:
-                                                s_data = self.s11  # Final fallback to S11
-                                            
-                                            if s_data is not None and hasattr(self, 'freqs') and self.freqs is not None and index < len(s_data) and index < len(self.freqs):
-                                                val_complex = s_data[index]
-                                                
-                                                # Use appropriate coordinates based on graph type
-                                                if graph_type_left == "Smith Diagram":
-                                                    # Smith diagram coordinates (real/imag)
-                                                    real_part = float(np.real(val_complex))
-                                                    imag_part = float(np.imag(val_complex))
-                                                    self.cursor_left_2.set_data([real_part], [imag_part])
-                                                elif graph_type_left == "Magnitude":
-                                                    freq_mhz = float(self.freqs[index] / 1e6)
-                                                    if unit_mode_left == "dB":
-                                                        mag_val = float(20 * np.log10(np.abs(val_complex)))
-                                                    elif unit_mode_left == "Power ratio":
-                                                        mag_val = float(np.abs(val_complex)**2)
-                                                    elif unit_mode_left == "Voltage ratio":
-                                                        mag_val = float(np.abs(val_complex))
-                                                    else:
-                                                        mag_val = float(np.abs(val_complex))
-                                                    self.cursor_left_2.set_data([freq_mhz], [mag_val])
-                                                elif graph_type_left == "Phase":
-                                                    # Phase plot coordinates (freq in MHz, phase in degrees)
-                                                    freq_mhz = float(self.freqs[index] / 1e6)
-                                                    phase_deg = float(np.angle(val_complex) * 180 / np.pi)
-                                                    self.cursor_left_2.set_data([freq_mhz], [phase_deg])
-                                                elif graph_type_left == "VSWR":
-                                                    # VSWR plot coordinates (freq in MHz, VSWR value)
-                                                    freq_mhz = float(self.freqs[index] / 1e6)
-                                                    s_magnitude = np.abs(val_complex)
-                                                    vswr_val = (1 + s_magnitude) / (1 - s_magnitude) if s_magnitude < 1 else 999
-                                                    self.cursor_left_2.set_data([freq_mhz], [float(vswr_val)])
-                                                
-                                                # Force redraw
-                                                if hasattr(self, 'canvas_left') and self.canvas_left:
-                                                    self.canvas_left.draw_idle()
-                                        except Exception as e:
-                                            print(f"Error updating cursor_left position: {e}")
+                                    # Determine which S parameter data to use
+                                    s_data = None
+                                    if s_param_left == "S21" and hasattr(self, 's21') and self.s21 is not None:
+                                        s_data = self.s21
+                                    elif s_param_left == "S11" and hasattr(self, 's11') and self.s11 is not None:
+                                        s_data = self.s11
+                                    elif hasattr(self, 's21') and self.s21 is not None:
+                                        s_data = self.s21  # Default fallback to S21
+                                    elif hasattr(self, 's11') and self.s11 is not None:
+                                        s_data = self.s11  # Final fallback to S11
                                     
-                                    return result
+                                    if s_data is not None and hasattr(self, 'freqs') and self.freqs is not None and index < len(s_data) and index < len(self.freqs):
+                                        val_complex = s_data[index]
+                                        
+                                        # Use appropriate coordinates based on graph type
+                                        if graph_type_left == "Smith Diagram":
+                                            # Smith diagram coordinates (real/imag)
+                                            real_part = float(np.real(val_complex))
+                                            imag_part = float(np.imag(val_complex))
+                                            self.cursor_left_2.set_data([real_part], [imag_part])
+                                        elif graph_type_left == "Magnitude":
+                                            freq_mhz = float(self.freqs[index] / 1e6)
+                                            if unit_mode_left == "dB":
+                                                mag_val = float(20 * np.log10(np.abs(val_complex)))
+                                            elif unit_mode_left == "Power ratio":
+                                                mag_val = float(np.abs(val_complex)**2)
+                                            elif unit_mode_left == "Voltage ratio":
+                                                mag_val = float(np.abs(val_complex))
+                                            else:
+                                                mag_val = float(np.abs(val_complex))
+                                            self.cursor_left_2.set_data([freq_mhz], [mag_val])
+                                        elif graph_type_left == "Phase":
+                                            # Phase plot coordinates (freq in MHz, phase in degrees)
+                                            freq_mhz = float(self.freqs[index] / 1e6)
+                                            phase_deg = float(np.angle(val_complex) * 180 / np.pi)
+                                            self.cursor_left_2.set_data([freq_mhz], [phase_deg])
+                                        elif graph_type_left == "VSWR":
+                                            # VSWR plot coordinates (freq in MHz, VSWR value)
+                                            freq_mhz = float(self.freqs[index] / 1e6)
+                                            s_magnitude = np.abs(val_complex)
+                                            vswr_val = (1 + s_magnitude) / (1 - s_magnitude) if s_magnitude < 1 else 999
+                                            self.cursor_left_2.set_data([freq_mhz], [float(vswr_val)])
+                                        
+                                        # Force redraw
+                                        if hasattr(self, 'canvas_left') and self.canvas_left:
+                                            self.canvas_left.draw_idle()
+                                except Exception as e:
+                                    print(f"Error updating cursor_left position: {e}")
                         
-                                self.update_cursor_2 = cursor_left_wrapper_2
+                            return result
+                
+                        self.update_cursor_2 = cursor_left_wrapper_2
 
                         if hasattr(self, 'slider_left_2') and self.slider_left_2:
                             try:
@@ -1833,7 +1864,7 @@ class NanoVNAGraphics(QMainWindow):
                                     self.slider_left_2.disconnect()
                                 except:
                                     pass
-                            self.slider_left.on_changed(lambda val: cursor_left_wrapper_2(int(val), from_slider=True))
+                            self.slider_left_2.on_changed(lambda val: cursor_left_wrapper_2(int(val), from_slider=True))
 
             except Exception as e:
                 print(f"Error forcing cursor_left to ax_left: {e}")
@@ -2326,7 +2357,7 @@ class NanoVNAGraphics(QMainWindow):
                     logging.info(f"[graphics_window._update_slider_ranges] Right slider updated: range 0-{max_index}, positioned at index {middle_index} ({self.freqs[middle_index]/1e6:.3f} MHz)")
                 except Exception as e:
                     logging.warning(f"[graphics_window._update_slider_ranges] Could not update right slider: {e}")
-            
+
             # Force canvas redraw to show updated markers
             if hasattr(self, 'canvas_left') and self.canvas_left:
                 self.canvas_left.draw_idle()
@@ -3722,8 +3753,12 @@ class NanoVNAGraphics(QMainWindow):
                     # Force sliders to leftmost position
                     if hasattr(self, 'slider_left') and self.slider_left:
                         self.slider_left.set_val(0)
+                    if hasattr(self, 'slider_left_2') and self.slider_left_2:
+                        self.slider_left_2.set_val(0)
                     if hasattr(self, 'slider_right') and self.slider_right:
                         self.slider_right.set_val(0)
+                    if hasattr(self, 'slider_right_2') and self.slider_right_2:
+                        self.slider_right_2.set_val(0)
                     
                     # Force cursor information update
                     if hasattr(self, 'update_cursor') and callable(self.update_cursor):
@@ -3731,7 +3766,7 @@ class NanoVNAGraphics(QMainWindow):
                         logging.info("[graphics_window.run_sweep] FINAL: Left cursor info updated to show minimum frequency data")
 
                     if hasattr(self, 'update_cursor_2') and callable(self.update_cursor_2):
-                        self.update_cursor_2(50)
+                        self.update_cursor_2(0)
                         logging.info("[graphics_window.run_sweep] FINAL: Left cursor info updated to show minimum frequency data")
                     
                     if hasattr(self, 'update_right_cursor') and callable(self.update_right_cursor):
