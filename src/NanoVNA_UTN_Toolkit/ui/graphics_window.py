@@ -1366,9 +1366,10 @@ class NanoVNAGraphics(QMainWindow):
             # Clear any existing wrapper functions
             if hasattr(self, '_original_update_cursor'):
                 self.update_cursor = self._original_update_cursor
+                delattr(self, '_original_update_cursor')
             if hasattr(self, '_original_update_cursor_2'):
                 self.update_cursor_2 = self._original_update_cursor_2
-                #delattr(self, '_original_update_cursor_2')
+                delattr(self, '_original_update_cursor_2')
             if hasattr(self, '_original_update_right_cursor'):
                 self.update_right_cursor = self._original_update_right_cursor
                 delattr(self, '_original_update_right_cursor')
@@ -4156,18 +4157,10 @@ class NanoVNAGraphics(QMainWindow):
                 cursor_graph.set_xdata([freqs[0] * 1e-6])
                 cursor_graph.set_ydata([magnitude_db[0]])
 
-                if self.show_graphic1_marker2:
-                    cursor_graph_2.set_xdata([freqs[10] * 1e-6])
-                    cursor_graph_2.set_ydata([magnitude_db[10]])
-
                 fig.canvas.draw_idle()
 
                 cursor_x = cursor_graph.get_xdata()[0]
                 cursor_y = cursor_graph.get_ydata()[0]
-
-                if self.show_graphic1_marker2:
-                    cursor_x_2 = cursor_graph_2.get_xdata()[0]
-                    cursor_y_2 = cursor_graph_2.get_ydata()[0]
 
                 logging.info(f"[Cursor] Frequency: {cursor_x:.6f} MHz, Magnitude: {cursor_y:.3f} {unit}")
 
@@ -4244,7 +4237,12 @@ class NanoVNAGraphics(QMainWindow):
                 
             # Set axis properties
             ax.tick_params(axis='both', which='major', labelsize=8)
-            #fig.tight_layout()
+
+            cursor_graph.set_zorder(10)
+            ax.add_line(cursor_graph)
+
+            cursor_graph_2.set_zorder(10)
+            ax.add_line(cursor_graph_2)
             
         except Exception as e:
             logging.error(f"[graphics_window._recreate_single_plot] Error recreating plot: {e}")
