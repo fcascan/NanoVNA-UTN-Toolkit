@@ -194,7 +194,7 @@ class SmithChartBuilder:
             zorder=self.config.center_line_zorder
         )
     
-    def add_cursor_marker(self, visible=None, visible_2=None, color=None, size=None):
+    def add_cursor_marker(self, visible=None, visible_2=None, color=None, color2=None, size=None):
         """Add cursor marker for interactive use."""
         if self.ax is None:
             return None
@@ -202,10 +202,11 @@ class SmithChartBuilder:
         visible = visible if visible is not None else self.config.marker_visible
         visible_2 = visible_2 if visible_2 is not None else self.config.marker_visible_2
         color = color or self.config.marker_color
+        color2 = color2 or self.config.marker_color
         size = size or self.config.markersize
         
         cursor, = self.ax.plot([], [], 'o', markersize=size, color=color, visible=visible)
-        cursor_2, = self.ax.plot([], [], 'o', markersize=size, color=color, visible=visible_2)
+        cursor_2, = self.ax.plot([], [], 'o', markersize=size, color=color2, visible=visible_2)
 
         return cursor, cursor_2
 
@@ -249,7 +250,7 @@ class SmithChartManager:
     
     def create_graphics_panel_smith_chart(self, s_data, freqs, s_param="S11",
                                         figsize=(5, 5), container_layout=None,
-                                        trace_color=None, marker_color=None):
+                                        trace_color=None, marker_color=None, marker2_color=None):
         """Create Smith chart for graphics panels."""
         # Setup figure
         fig, ax = self.builder.setup_figure(figsize=figsize)
@@ -267,7 +268,7 @@ class SmithChartManager:
         self.builder.add_legend([s_param], colors=[trace_color or self.config.trace_color])
         
         # Add cursor marker
-        cursor, cursor_2 = self.builder.add_cursor_marker(color=marker_color)
+        cursor, cursor_2 = self.builder.add_cursor_marker(color=marker_color, color2=marker2_color)
         
         # Create canvas
         canvas = self.builder.create_canvas()

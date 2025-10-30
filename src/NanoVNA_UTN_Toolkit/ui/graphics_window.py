@@ -887,8 +887,10 @@ class NanoVNAGraphics(QMainWindow):
                 s_param=config['s_param_tab1'], 
                 tracecolor=config['trace_color1'],
                 markercolor=config['marker_color1'],
+                marker2color=config['marker_color2'],
                 linewidth=config['trace_size1'],
-                markersize=config['marker_size1']  
+                markersize=config['marker_size1'], 
+                marker2size=config['marker_size2']  
             )
 
         # =================== RIGHT PANEL (EMPTY) ===================
@@ -902,8 +904,10 @@ class NanoVNAGraphics(QMainWindow):
                 s_param=config['s_param_tab2'],
                 tracecolor=config['trace_color2'],
                 markercolor=config['marker_color2'],
+                marker2color=config['marker2_color2'],
                 linewidth=config['trace_size2'],
-                markersize=config['marker_size2']
+                markersize=config['marker_size2'],
+                marker2size=config['marker2_size2']
             )
 
         # =================== PANELS LAYOUT ===================
@@ -1022,13 +1026,17 @@ class NanoVNAGraphics(QMainWindow):
             'graph_type_tab2': settings.value("Tab2/GraphType2", "Magnitude"),
             's_param_tab2': settings.value("Tab2/SParameter", "S11"),
             'trace_color1': settings.value("Graphic1/TraceColor", "blue"),
-            'marker_color1': settings.value("Graphic1/MarkerColor", "blue"),
+            'marker_color1': settings.value("Graphic1/MarkerColor1", "blue"),
+            'marker2_color1': settings.value("Graphic1/MarkerColor2", "blue"),
             'trace_size1': int(settings.value("Graphic1/TraceWidth", 2)),
-            'marker_size1': int(settings.value("Graphic1/MarkerWidth", 6)),
+            'marker_size1': int(settings.value("Graphic1/MarkerWidth1", 6)),
+            'marker2_size1': int(settings.value("Graphic1/MarkerWidth2", 6)),
             'trace_color2': settings.value("Graphic2/TraceColor", "blue"),
-            'marker_color2': settings.value("Graphic2/MarkerColor", "blue"),
+            'marker_color2': settings.value("Graphic2/MarkerColor1", "blue"),
+            'marker2_color2': settings.value("Graphic2/MarkerColor2", "blue"),
             'trace_size2': int(settings.value("Graphic2/TraceWidth", 2)),
-            'marker_size2': int(settings.value("Graphic2/MarkerWidth", 6))
+            'marker_size2': int(settings.value("Graphic2/MarkerWidth1", 6)),
+            'marker2_size2': int(settings.value("Graphic2/MarkerWidth2", 6))
         }
 
     def _clear_panel_labels(self, panel_side='left'):
@@ -1358,7 +1366,8 @@ class NanoVNAGraphics(QMainWindow):
             logging.error(f"[graphics_window._reset_markers_after_sweep] Error resetting markers: {e}")
 
 
-    def _recreate_cursors_for_new_plots(self, marker_color_left, marker_color_right):
+    def _recreate_cursors_for_new_plots(self, marker_color_left, marker_color_right, 
+        marker2_color_left, marker2_color_right, marker1_size_left, marker1_size_right, marker2_size_left, marker2_size_right):
         """Recreate cursors when the plot type changes."""
         try:
             logging.info("[graphics_window._recreate_cursors_for_new_plots] Recreating cursors for plot type changes")
@@ -1409,7 +1418,7 @@ class NanoVNAGraphics(QMainWindow):
             # Create new cursors at position (0,0) - they will be positioned correctly later
             # Make them invisible initially to avoid the "fixed cursor" problem
             if hasattr(self, 'ax_left') and self.ax_left:
-                self.cursor_left = self.ax_left.plot(0, 0, 'o', color=marker_color_left, markersize=5, 
+                self.cursor_left = self.ax_left.plot(0, 0, 'o', color=marker_color_left, markersize=marker1_size_left, 
                                                     markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
 
             if hasattr(self, 'ax_left') and self.ax_left:
@@ -1417,7 +1426,7 @@ class NanoVNAGraphics(QMainWindow):
                                                     markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
             
             if hasattr(self, 'ax_right') and self.ax_right:
-                self.cursor_right = self.ax_right.plot(0, 0, 'o', color=marker_color_right, markersize=5, 
+                self.cursor_right = self.ax_right.plot(0, 0, 'o', color=marker_color_right, markersize=marker1_size_right, 
                                                       markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
 
             if hasattr(self, 'ax_right') and self.ax_right:
@@ -1436,8 +1445,11 @@ class NanoVNAGraphics(QMainWindow):
                     self.markers[1]['cursor_2'] = self.cursor_right_2
             
             # Force marker visibility setup to create the wrapper functions again
-            self._force_marker_visibility(marker_color_left=marker_color_left, marker_color_right=marker_color_right)
-            self._force_marker_visibility_2(marker_color_left=marker_color_left, marker_color_right=marker_color_right)
+            self._force_marker_visibility(marker_color_left=marker_color_left, marker_color_right=marker_color_right, 
+                marker1_size_left=marker1_size_left, marker1_size_right=marker1_size_right)
+
+            self._force_marker_visibility_2(marker_color_left=marker2_color_left, marker_color_right=marker2_color_right,
+                marker_size_left=marker2_size_left, marker_size_right=marker2_size_right)
             
             logging.info("[graphics_window._recreate_cursors_for_new_plots] Cursors recreated successfully")
             
@@ -1727,7 +1739,7 @@ class NanoVNAGraphics(QMainWindow):
                 self.slider_left.set_val(val)
                 self.update_cursor(val)
 
-    def _force_marker_visibility_2(self, marker_color_left, marker_color_right):
+    def _force_marker_visibility_2(self, marker_color_left, marker_color_right, marker_size_left, marker_size_right):
         """Force markers to be visible by recreating them directly on axes"""
 
         actual_dir = os.path.dirname(os.path.dirname(__file__))  
@@ -1764,7 +1776,7 @@ class NanoVNAGraphics(QMainWindow):
                     pass  # Use defaults
                 
                 # Create new cursor directly on the axes
-                new_cursor_2 = self.ax_left.plot(x_val_2, y_val_2, 'o', color=marker_color_left, markersize=5, markeredgewidth=2, visible=self.show_graphic1_marker2)[0]
+                new_cursor_2 = self.ax_left.plot(x_val_2, y_val_2, 'o', color=marker_color_left, markersize=marker_size_left, markeredgewidth=2, visible=self.show_graphic1_marker2)[0]
                 self.cursor_left_2 = new_cursor_2
                 logging.info(f"[graphics_window._force_marker_visibility] Created new left cursor at ({x_val_2}, {y_val_2})")
 
@@ -1892,7 +1904,7 @@ class NanoVNAGraphics(QMainWindow):
                     pass  # Use defaults
                 
                 # Create new cursor directly on the axes
-                new_cursor = self.ax_right.plot(x_val, y_val, 'o', color=marker_color_right, markersize=5, markeredgewidth=2, visible=self.show_graphic2_marker2)[0]
+                new_cursor = self.ax_right.plot(x_val, y_val, 'o', color=marker_color_right, markersize=marker_size_right, markeredgewidth=2, visible=self.show_graphic2_marker2)[0]
                 self.cursor_right_2 = new_cursor
                 logging.info(f"[graphics_window._force_marker_visibility] Created new right cursor at ({x_val}, {y_val})")
                 
@@ -1999,7 +2011,7 @@ class NanoVNAGraphics(QMainWindow):
             except Exception as e:
                 print(f"Error forcing cursor_right to ax_right: {e}")
  
-    def _force_marker_visibility(self, marker_color_left, marker_color_right):
+    def _force_marker_visibility(self, marker_color_left, marker_color_right, marker1_size_left, marker1_size_right):
         """Force markers to be visible by recreating them directly on axes"""
 
         actual_dir = os.path.dirname(os.path.dirname(__file__))  
@@ -2036,7 +2048,7 @@ class NanoVNAGraphics(QMainWindow):
                     pass  # Use defaults
                 
                 # Create new cursor directly on the axes
-                new_cursor = self.ax_left.plot(x_val, y_val, 'o', color=marker_color_left, markersize=5, markeredgewidth=2)[0]
+                new_cursor = self.ax_left.plot(x_val, y_val, 'o', color=marker_color_left, markersize=marker1_size_left, markeredgewidth=2)[0]
                 self.cursor_left = new_cursor
                 logging.info(f"[graphics_window._force_marker_visibility] Created new left cursor at ({x_val}, {y_val})")
 
@@ -2160,7 +2172,7 @@ class NanoVNAGraphics(QMainWindow):
                     pass  # Use defaults
                 
                 # Create new cursor directly on the axes
-                new_cursor = self.ax_right.plot(x_val, y_val, 'o', color=marker_color_right, markersize=5, markeredgewidth=2)[0]
+                new_cursor = self.ax_right.plot(x_val, y_val, 'o', color=marker_color_right, markersize=marker1_size_right, markeredgewidth=2)[0]
                 self.cursor_right = new_cursor
                 logging.info(f"[graphics_window._force_marker_visibility] Created new right cursor at ({x_val}, {y_val})")
                 
@@ -4003,21 +4015,25 @@ class NanoVNAGraphics(QMainWindow):
             s_param_tab2    = settings.value("Tab2/SParameter", "S11")
             
             trace_color1 = settings.value("Graphic1/TraceColor", "blue")
-            marker_color1 = settings.value("Graphic1/MarkerColor", "blue")
+            marker_color1 = settings.value("Graphic1/MarkerColor1", "blue")
+            marker2_color1 = settings.value("Graphic1/MarkerColor2", "blue")
             background_color1 = settings.value("Graphic1/BackgroundColor", "blue")
             text_color1 = settings.value("Graphic1/TextColor", "blue")
             axis_color1 = settings.value("Graphic1/AxisColor", "blue")
             trace_size1 = int(settings.value("Graphic1/TraceWidth", 2))
-            marker_size1 = int(settings.value("Graphic1/MarkerWidth", 6))
-            
+            marker_size1 = int(settings.value("Graphic1/MarkerWidth1", 6))
+            marker2_size1 = int(settings.value("Graphic1/MarkerWidth2", 6))
+
             trace_color2 = settings.value("Graphic2/TraceColor", "blue")
-            marker_color2 = settings.value("Graphic2/MarkerColor", "blue")
+            marker_color2 = settings.value("Graphic2/MarkerColor1", "blue")
+            marker2_color2 = settings.value("Graphic2/MarkerColor2", "blue")
             background_color2 = settings.value("Graphic2/BackgroundColor", "blue")
             text_color2 = settings.value("Graphic2/TextColor", "blue")
             axis_color2 = settings.value("Graphic2/AxisColor", "blue")
             trace_size2 = int(settings.value("Graphic2/TraceWidth", 2))
-            marker_size2 = int(settings.value("Graphic2/MarkerWidth", 6))
-            
+            marker_size2 = int(settings.value("Graphic2/MarkerWidth1", 6))
+            marker2_size2 = int(settings.value("Graphic2/MarkerWidth2", 6))
+
             # Determine which data to plot for each panel
             s_data_left = self.s11 if s_param_tab1 == "S11" else self.s21
             s_data_right = self.s11 if s_param_tab2 == "S11" else self.s21
@@ -4082,8 +4098,9 @@ class NanoVNAGraphics(QMainWindow):
             
             # Recreate cursors for the new graph types
             logging.info("[graphics_window.update_plots_with_new_data] Recreating cursors for new graph types")
-            self._recreate_cursors_for_new_plots(marker_color_left=marker_color1, marker_color_right=marker_color2)
-            
+            self._recreate_cursors_for_new_plots(marker_color_left=marker_color1, marker_color_right=marker_color2, marker2_color_left=marker2_color1,
+                marker2_color_right=marker2_color2, marker1_size_left=marker_size1, marker1_size_right=marker_size2, marker2_size_left=marker2_size1, marker2_size_right=marker2_size2)
+
             # Reset sliders and markers to leftmost position (index 0) for graph type changes
             # Skip this reset if we're doing a sweep (will be handled by _reset_markers_after_sweep)
             if not skip_reset:
@@ -4102,7 +4119,8 @@ class NanoVNAGraphics(QMainWindow):
             logging.error(f"[graphics_window.update_plots_with_new_data] Error updating plots: {e}")
     
     def _recreate_single_plot(self, ax, fig, s_data, freqs, graph_type, s_param, 
-                            tracecolor, markercolor, brackground_color_graphics, text_color, axis_color, linewidth, markersize,  unit="dB", cursor_graph=None, cursor_graph_2 = None):
+                            tracecolor, markercolor, brackground_color_graphics, text_color, axis_color, linewidth, markersize,
+                            unit="dB", cursor_graph=None, cursor_graph_2 = None):
         """Recreate a single plot with new data."""
         try:
             from matplotlib.lines import Line2D

@@ -193,7 +193,7 @@ class EditGraphics(QMainWindow):
         self.nano_window = nano_window
 
         self.setWindowTitle("Edit Graphics")
-        self.setFixedSize(800, 530)
+        self.setFixedSize(800, 630)
 
         # --- Frequency array placeholder ---
         if freqs is None:
@@ -213,8 +213,8 @@ class EditGraphics(QMainWindow):
         # --- Tabs setup ---
         tabs = QTabWidget()
 
-        tab1_widget, trace_color, marker_color, brackground_color_graphics, text_color, axis_color, line_width, marker_size = create_edit_tab1(self, tabs=tabs, nano_window=nano_window)
-        tab2_widget, trace_color2, marker_color2, brackground_color_graphics2, text_color2, axis_color2, line_width2, marker_size2 = create_edit_tab2(self, tabs=tabs, nano_window=nano_window)
+        tab1_widget, trace_color, marker_color, marker2_color, brackground_color_graphics, text_color, axis_color, line_width, marker_size, marker2_size = create_edit_tab1(self, tabs=tabs, nano_window=nano_window)
+        tab2_widget, trace_color2, marker_color2, marker2_color2, brackground_color_graphics2, text_color2, axis_color2, line_width2, marker_size2, marker2_size2 = create_edit_tab2(self, tabs=tabs, nano_window=nano_window)
 
         tabs.addTab(tab1_widget, "Graphic 1")
         tabs.addTab(tab2_widget, "Graphic 2")
@@ -230,10 +230,12 @@ class EditGraphics(QMainWindow):
         btn_apply.clicked.connect(lambda: self.on_apply_clicked(trace_color=trace_color(), trace_color2=trace_color2(), 
                                                                 brackground_color_graphics=brackground_color_graphics(), brackground_color_graphics2=brackground_color_graphics2(),
                                                                 marker_color=marker_color(), marker_color2=marker_color2(),
+                                                                marker2_color=marker2_color(), marker2_color2=marker2_color2(),
                                                                 text_color=text_color(), text_color2=text_color2(),
                                                                 axis_color=axis_color(), axis_color2=axis_color2(),
                                                                 line_width=line_width(), line_width2=line_width2(),
                                                                 marker_size=marker_size(), marker_size2=marker_size2(),
+                                                                marker2_size=marker2_size(), marker2_size2=marker2_size2(),
                                                                 settings=settings))
 
         button_layout.addWidget(btn_cancel)
@@ -247,27 +249,33 @@ class EditGraphics(QMainWindow):
     def on_apply_clicked(self, settings, trace_color="blue", trace_color2="blue",
                      brackground_color_graphics="blue", brackground_color_graphics2="blue",
                      marker_color="blue", marker_color2="blue", 
+                     marker2_color="blue", marker2_color2="blue", 
                      text_color="blue", text_color2="blue",
                      axis_color="blue", axis_color2="blue",
                      line_width=2, line_width2=2,
-                     marker_size=2, marker_size2=2):
+                     marker_size=2, marker_size2=2,
+                     marker2_size=2, marker2_size2=2):
         from NanoVNA_UTN_Toolkit.ui.utils.graphics_utils import create_left_panel, create_right_panel
 
         settings.setValue("Graphic1/TraceColor", trace_color)
-        settings.setValue("Graphic1/MarkerColor", marker_color)
+        settings.setValue("Graphic1/MarkerColor1", marker_color)
+        settings.setValue("Graphic1/MarkerColor2", marker2_color)
         settings.setValue("Graphic1/BackgroundColor", brackground_color_graphics)
         settings.setValue("Graphic1/TextColor", text_color)
         settings.setValue("Graphic1/AxisColor", axis_color)
         settings.setValue("Graphic1/TraceWidth", line_width)
-        settings.setValue("Graphic1/MarkerWidth", marker_size)
+        settings.setValue("Graphic1/MarkerWidth1", marker_size)
+        settings.setValue("Graphic1/MarkerWidth2", marker2_size)
 
         settings.setValue("Graphic2/TraceColor", trace_color2)
-        settings.setValue("Graphic2/MarkerColor", marker_color2)
+        settings.setValue("Graphic2/MarkerColor1", marker_color2)
+        settings.setValue("Graphic2/MarkerColor2", marker2_color2)
         settings.setValue("Graphic2/BackgroundColor", brackground_color_graphics2)
         settings.setValue("Graphic2/TextColor", text_color2)
         settings.setValue("Graphic2/AxisColor", axis_color2)
         settings.setValue("Graphic2/TraceWidth", line_width2)
-        settings.setValue("Graphic2/MarkerWidth", marker_size2)
+        settings.setValue("Graphic2/MarkerWidth1", marker_size2)
+        settings.setValue("Graphic2/MarkerWidth2", marker2_size2)
         settings.sync()
 
         ui_dir = os.path.dirname(os.path.dirname(__file__))  

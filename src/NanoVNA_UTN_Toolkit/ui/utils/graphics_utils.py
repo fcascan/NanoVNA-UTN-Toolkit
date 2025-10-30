@@ -75,8 +75,8 @@ def parse_frequency_input(text):
 #############################################################################################
 
 def create_left_panel(S_data, freqs, settings, graph_type="Smith Diagram", s_param="S11",
-                      tracecolor="red", markercolor="red", linewidth=2,
-                      markersize=5, marker_visible=True, marker_visible_2=False):
+                      tracecolor="red", markercolor="red", marker2color="red", linewidth=2,
+                      markersize=5, marker2size=5, marker_visible=True, marker_visible_2=False):
 
     brackground_color_graphics = settings.value("Graphic1/BackgroundColor", "red")
     text_color = settings.value("Graphic1/TextColor", "red")
@@ -120,7 +120,8 @@ def create_left_panel(S_data, freqs, settings, graph_type="Smith Diagram", s_par
             figsize=(10, 10),
             container_layout=left_layout,
             trace_color=tracecolor,
-            marker_color=markercolor
+            marker_color=markercolor,
+            marker2_color=marker2color
         )
 
     elif graph_type == "Magnitude":
@@ -164,7 +165,7 @@ def create_left_panel(S_data, freqs, settings, graph_type="Smith Diagram", s_par
         ax.grid(True, which='both', axis='both', color='white', linestyle='--', linewidth=0.5, alpha=0.3, zorder=1)
 
         cursor_graph, = ax.plot([], [], 'o', markersize=markersize, color=markercolor, visible=marker_visible)
-        cursor_graph_2, = ax.plot([], [], 'o', markersize=markersize, color=markercolor, visible=False)
+        cursor_graph_2, = ax.plot([], [], 'o', markersize=marker2size, color=marker2color, visible=False)
 
     elif graph_type == "Phase":
 
@@ -207,7 +208,7 @@ def create_left_panel(S_data, freqs, settings, graph_type="Smith Diagram", s_par
         ax.grid(True, which='both', axis='both', color='white', linestyle='--', linewidth=0.5, alpha=0.3, zorder=1)
 
         cursor_graph, = ax.plot([], [], 'o', markersize=markersize, color=markercolor, visible=marker_visible)
-        cursor_graph_2, = ax.plot([], [], 'o', markersize=markersize, color=markercolor, visible=False)
+        cursor_graph_2, = ax.plot([], [], 'o', markersize=marker2size, color=marker2color, visible=False)
 
     else:
         raise ValueError(f"Unknown graph_type: {graph_type}")
@@ -619,7 +620,7 @@ def create_left_panel(S_data, freqs, settings, graph_type="Smith Diagram", s_par
 #############################################################################################
 
 def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diagram", s_param="S11",
-                       tracecolor="red", markercolor="red", linewidth=2, markersize=5, marker_visible=True):
+                       tracecolor="red", markercolor="red", marker2color="red", linewidth=2, markersize=5, marker2size=5, marker_visible=True):
 
     brackground_color_graphics = settings.value("Graphic2/BackgroundColor", "red")
     text_color = settings.value("Graphic2/TextColor", "red")
@@ -705,7 +706,7 @@ def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diag
         ax.grid(True, which='both', axis='both', color='white', linestyle='--', linewidth=0.5, alpha=0.3, zorder=1)
 
         cursor_graph, = ax.plot([], [], 'o', markersize=markersize, color=markercolor, visible=marker_visible)
-        cursor_graph_2, = ax.plot([], [], 'o', markersize=markersize, color=markercolor, visible=False)
+        cursor_graph_2, = ax.plot([], [], 'o', markersize=marker2size, color=marker2color, visible=False)
 
     elif graph_type == "Phase":
         fig, ax = plt.subplots(figsize=(4,3))
@@ -747,7 +748,7 @@ def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diag
         ax.grid(True, which='both', axis='both', color='white', linestyle='--', linewidth=0.5, alpha=0.3, zorder=1)
         
         cursor_graph, = ax.plot([], [], 'o', markersize=markersize, color=markercolor, visible=marker_visible)
-        cursor_graph_2, = ax.plot([], [], 'o', markersize=markersize, color=markercolor, visible=False)
+        cursor_graph_2, = ax.plot([], [], 'o', markersize=marker2size, color=marker2olor, visible=False)
 
     # --- Info panel (Right side reorganized) ---
     info_panel = QWidget()
