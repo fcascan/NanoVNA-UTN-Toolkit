@@ -3234,6 +3234,9 @@ class NanoVNAGraphics(QMainWindow):
         grid_action.setCheckable(True)
         grid_action.setChecked(current_state)
 
+        range_action = menu.addAction("Set range")
+        #grid_action.setChecked(current_state)
+
         # --- Export ---
         menu.addSeparator()
         export_action = menu.addAction("Export...")
@@ -3312,6 +3315,11 @@ class NanoVNAGraphics(QMainWindow):
             target_fig.canvas.draw_idle()
             grid_action.setText("Grid ✓" if new_state else "Grid")
 
+        # --- Range ---
+
+        elif selected_action == range_action:
+            self.show_y_range_dialog(target_ax)
+
         # --- Export ---
 
         elif selected_action == export_action:
@@ -3331,6 +3339,58 @@ class NanoVNAGraphics(QMainWindow):
             self.markers_button.show()
         else:
             self.markers_button.hide()
+
+    def show_y_range_dialog(self, target_ax):
+        from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
+
+        if target_ax is None:
+            QMessageBox.warning(None, "Error", "No axis selected.")
+            return
+
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Set Y Range")
+        dlg.setFixedSize(250, 150)
+
+        layout = QVBoxLayout(dlg)
+
+        l1 = QHBoxLayout()
+        l1.addWidget(QLabel("Y min:"))
+        ymin_edit = QLineEdit()
+        l1.addWidget(ymin_edit)
+        layout.addLayout(l1)
+
+        l2 = QHBoxLayout()
+        l2.addWidget(QLabel("Y max:"))
+        ymax_edit = QLineEdit()
+        l2.addWidget(ymax_edit)
+        layout.addLayout(l2)
+
+        btn_layout = QHBoxLayout()
+        apply_btn = QPushButton("Apply")
+        cancel_btn = QPushButton("Cancel")
+        btn_layout.addWidget(apply_btn)
+        btn_layout.addWidget(cancel_btn)
+        layout.addLayout(btn_layout)
+
+        result = {"accepted": False, "ymin": None, "ymax": None}
+
+        def apply_clicked():
+            try:
+                ymin = float(ymin_edit.text())
+                ymax = float(ymax_edit.text())
+                result["ymin"], result["ymax"] = ymin, ymax
+                result["accepted"] = True
+                dlg.accept()
+            except ValueError:
+                QMessageBox.warning(dlg, "Invalid Input", "Please enter valid numbers for Y min and Y max.")
+
+        apply_btn.clicked.connect(apply_clicked)
+        cancel_btn.clicked.connect(dlg.reject)
+
+        if dlg.exec() == QDialog.Accepted and result["accepted"] and target_ax is not None:
+            target_ax.set_ylim(float(result["ymin"]), float(result["ymax"]))
+            target_ax.figure.canvas.draw_idle()
+
 
     def show_frequency_difference_dialog(self):
         import os
