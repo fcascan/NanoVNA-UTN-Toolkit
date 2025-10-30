@@ -17,12 +17,19 @@ from PySide6.QtCore import Qt
 class ExportDialog(QDialog):
     """Dialog for exporting graph data and images."""
     
-    def __init__(self, parent=None, figure=None, left_graph=None, right_graph=None, freqs = None):
+    def __init__(self, parent=None, figure=None, left_graph=None, right_graph=None, freqs = None, show_markers_left=None, show_markers_right=None, 
+        update_cursor_left = None, update_cursor_right = None):
         super().__init__(parent)
 
         self.left_graph = left_graph
         self.right_grap = right_graph
         self.freqs = freqs
+
+        self.show_markers_left = show_markers_left 
+        self.show_markers_right = show_markers_right
+
+        self.update_cursor_left = update_cursor_left
+        self.update_cursor_right = update_cursor_right
 
         ui_dir = os.path.dirname(os.path.dirname(__file__))  
         ruta_ini = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
@@ -237,48 +244,138 @@ class ExportDialog(QDialog):
         layout.addLayout(close_layout)
 
     def create_static_preview(self):
-        """Create a static preview image of the graph."""
+        """Create a static preview image of the graph with info boxes for active markers."""
+        import io
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from PySide6.QtGui import QPixmap
+
         if not self.figure:
             return None
-            
-        try:
-            # Hide interactive elements (sliders) but keep cursors visible
-            interactive_elements = []
-            for ax in self.figure.axes:
-                # Hide slider axes (usually have very small height/width)
-                if hasattr(ax, 'get_position'):
-                    pos = ax.get_position()
-                    if pos.height < 0.1 or pos.width < 0.1:  # Likely a slider
-                        if ax.get_visible():
-                            interactive_elements.append((ax, True))
-                            ax.set_visible(False)
-                        continue
-            
-            # Force canvas update
-            self.figure.canvas.draw()
-            
-            # Generate preview image
-            buf = io.BytesIO()
-            self.figure.savefig(buf, format='png', dpi=100, 
-                    edgecolor='none')
-            buf.seek(0)
-            
-            # Restore interactive elements
-            for element, was_visible in interactive_elements:
-                element.set_visible(was_visible)
-            
-            # Force canvas redraw after restoring elements
-            self.figure.canvas.draw()
-            
-            # Create QPixmap from bytes
-            pixmap = QPixmap()
-            if pixmap.loadFromData(buf.getvalue()):
-                return pixmap
-                
-        except Exception as e:
-            print(f"Preview generation error: {e}")
-            
+
+        import copy
+        fig_copy = copy.deepcopy(self.figure)
+
+        # Eliminar ejes pequeños (sliders, colorbars, etc.)
+        axes_to_keep = [ax for ax in fig_copy.axes if ax.get_position().height > 0.1 and ax.get_position().width > 0.1]
+        if not axes_to_keep:
+            return None
+        ax = axes_to_keep[0]
+
+        actual_dir = os.path.dirname(os.path.dirname(__file__))  
+        ruta_ini = os.path.join(actual_dir, "ui", "graphics_windows", "ini", "config.ini")
+        settings = QSettings(ruta_ini, QSettings.IniFormat)
+
+        # Determinar si la figura es la izquierda o la derecha
+        if self.figure == getattr(self.parent_window, 'fig_left', None):
+            active_markers = [
+                (getattr(self.parent_window, 'cursor_left', None), 1, self.show_markers_left[0]),
+                (getattr(self.parent_window, 'cursor_left_2', None), 2, self.show_markers_left[1])
+            ]
+            unit = settings.value("Graphic1/db_times", "dB")
+
+            graph = settings.value("Tab1/GraphType1", "Magnitude")
+
+            color = 'red'
+        elif self.figure == getattr(self.parent_window, 'fig_right', None):
+            active_markers = [
+                (getattr(self.parent_window, 'cursor_right', None), 1, self.show_markers_right[0]),
+                (getattr(self.parent_window, 'cursor_right_2', None), 2, self.show_markers_right[1])
+            ]
+            unit = settings.value("Graphic2/db_times", "dB")
+
+            graph = settings.value("Tab2/GraphType2", "Magnitude")
+
+            color = 'blue'
+        else:
+            return None
+
+        # Filtrar marcadores activos
+        active_markers = [(cursor, mid) for cursor, mid, show in active_markers if show and cursor is not None]
+        if not active_markers:
+            return None
+
+        # Mantener estilo y fondo original, solo ajustando tamaño
+        fig_copy.set_size_inches(6, 4)
+        fig_copy.set_dpi(300)
+
+        # Ocultar ejes pequeños (sliders)
+        for ax_sub in fig_copy.axes:
+            pos = ax_sub.get_position()
+            if pos.height < 0.1 or pos.width < 0.1:
+                ax_sub.set_visible(False)
+
+        # --- Dibujar markers e info boxes ---
+        box_height = 0.15
+        ypos_start = 0.9
+
+        if len(active_markers) == 1:
+            ypos_step = box_height + 0.02
+        else:
+            ypos_step = box_height + 0.12 
+
+        for i, (cursor, marker_id) in enumerate(active_markers):
+
+            if graph == "Magnitude":
+                x_data, y_data = cursor.get_data()
+                if len(x_data) == 0 or len(y_data) == 0:
+                    continue
+
+                freq = x_data[0]
+                magnitude = y_data[0]
+
+                # Dibujar caja de información
+                ypos = ypos_start - i * ypos_step
+                info_text = (
+                    f"Marker {marker_id}\n"
+                    f"Freq: {x_data[0]:.2f}\n"
+                    f"|S|: {magnitude:.3f}{unit}"
+                )
+                ax.text(   
+                        0.05, ypos, info_text,
+                    transform=ax.transAxes,
+                    fontsize=8,
+                    verticalalignment='top',
+                    bbox=dict(facecolor='white', alpha=0.7, edgecolor='black')
+                )
+
+            if graph == "Phase":
+                x_data, y_data = cursor.get_data()
+                if len(x_data) == 0 or len(y_data) == 0:
+                    continue
+
+                freq = x_data[0]
+                magnitude = y_data[0]
+
+                # Dibujar caja de información
+                ypos = ypos_start - i * ypos_step
+                info_text = (
+                    f"Marker {marker_id}\n"
+                    f"Freq: {x_data[0]:.2f}\n"
+                    f"\phi: {magnitude:.3f}{"°"}"
+                )
+                ax.text(   
+                        0.05, ypos, info_text,
+                    transform=ax.transAxes,
+                    fontsize=8,
+                    verticalalignment='top',
+                    bbox=dict(facecolor='white', alpha=0.7, edgecolor='black')
+                )
+
+            # Dibujar marker sobre la gráfica original
+            ax.plot(x_data, y_data, marker='o', color='red', markersize=6)
+
+
+        # --- Exportar imagen a pixmap ---
+        buf = io.BytesIO()
+        fig_copy.savefig(buf, format='png', dpi=100, edgecolor='none')
+        buf.seek(0)
+
+        pixmap = QPixmap()
+        if pixmap.loadFromData(buf.getvalue()):
+            return pixmap
         return None
+
 
     def _prepare_figure_for_export(self, dpi=300, size_inches=(10, 8), remove_sliders=True):
         """
@@ -300,7 +397,21 @@ class ExportDialog(QDialog):
         # Set DPI and size
         fig_copy.set_dpi(dpi)
         fig_copy.set_size_inches(*size_inches)
-        
+
+        if hasattr(self.parent_window, 'cursor_left') and self.parent_window.cursor_left:
+            x, y_complex = self.parent_window.cursor_left.get_data()  # y puede ser complejo
+            magnitude = np.abs(y_complex[0])
+            phase_deg = np.angle(y_complex[0], deg=True)
+            
+            # Dibujar el marcador
+            ax.plot(x, magnitude, marker='o', color='red', markersize=8, label='M1')
+
+            # Cuadro de info
+            info_text = f"Freq: {x[0]:.2f}\n|S11|: {magnitude:.3f}\nPhase: {phase_deg:.2f}°"
+            ax.text(0.05, 0.95, info_text, transform=ax.transAxes,
+                    fontsize=8, verticalalignment='top',
+                    bbox=dict(facecolor='white', alpha=0.7, edgecolor='black'))
+                
         # Handle slider removal and axis adjustments
         if remove_sliders:
             # Collect slider axes to remove
