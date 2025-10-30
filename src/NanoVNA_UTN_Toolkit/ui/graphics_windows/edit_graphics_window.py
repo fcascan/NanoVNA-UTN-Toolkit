@@ -244,8 +244,13 @@ class EditGraphics(QMainWindow):
         self.setCentralWidget(central_widget)
         #self.setStyleSheet("background-color: #7f7f7f;")
 
-    def on_apply_clicked(self, settings, trace_color="blue", trace_color2="blue", brackground_color_graphics="blue", brackground_color_graphics2="blue", marker_color="blue", marker_color2="blue", 
-                    text_color="blue", text_color2="blue", axis_color="blue", axis_color2="blue", line_width=2, line_width2=2, marker_size=2, marker_size2=2):
+    def on_apply_clicked(self, settings, trace_color="blue", trace_color2="blue",
+                     brackground_color_graphics="blue", brackground_color_graphics2="blue",
+                     marker_color="blue", marker_color2="blue", 
+                     text_color="blue", text_color2="blue",
+                     axis_color="blue", axis_color2="blue",
+                     line_width=2, line_width2=2,
+                     marker_size=2, marker_size2=2):
         from NanoVNA_UTN_Toolkit.ui.utils.graphics_utils import create_left_panel, create_right_panel
 
         settings.setValue("Graphic1/TraceColor", trace_color)
@@ -263,92 +268,79 @@ class EditGraphics(QMainWindow):
         settings.setValue("Graphic2/AxisColor", axis_color2)
         settings.setValue("Graphic2/TraceWidth", line_width2)
         settings.setValue("Graphic2/MarkerWidth", marker_size2)
-
         settings.sync()
 
         ui_dir = os.path.dirname(os.path.dirname(__file__))  
         ruta_ini = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
-
         settings = QSettings(ruta_ini, QSettings.IniFormat)
 
         graph_type1 = settings.value("Tab1/GraphType1", "Smith Diagram")
         s_param1 = settings.value("Tab1/SParameter", "S11")
-
-        graph_type2 = settings.value("Tab2/GraphType2", "Smith Diagram")
+        graph_type2 = settings.value("Tab2/GraphType2", "Magnitude")
         s_param2 = settings.value("Tab2/SParameter", "S11")
 
         self.s11 = self.nano_window.s11
         self.s21 = self.nano_window.s21
         self.freqs = self.nano_window.freqs
 
-        panels_layout = self.nano_window.centralWidget().layout().itemAt(1).layout()  # HBox
+        data_left = self.s11 if s_param1 == "S11" else self.s21
+        data_right = self.s11 if s_param2 == "S11" else self.s21
 
-        if hasattr(self.nano_window, "markers"):
-                for marker in self.nano_window.markers:
-                    slider = marker["slider"]
-                    slider.disconnect_events()
+        unit_left = self.nano_window.get_graph_unit(1)
+        unit_right = self.nano_window.get_graph_unit(2)
 
-        while panels_layout.count():
-                item = panels_layout.takeAt(0)  
-                widget = item.widget()
-                if widget is not None:
-                    widget.setParent(None)
+        self.nano_window.update_plots_with_new_data(skip_reset=True)
 
-        self.nano_window.left_panel, self.nano_window.fig_left, self.nano_window.ax_left, \
-        self.nano_window.canvas_left, self.nano_window.slider_left, self.nano_window.cursor_left, \
-        self.nano_window.labels_left, self.nano_window.update_cursor_left, self.nano_window.update_left_data = \
-            create_left_panel(
-                S_data=self.s11,
-                freqs=self.freqs,
-                settings=settings,
-                graph_type=graph_type1,
-                s_param=s_param1,
-                tracecolor=trace_color,
-                markercolor=marker_color,
-                linewidth=line_width,
-                markersize=marker_size
-            )
+        self.nano_window._recreate_single_plot(
+            ax=self.nano_window.ax_left,
+            fig=self.nano_window.fig_left,
+            s_data=data_left,
+            freqs=self.freqs,
+            graph_type=graph_type1,
+            s_param=s_param1,
+            tracecolor=trace_color,
+            markercolor=marker_color,
+            brackground_color_graphics=brackground_color_graphics,
+            text_color=text_color,
+            axis_color=axis_color,
+            linewidth=line_width,
+            markersize=marker_size,
+            unit=unit_left,
+            cursor_graph=self.nano_window.cursor_left,
+            cursor_graph_2=self.nano_window.cursor_left_2
+        )
 
-        self.nano_window.right_panel, self.nano_window.fig_right, self.nano_window.ax_right, \
-        self.nano_window.canvas_right, self.nano_window.slider_right, self.nano_window.cursor_right, \
-        self.nano_window.labels_right, self.nano_window.update_cursor_right, self.nano_window.update_right_data = \
-            create_right_panel(
-                S_data=self.s11,
-                freqs=self.freqs,
-                settings=settings,
-                graph_type=graph_type2,
-                s_param=s_param2,
-                tracecolor=trace_color2,
-                markercolor=marker_color2,
-                linewidth=line_width2,
-                markersize=marker_size2    
-            )
+        self.nano_window._recreate_single_plot(
+            ax=self.nano_window.ax_right,
+            fig=self.nano_window.fig_right,
+            s_data=data_right,
+            freqs=self.freqs,
+            graph_type=graph_type2,
+            s_param=s_param2,
+            tracecolor=trace_color2,
+            markercolor=marker_color2,
+            brackground_color_graphics=brackground_color_graphics2,
+            text_color=text_color2,
+            axis_color=axis_color2,
+            linewidth=line_width2,
+            markersize=marker_size2,
+            unit=unit_right,
+            cursor_graph=self.nano_window.cursor_right,
+            cursor_graph_2=self.nano_window.cursor_right_2
+        )
 
-        self.nano_window.update_plots_with_new_data()
+        self.nano_window.s11 = self.s11
+        self.nano_window.s21 = self.s21
+        self.nano_window.freqs = self.freqs
+        self.nano_window.left_graph_type = graph_type1
+        self.nano_window.left_s_param = s_param1
+        self.nano_window.right_graph_type = graph_type2
+        self.nano_window.right_s_param = s_param2
 
-        self.nano_window.markers = [
-            {
-                "cursor": self.nano_window.cursor_left,
-                "slider": self.nano_window.slider_left,
-                "label": self.nano_window.labels_left,
-                "update_cursor": self.nano_window.update_cursor_left
-            },
-            {
-                "cursor": self.nano_window.cursor_right,
-                "slider": self.nano_window.slider_right,
-                "label": self.nano_window.labels_right,
-                "update_cursor": self.nano_window.update_cursor_right
-            }
-        ]
-
-        # --- Insertar nuevos panels en el layout ---
-        panels_layout.addWidget(self.nano_window.left_panel, 1)
-        panels_layout.addWidget(self.nano_window.right_panel, 1)
-
-        # --- Redibujar ---
         self.nano_window.canvas_left.draw_idle()
         self.nano_window.canvas_right.draw_idle()
 
+        self.nano_window.show()
         self.close()
 
 if __name__ == "__main__":
