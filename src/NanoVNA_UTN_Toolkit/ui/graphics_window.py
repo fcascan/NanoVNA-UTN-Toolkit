@@ -3402,18 +3402,22 @@ class NanoVNAGraphics(QMainWindow):
 
         layout = QVBoxLayout(dlg)
 
+        # --- Inputs ---
         l1 = QHBoxLayout()
         l1.addWidget(QLabel("Y min:"))
         ymin_edit = QLineEdit()
+        ymin_edit.setPlaceholderText(str(target_ax.get_ylim()[0]))
         l1.addWidget(ymin_edit)
         layout.addLayout(l1)
 
         l2 = QHBoxLayout()
         l2.addWidget(QLabel("Y max:"))
         ymax_edit = QLineEdit()
+        ymax_edit.setPlaceholderText(str(target_ax.get_ylim()[1]))
         l2.addWidget(ymax_edit)
         layout.addLayout(l2)
 
+        # --- Buttons ---
         btn_layout = QHBoxLayout()
         apply_btn = QPushButton("Apply")
         cancel_btn = QPushButton("Cancel")
@@ -3421,24 +3425,32 @@ class NanoVNAGraphics(QMainWindow):
         btn_layout.addWidget(cancel_btn)
         layout.addLayout(btn_layout)
 
-        result = {"accepted": False, "ymin": None, "ymax": None}
-
+        # --- Logic ---
         def apply_clicked():
             try:
-                ymin = float(ymin_edit.text())
-                ymax = float(ymax_edit.text())
-                result["ymin"], result["ymax"] = ymin, ymax
-                result["accepted"] = True
+                ymin_text = ymin_edit.text().strip()
+                ymax_text = ymax_edit.text().strip()
+
+                # No tocar si está vacío
+                if not ymin_text and not ymax_text:
+                    dlg.reject()
+                    return
+
+                ymin = float(ymin_text) if ymin_text else target_ax.get_ylim()[0]
+                ymax = float(ymax_text) if ymax_text else target_ax.get_ylim()[1]
+
+                target_ax.set_ylim(ymin, ymax)
+                target_ax.figure.canvas.draw_idle()
                 dlg.accept()
+
             except ValueError:
                 QMessageBox.warning(dlg, "Invalid Input", "Please enter valid numbers for Y min and Y max.")
 
         apply_btn.clicked.connect(apply_clicked)
         cancel_btn.clicked.connect(dlg.reject)
 
-        if dlg.exec() == QDialog.Accepted and result["accepted"] and target_ax is not None:
-            target_ax.set_ylim(float(result["ymin"]), float(result["ymax"]))
-            target_ax.figure.canvas.draw_idle()
+        # --- Solo muestra, sin tocar el gráfico ---
+        dlg.exec()
 
 
     def show_frequency_difference_dialog(self):
