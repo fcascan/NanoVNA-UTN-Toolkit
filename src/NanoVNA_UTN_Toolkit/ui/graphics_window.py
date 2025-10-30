@@ -877,7 +877,7 @@ class NanoVNAGraphics(QMainWindow):
         self.left_s_param = left_s_param
 
         # =================== LEFT PANEL (EMPTY) ===================
-        self.left_panel, self.info_panel_left_2, self.fig_left, self.ax_left, self.canvas_left, \
+        self.left_panel, self.info_panel_left, self.info_panel_left_2, self.fig_left, self.ax_left, self.canvas_left, \
         self.slider_left, self.slider_left_2, self.cursor_left, self.cursor_left_2, self.labels_left, self.labels_left_2, self.update_cursor, self.update_cursor_2, self.update_left_data = \
             create_left_panel(
                 self,
@@ -895,7 +895,7 @@ class NanoVNAGraphics(QMainWindow):
             )
 
         # =================== RIGHT PANEL (EMPTY) ===================
-        self.right_panel, self.info_panel_right_2, self.fig_right, self.ax_right, self.canvas_right, \
+        self.right_panel, self.info_panel_right, self.info_panel_right_2, self.fig_right, self.ax_right, self.canvas_right, \
         self.slider_right, self.slider_right_2, self.cursor_right, self.cursor_right_2, self.labels_right, self.labels_right_2, self.update_right_cursor, self.update_right_cursor_2, self.update_right_data = \
             create_right_panel(
                 self,
@@ -3222,9 +3222,19 @@ class NanoVNAGraphics(QMainWindow):
             self.show_graphic1_marker1 = not self.show_graphic1_marker1
             self.toggle_marker_visibility(0, self.show_graphic1_marker1)
 
+            if self.show_graphic1_marker1:
+                self.info_panel_left.show()
+            if not self.show_graphic1_marker1 and self.show_graphic1_marker2:
+                self.info_panel_left.hide()
+
         elif selected_action == marker1_graphic2_action:
             self.show_graphic2_marker1 = not self.show_graphic2_marker1
             self.toggle_marker_visibility(1, self.show_graphic2_marker1)
+
+            if self.show_graphic2_marker1:
+                self.info_panel_right.show()
+            if not self.show_graphic2_marker1 and self.show_graphic2_marker2:
+                self.info_panel_right.hide()
 
         elif selected_action == marker2_graphic1_action:
             self.show_graphic1_marker2 = not self.show_graphic1_marker2
@@ -3233,7 +3243,7 @@ class NanoVNAGraphics(QMainWindow):
 
             if self.show_graphic1_marker2:
                 self.info_panel_left_2.show()
-            if not self.show_graphic1_marker2:
+            if not self.show_graphic1_marker2 and self.show_graphic1_marker1:
                 self.info_panel_left_2.hide()
 
         elif selected_action == marker2_graphic2_action:
@@ -3243,8 +3253,8 @@ class NanoVNAGraphics(QMainWindow):
 
             if self.show_graphic2_marker2:
                 self.info_panel_right_2.show()
-            if not self.show_graphic2_marker2:
-                self.info_panel_right_2.show()
+            if not self.show_graphic2_marker2 and self.show_graphic2_marker1:
+                self.info_panel_right_2.hide()
 
         # --- Lock Markers ---
 
@@ -3559,12 +3569,12 @@ class NanoVNAGraphics(QMainWindow):
             slider_2.set_active(False) 
 
             # --- Limpiar otros labels ---
-            labels["val"].setText(f"{self.left_s_param if marker_index==0 else 'S11'}: -- + j--")
-            labels["mag"].setText("|S11|: --")
-            labels["phase"].setText("Phase: --")
-            labels["z"].setText("Z: -- + j--")
-            labels["il"].setText("IL: --")
-            labels["vswr"].setText("VSWR: --")
+            labels_2["val"].setText(f"{self.left_s_param if marker_index==0 else 'S11'}: -- + j--")
+            labels_2["mag"].setText("|S11|: --")
+            labels_2["phase"].setText("Phase: --")
+            labels_2["z"].setText("Z: -- + j--")
+            labels_2["il"].setText("IL: --")
+            labels_2["vswr"].setText("VSWR: --")
 
             slider.ax.set_position([0.25,0.04,0.5,0.03])
 

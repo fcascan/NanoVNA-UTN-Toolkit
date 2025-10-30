@@ -611,10 +611,8 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
         magnitude = abs(val_complex)
         phase_deg = np.angle(val_complex, deg=True)
 
-        # === Leer modo de unidad desde Graphic1 en el INI ===
         actual_dir = os.path.dirname(os.path.dirname(__file__))
         ruta_ini = os.path.join(actual_dir, "graphics_windows", "ini", "config.ini")
-
         settings = QSettings(ruta_ini, QSettings.IniFormat)
 
         unit_mode = settings.value("Graphic1/db_times", "dB")
@@ -622,7 +620,6 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
         # === Actualizar cursor según graph_type y unidad ===
         if graph_type == "Smith Diagram":
             cursor_graph_2.set_data([np.real(val_complex)], [np.imag(val_complex)])
-
         elif graph_type == "Magnitude":
             if unit_mode == "dB":
                 mag_value = 20 * np.log10(magnitude)
@@ -632,44 +629,41 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
                 mag_value = magnitude
             else:
                 mag_value = magnitude
-
             cursor_graph_2.set_xdata([freqs[index] * 1e-6])
             cursor_graph_2.set_ydata([mag_value])
-
         elif graph_type == "Phase":
             cursor_graph_2.set_data([freqs[index] * 1e-6], [phase_deg])
 
-        # === Actualizar labels ===
+        # === Actualizar labels del panel 2 ===
         freq_value, freq_unit = format_frequency_smart_split(freqs[index])
-        edit_value.setText(freq_value)
+        edit_value_2.setText(freq_value)
+        text_width = edit_value_2.fontMetrics().horizontalAdvance(edit_value_2.text())
+        edit_value_2.setFixedWidth(max(text_width + 10, 50))
 
-        text_width = edit_value.fontMetrics().horizontalAdvance(edit_value.text())
-        edit_value.setFixedWidth(max(text_width + 10, 50))
-
-        labels_dict["unit"].setText(freq_unit)
-        labels_dict["val"].setText(
+        labels_dict_2["unit"].setText(freq_unit)
+        labels_dict_2["val"].setText(
             f"{s_param}: {np.real(val_complex):.3f} {'+' if np.imag(val_complex) >= 0 else '-'} j{abs(np.imag(val_complex)):.3f}"
         )
-        labels_dict["mag"].setText(f"|{s_param}|: {magnitude:.3f}")
-        labels_dict["phase"].setText(f"Phase: {phase_deg:.2f}°")
+        labels_dict_2["mag"].setText(f"|{s_param}|: {magnitude:.3f}")
+        labels_dict_2["phase"].setText(f"Phase: {phase_deg:.2f}°")
 
         z = (1 + val_complex) / (1 - val_complex)
-        labels_dict["z"].setText(f"Z: {np.real(z):.2f} + j{np.imag(z):.2f}")
+        labels_dict_2["z"].setText(f"Z: {np.real(z):.2f} + j{np.imag(z):.2f}")
 
         il_db = -20 * np.log10(magnitude)
-        labels_dict["il"].setText(f"IL: {il_db:.2f} dB")
+        labels_dict_2["il"].setText(f"IL: {il_db:.2f} dB")
 
         vswr_val = (1 + magnitude) / (1 - magnitude) if magnitude < 1 else np.inf
-        labels_dict["vswr"].setText(f"VSWR: {vswr_val:.2f}" if np.isfinite(vswr_val) else "VSWR: ∞")
+        labels_dict_2["vswr"].setText(f"VSWR: {vswr_val:.2f}" if np.isfinite(vswr_val) else "VSWR: ∞")
 
         fig.canvas.draw_idle()
 
         if not from_slider:
             slider_2.set_val(index)
 
-        edit_value.clearFocus()
-
+        edit_value_2.clearFocus()
         settings.setValue("Cursor_2_1/index", index)
+
 
     # --- Slider ---
 
@@ -782,7 +776,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
         edit_value.editingFinished.disconnect()
         edit_value.editingFinished.connect(freq_edited)
 
-    return left_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references
+    return left_panel, info_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references
 
 #############################################################################################
 # =================== RIGHT PANEL ========================================================= #
@@ -1293,10 +1287,8 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
         magnitude = abs(val_complex)
         phase_deg = np.angle(val_complex, deg=True)
 
-        # === Leer modo de unidad desde Graphic1 en el INI ===
         actual_dir = os.path.dirname(os.path.dirname(__file__))
         ruta_ini = os.path.join(actual_dir, "graphics_windows", "ini", "config.ini")
-
         settings = QSettings(ruta_ini, QSettings.IniFormat)
 
         unit_mode = settings.value("Graphic1/db_times", "dB")
@@ -1304,7 +1296,6 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
         # === Actualizar cursor según graph_type y unidad ===
         if graph_type == "Smith Diagram":
             cursor_graph_2.set_data([np.real(val_complex)], [np.imag(val_complex)])
-
         elif graph_type == "Magnitude":
             if unit_mode == "dB":
                 mag_value = 20 * np.log10(magnitude)
@@ -1314,44 +1305,42 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
                 mag_value = magnitude
             else:
                 mag_value = magnitude
-
             cursor_graph_2.set_xdata([freqs[index] * 1e-6])
             cursor_graph_2.set_ydata([mag_value])
-
         elif graph_type == "Phase":
             cursor_graph_2.set_data([freqs[index] * 1e-6], [phase_deg])
 
-        # === Actualizar labels ===
+        # === Actualizar labels del panel 2 ===
         freq_value, freq_unit = format_frequency_smart_split(freqs[index])
-        edit_value.setText(freq_value)
+        edit_value_2.setText(freq_value)
 
-        text_width = edit_value.fontMetrics().horizontalAdvance(edit_value.text())
-        edit_value.setFixedWidth(max(text_width + 10, 50))
+        text_width = edit_value_2.fontMetrics().horizontalAdvance(edit_value_2.text())
+        edit_value_2.setFixedWidth(max(text_width + 10, 50))
 
-        labels_dict["unit"].setText(freq_unit)
-        labels_dict["val"].setText(
+        labels_dict_2["unit"].setText(freq_unit)
+        labels_dict_2["val"].setText(
             f"{s_param}: {np.real(val_complex):.3f} {'+' if np.imag(val_complex) >= 0 else '-'} j{abs(np.imag(val_complex)):.3f}"
         )
-        labels_dict["mag"].setText(f"|{s_param}|: {magnitude:.3f}")
-        labels_dict["phase"].setText(f"Phase: {phase_deg:.2f}°")
+        labels_dict_2["mag"].setText(f"|{s_param}|: {magnitude:.3f}")
+        labels_dict_2["phase"].setText(f"Phase: {phase_deg:.2f}°")
 
         z = (1 + val_complex) / (1 - val_complex)
-        labels_dict["z"].setText(f"Z: {np.real(z):.2f} + j{np.imag(z):.2f}")
+        labels_dict_2["z"].setText(f"Z: {np.real(z):.2f} + j{np.imag(z):.2f}")
 
         il_db = -20 * np.log10(magnitude)
-        labels_dict["il"].setText(f"IL: {il_db:.2f} dB")
+        labels_dict_2["il"].setText(f"IL: {il_db:.2f} dB")
 
         vswr_val = (1 + magnitude) / (1 - magnitude) if magnitude < 1 else np.inf
-        labels_dict["vswr"].setText(f"VSWR: {vswr_val:.2f}" if np.isfinite(vswr_val) else "VSWR: ∞")
+        labels_dict_2["vswr"].setText(f"VSWR: {vswr_val:.2f}" if np.isfinite(vswr_val) else "VSWR: ∞")
 
         fig.canvas.draw_idle()
 
         if not from_slider:
             slider_2.set_val(index)
 
-        edit_value.clearFocus()
-
+        edit_value_2.clearFocus()
         settings.setValue("Cursor_2_2/index", index)
+
 
     # --- Slider ---
     slider_ax = fig.add_axes([0.25,0.04,0.5,0.03], facecolor='lightgray')
@@ -1437,4 +1426,4 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
         S_data = new_s_data
         freqs = new_freqs
 
-    return right_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references
+    return right_panel, info_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references
