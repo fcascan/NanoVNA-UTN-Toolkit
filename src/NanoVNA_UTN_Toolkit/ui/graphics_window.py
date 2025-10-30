@@ -1766,6 +1766,18 @@ class NanoVNAGraphics(QMainWindow):
                 self.slider_left.set_val(val)
                 self.update_cursor(val)
 
+    def left_slider_moved_2(self, val):
+        if self.markers_locked:
+            if self.slider_right_2.val != val:
+                self.slider_right_2.set_val(val)
+                self.update_right_cursor_2(val)
+
+    def right_slider_moved_2(self, val):
+        if self.markers_locked:
+            if self.slider_left_2.val != val:
+                self.slider_left_2.set_val(val)
+                self.update_cursor_2(val)
+
     def _force_marker_visibility_2(self, marker_color_left, marker_color_right, marker_size_left, marker_size_right):
         """Force markers to be visible by recreating them directly on axes"""
 
@@ -3269,6 +3281,10 @@ class NanoVNAGraphics(QMainWindow):
                 val = self.slider_left.val
                 self.slider_right.set_val(val)
                 self.update_right_cursor(val)
+
+                val_2 = self.slider_left_2.val
+                self.slider_right_2.set_val(val_2)
+                self.update_right_cursor_2(val_2)
 
         # --- Grid ---
           
