@@ -535,7 +535,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 
     info_panel_2.hide()
 
-    def update_cursor(index, from_slider=False):
+    def update_cursor(index, from_slider=False, return_values=False):
         import os
         from PySide6.QtCore import QSettings
 
@@ -603,7 +603,15 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 
         settings.setValue("Cursor_1_1/index", index)
 
-    def update_cursor_2(index, from_slider=False):
+        if return_values:
+            return {
+                "freq": freqs[index],
+                "mag": magnitude,
+                "phase": phase_deg,
+                "val_complex": val_complex
+            }
+
+    def update_cursor_2(index, from_slider=False, return_values=False):
         import os
         from PySide6.QtCore import QSettings
 
@@ -664,6 +672,13 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
         edit_value_2.clearFocus()
         settings.setValue("Cursor_2_1/index", index)
 
+        if return_values:
+            return {
+                "freq": freqs[index],
+                "mag": magnitude,
+                "phase": phase_deg,
+                "val_complex": val_complex
+            }
 
     # --- Slider ---
 
@@ -1235,7 +1250,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
 
     info_panel_2.hide()
 
-    def update_cursor(index, from_slider=False):
+    def update_cursor(index, from_slider=False, return_values = False):
         val_complex = S_data[index]
         magnitude = abs(val_complex)
         phase_deg = np.angle(val_complex, deg=True)
@@ -1279,7 +1294,15 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
 
         settings.setValue("Cursor_1_2/index", index)
 
-    def update_cursor_2(index, from_slider=False):
+        if return_values:
+            return {
+                "freq": freqs[index],
+                "mag": magnitude,
+                "phase": phase_deg,
+                "val_complex": val_complex
+            }
+
+    def update_cursor_2(index, from_slider=False, return_values = False):
         import os
         from PySide6.QtCore import QSettings
 
@@ -1340,6 +1363,14 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
 
         edit_value_2.clearFocus()
         settings.setValue("Cursor_2_2/index", index)
+
+        if return_values:
+            return {
+                "freq": freqs[index],
+                "mag": magnitude,
+                "phase": phase_deg,
+                "val_complex": val_complex
+            }
 
 
     # --- Slider ---

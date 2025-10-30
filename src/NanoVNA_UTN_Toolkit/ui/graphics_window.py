@@ -36,7 +36,7 @@ from PySide6.QtCore import QTimer, QThread, Qt, QSettings
 from PySide6.QtWidgets import (
     QLabel, QMainWindow, QVBoxLayout, QWidget, QFileDialog,
     QPushButton, QHBoxLayout, QSizePolicy, QApplication, QGroupBox, QGridLayout,
-    QMenu, QFileDialog, QMessageBox, QProgressBar
+    QMenu, QFileDialog, QMessageBox, QProgressBar, QDialog, QLineEdit
 )
 from PySide6.QtGui import QIcon, QPixmap, QColor
 from .export import ExportDialog
@@ -805,9 +805,9 @@ class NanoVNAGraphics(QMainWindow):
         # --- Central widget ---
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        main_layout_vertical = QVBoxLayout(central_widget)
-        main_layout_vertical.setContentsMargins(10, 10, 10, 10)
-        main_layout_vertical.setSpacing(10)
+        self.main_layout_vertical = QVBoxLayout(central_widget)
+        self.main_layout_vertical.setContentsMargins(10, 10, 10, 10)
+        self.main_layout_vertical.setSpacing(10)
 
         # --- Sweep Control Button ---
         sweep_control_layout = QHBoxLayout()
@@ -859,7 +859,7 @@ class NanoVNAGraphics(QMainWindow):
         # Inicializa el texto del label
         self.update_calibration_label_from_method()
 
-        main_layout_vertical.addLayout(sweep_control_layout)
+        self.main_layout_vertical.addLayout(sweep_control_layout)
         
         # Set initial state of reconnect button after UI elements are created
         self._update_reconnect_button_state()
@@ -912,6 +912,12 @@ class NanoVNAGraphics(QMainWindow):
                 marker2size=config['marker2_size2']
             )
 
+        self._update_cursor_orig = self.update_cursor 
+        self._update_cursor_2_orig = self.update_cursor_2
+
+        self._update_cursor_right_orig = self.update_right_cursor 
+        self._update_cursor_2_right_orig = self.update_right_cursor_2
+
         # =================== PANELS LAYOUT ===================
 
         panels_layout = QHBoxLayout()
@@ -924,12 +930,22 @@ class NanoVNAGraphics(QMainWindow):
 
         panels_layout.addWidget(self.left_panel, 1)
         panels_layout.addWidget(self.right_panel, 1)
-        main_layout_vertical.addLayout(panels_layout)
+        self.main_layout_vertical.addLayout(panels_layout)
+
+        self.markers_button = QPushButton("Markers Diff")
+        self.markers_button_layout = QHBoxLayout()
+        self.markers_button_layout.addStretch()
+        self.markers_button_layout.addWidget(self.markers_button)
+        self.markers_button_layout.addStretch()
+        self.main_layout_vertical.addLayout(self.markers_button_layout)
 
         self.markers = [
             {"cursor": self.cursor_left, "cursor_2": self.cursor_left_2, "slider": self.slider_left, "slider_2": self.slider_left_2, "label": self.labels_left, "label_2": self.labels_left_2, "update_cursor": self.update_cursor, "update_cursor_2": self.update_cursor_2},
             {"cursor": self.cursor_right, "cursor_2": self.cursor_right_2, "slider": self.slider_right, "slider_2": self.slider_right_2, "label": self.labels_right, "label_2": self.labels_right_2, "update_cursor": self.update_right_cursor, "update_cursor_2": self.update_right_cursor_2}
         ]
+        
+        self.markers_button.clicked.connect(self.show_frequency_difference_dialog)
+        self.markers_button.hide()
         
         # Clear all marker information fields until first sweep is completed
         self._clear_all_marker_fields()
@@ -3310,6 +3326,95 @@ class NanoVNAGraphics(QMainWindow):
         elif current_unit in ("Power ratio", "Voltage ratio"):
             if selected_action == db_action:
                 self.toggle_db_times(event, "dB")
+
+        if self.show_graphic1_marker1 and self.show_graphic1_marker2 or self.show_graphic2_marker1 and self.show_graphic2_marker2:
+            self.markers_button.show()
+        else:
+            self.markers_button.hide()
+
+    def show_frequency_difference_dialog(self):
+        import os
+        from PySide6.QtWidgets import QDialog, QLabel, QHBoxLayout, QVBoxLayout
+        from PySide6.QtCore import Qt, QSettings
+
+        # --- Path to config.ini ---
+        actual_dir = os.path.dirname(os.path.dirname(__file__))  
+        ruta_ini = os.path.join(actual_dir, "ui", "graphics_windows", "ini", "config.ini")
+        settings = QSettings(ruta_ini, QSettings.IniFormat)
+
+        # --- Read cursor indices ---
+        cursor_1_1_index = int(settings.value("Cursor_1_1/index", 0))
+        cursor_1_2_index = int(settings.value("Cursor_1_2/index", 0))
+        cursor_2_1_index = int(settings.value("Cursor_2_1/index", 0))
+        cursor_2_2_index = int(settings.value("Cursor_2_2/index", 0))
+
+        # --- LEFT PANEL VALUES ---
+        left_marker1_vals = self._update_cursor_orig(cursor_1_1_index, return_values=True)
+        left_marker2_vals = self._update_cursor_2_orig(cursor_2_1_index, return_values=True)
+        left_diff = {key: left_marker2_vals[key] - left_marker1_vals[key] for key in ["freq", "mag", "phase"]}
+
+        # --- RIGHT PANEL VALUES ---
+        right_marker1_vals = self._update_cursor_right_orig(cursor_1_2_index, return_values=True)
+        right_marker2_vals = self._update_cursor_2_right_orig(cursor_2_2_index, return_values=True)
+        right_diff = {key: right_marker2_vals[key] - right_marker1_vals[key] for key in ["freq", "mag", "phase"]}
+
+        # --- Determine which panels to show ---
+        show_left = False
+        show_right = False
+
+        # All true → both panels
+        if (self.show_graphic1_marker1 and self.show_graphic1_marker2) and (self.show_graphic2_marker1 and self.show_graphic2_marker2):
+            show_left = True
+            show_right = True
+        # Only left
+        elif (self.show_graphic1_marker1 and self.show_graphic1_marker2):
+            show_left = True
+        # Only right
+        elif (self.show_graphic2_marker1 and self.show_graphic2_marker2):
+            show_right = True
+
+        # --- CREATE DIALOG ---
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Marker Differences")
+        dialog.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
+
+        layout = QHBoxLayout()
+
+        # --- Adjust size based on panels shown ---
+        if show_left and show_right:
+            dialog.setFixedSize(500, 120)
+        else:  # only one panel
+            dialog.setFixedSize(260, 120)
+
+        # --- LEFT PANEL DISPLAY ---
+        if show_left:
+            left_layout = QVBoxLayout()
+            left_title = QLabel("Left Panel Differences")
+            left_title.setAlignment(Qt.AlignCenter)
+            left_layout.addWidget(left_title)
+            for key in ["freq", "mag", "phase"]:
+                row = QHBoxLayout()
+                row.addWidget(QLabel(f"{key.capitalize()} Diff:"))
+                row.addWidget(QLabel(f"{left_diff[key]:.3f}"))
+                left_layout.addLayout(row)
+            layout.addLayout(left_layout)
+
+        # --- RIGHT PANEL DISPLAY ---
+        if show_right:
+            right_layout = QVBoxLayout()
+            right_title = QLabel("Right Panel Differences")
+            right_title.setAlignment(Qt.AlignCenter)
+            right_layout.addWidget(right_title)
+            for key in ["freq", "mag", "phase"]:
+                row = QHBoxLayout()
+                row.addWidget(QLabel(f"{key.capitalize()} Diff:"))
+                row.addWidget(QLabel(f"{right_diff[key]:.3f}"))
+                right_layout.addLayout(row)
+            layout.addLayout(right_layout)
+
+        # --- Set layout and show ---
+        dialog.setLayout(layout)
+        dialog.exec()
 
 
     def toggle_db_times(self, event, new_mode):
