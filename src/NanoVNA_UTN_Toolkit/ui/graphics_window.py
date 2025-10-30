@@ -7,6 +7,8 @@ import logging
 import numpy as np
 import skrf as rf
 
+from skrf import Network
+
 import matplotlib.pyplot as plt
 
 plt.rcParams['mathtext.fontset'] = 'cm'  
@@ -3214,11 +3216,13 @@ class NanoVNAGraphics(QMainWindow):
                 target_ax = self.ax_right
                 target_fig = self.fig_right
                 target_attr = "grid_enabled_right"
+                selected_graph_name = "right"
                 break
             elif hasattr(self, "canvas_left") and current_widget == self.canvas_left:
                 target_ax = self.ax_left
                 target_fig = self.fig_left
                 target_attr = "grid_enabled_left"
+                selected_graph_name = "left"
                 break
             current_widget = current_widget.parent()
 
@@ -3237,11 +3241,18 @@ class NanoVNAGraphics(QMainWindow):
         range_action = menu.addAction("Set range")
         #grid_action.setChecked(current_state)
 
+        smith_action = menu.addAction("Smith Normalized")
+
         # --- Export ---
         menu.addSeparator()
         export_action = menu.addAction("Export...")
 
         selected_action = menu.exec(event.globalPos())
+
+        self.ax_to_network = {
+            self.ax_left: rf.Network(frequency=self.freqs, s=self.s11, z0=50),
+            self.ax_right: rf.Network(frequency=self.freqs, s=self.s11, z0=50)
+        }
 
         # --- Handle actions ---
         if selected_action == view_menu:
@@ -3319,6 +3330,44 @@ class NanoVNAGraphics(QMainWindow):
 
         elif selected_action == range_action:
             self.show_y_range_dialog(target_ax)
+
+        # --- Smith Normalized ---
+          
+        # --- Toggle Smith Normalized ---
+        elif selected_action == smith_action and target_ax and target_fig:
+            # Determinar si el gráfico seleccionado es tipo Smith
+
+            logging.info(f"selected_graph_name: {selected_graph_name}")
+            logging.info(f"left_graph_type: {self.left_graph_type}")
+            logging.info(f"right_graph_type: {self.right_graph_type}")
+            logging.info(f"target_ax: {target_ax}")
+            logging.info(f"target_fig: {target_fig}")
+
+            is_smith = (selected_graph_name == "left" and self.left_graph_type.lower() == "smith diagram") or \
+                    (selected_graph_name == "right" and self.right_graph_type.lower() == "smith diagram")
+
+            if not is_smith:
+                # Mostrar advertencia al usuario
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.information(self, "Smith Normalized",
+                                        "The selected graph is not a Smith chart and cannot be normalized to Γ.")
+                return
+
+            # Tomar el Network asociado al ax
+            net = self.ax_to_network.get(target_ax, None)
+            if net is None:
+                return
+
+            # Dibujar Gamma normalizado
+            gamma = net.s[:,0,0]
+            target_ax.clear()
+            target_ax.plot(gamma.real, gamma.imag, 'o-')
+            target_ax.set_xlim(-1, 1)
+            target_ax.set_ylim(-1, 1)
+            target_ax.set_xlabel("Re(Γ)")
+            target_ax.set_ylabel("Im(Γ)")
+            target_ax.grid(True)
+            target_fig.canvas.draw_idle()
 
         # --- Export ---
 
