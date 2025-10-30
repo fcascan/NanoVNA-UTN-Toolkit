@@ -258,15 +258,16 @@ class LatexExporter:
         if kits_ok and not no_calibration and not is_import_dut:
             doc.append(NoEscape(rf'\item \textbf{{Selected kit:}} {kit_name_only_tex}'))
             doc.append(NoEscape(rf'\item \textbf{{Calibration Kit Method:}} {calibration_method}'))
+            doc.append(NoEscape(rf'\item \textbf{{Calibrated Parameter:}} {calibrated_parameter}'))
         elif not kits_ok and not no_calibration and not is_import_dut:
             doc.append(NoEscape(rf'\item \textbf{{Calibration Wizard Method:}} {calibration_method}'))
+            doc.append(NoEscape(rf'\item \textbf{{Calibrated Parameter:}} {calibrated_parameter}'))
         elif not kits_ok and no_calibration and not is_import_dut:
             doc.append(NoEscape(r'\item \textbf{{No Calibration}}'))
         elif is_import_dut:
             doc.append(NoEscape(r'\item \textbf{{DUT}}'))
             settings_calibration.setValue("Calibration/DUT", False)
 
-        doc.append(NoEscape(rf'\item \textbf{{Calibrated Parameter:}} {calibrated_parameter}'))
         doc.append(NoEscape(rf'\item \textbf{{Date and Time:}} {current_datetime}'))
         doc.append(NoEscape(r'\end{itemize}'))
         doc.append(NoEscape(r'\end{flushleft}'))

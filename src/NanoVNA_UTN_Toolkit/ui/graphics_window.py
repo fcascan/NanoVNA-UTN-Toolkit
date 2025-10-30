@@ -2597,6 +2597,14 @@ class NanoVNAGraphics(QMainWindow):
 
             kit_name_with_id = f"{name}_{kit_info['id']}" 
 
+            
+            if kit_info["method"] == "OSM (Open - Short - Match)":
+                parameter = "S11"
+            elif kit_info["method"] == "Normalization":
+                parameter = "S21"
+            else:
+                parameter = "S11, S21"
+
             # Guardar en [Calibration]
             settings.beginGroup("Calibration")
             settings.setValue("Name", kit_name_with_id)
@@ -2604,6 +2612,7 @@ class NanoVNAGraphics(QMainWindow):
             settings.setValue("Method", kit_info["method"])
             settings.setValue("Kits", True)
             settings.setValue("NoCalibration", False)
+            settings.setValue("Parameter", parameter)
             settings.endGroup()
             settings.sync()
 
@@ -3431,7 +3440,6 @@ class NanoVNAGraphics(QMainWindow):
                 ymin_text = ymin_edit.text().strip()
                 ymax_text = ymax_edit.text().strip()
 
-                # No tocar si está vacío
                 if not ymin_text and not ymax_text:
                     dlg.reject()
                     return
@@ -3449,7 +3457,6 @@ class NanoVNAGraphics(QMainWindow):
         apply_btn.clicked.connect(apply_clicked)
         cancel_btn.clicked.connect(dlg.reject)
 
-        # --- Solo muestra, sin tocar el gráfico ---
         dlg.exec()
 
 
@@ -4926,6 +4933,16 @@ class NanoVNAGraphics(QMainWindow):
 
                 settings_calibration.setValue("Calibration/Kits", True)
                 settings_calibration.setValue("Calibration/NoCalibration", False)
+
+                if selected_method == "OSM (Open - Short - Match)":
+                    parameter = "S11"
+                elif selected_method == "Normalization":
+                    parameter = "S21"
+                else:
+                    parameter = "S11, S21"
+
+                settings.setValue("Calibration/Parameter", parameter)
+                settings.sync()
 
                 logging.info(f"[welcome_windows.open_save_calibration] Saved calibration {full_calibration_name}")
 

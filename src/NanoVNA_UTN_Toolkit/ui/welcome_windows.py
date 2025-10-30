@@ -590,6 +590,18 @@ class NanoVNAWelcome(QMainWindow):
                 settings_calibration.setValue("Calibration/Kits", True)
                 settings_calibration.setValue("Calibration/NoCalibration", False)
 
+                # Use new calibration structure
+          
+                if selected_method == "OSM (Open - Short - Match)":
+                    parameter = "S11"
+                elif selected_method == "Normalization":
+                    parameter = "S21"
+                else:
+                    parameter = "S11, S21"
+
+                settings.setValue("Calibration/Parameter", parameter)
+                settings.sync()
+
                 logging.info(f"[welcome_windows.open_save_calibration] Saved calibration {full_calibration_name}")
 
             except Exception as e:
@@ -893,6 +905,16 @@ class NanoVNAWelcome(QMainWindow):
             settings_calibration.setValue("Calibration/Name", kit_name_with_id)
             settings_calibration.setValue("Calibration/id", matched_id)
             settings_calibration.setValue("Calibration/Method", matched_method)
+
+            if matched_method == "OSM (Open - Short - Match)":
+                parameter = "S11"
+            elif matched_method == "Normalization":
+                parameter = "S21"
+            else:
+                parameter = "S11, S21"
+
+            settings_calibration.setValue("Calibration/Parameter", parameter)
+            settings_calibration.sync()
 
             logging.info(f"Saved calibration: {kit_name_with_id} (ID {matched_id}, Method {matched_method})")
         else:
