@@ -877,9 +877,10 @@ class NanoVNAGraphics(QMainWindow):
         self.left_s_param = left_s_param
 
         # =================== LEFT PANEL (EMPTY) ===================
-        self.left_panel, self.fig_left, self.ax_left, self.canvas_left, \
-        self.slider_left, self.slider_left_2, self.cursor_left, self.cursor_left_2, self.labels_left, self.update_cursor, self.update_cursor_2, self.update_left_data = \
+        self.left_panel, self.info_panel_left_2, self.fig_left, self.ax_left, self.canvas_left, \
+        self.slider_left, self.slider_left_2, self.cursor_left, self.cursor_left_2, self.labels_left, self.labels_left_2, self.update_cursor, self.update_cursor_2, self.update_left_data = \
             create_left_panel(
+                self,
                 S_data=None,  # Force empty 
                 freqs=None,   # Force empty
                 settings=settings,
@@ -894,9 +895,10 @@ class NanoVNAGraphics(QMainWindow):
             )
 
         # =================== RIGHT PANEL (EMPTY) ===================
-        self.right_panel, self.fig_right, self.ax_right, self.canvas_right, \
-        self.slider_right, self.slider_right_2, self.cursor_right, self.cursor_right_2, self.labels_right, self.update_right_cursor, self.update_right_cursor_2, self.update_right_data = \
+        self.right_panel, self.info_panel_right_2, self.fig_right, self.ax_right, self.canvas_right, \
+        self.slider_right, self.slider_right_2, self.cursor_right, self.cursor_right_2, self.labels_right, self.labels_right_2, self.update_right_cursor, self.update_right_cursor_2, self.update_right_data = \
             create_right_panel(
+                self,
                 settings=settings,
                 S_data=None,  # Force empty
                 freqs=None,   # Force empty
@@ -925,8 +927,8 @@ class NanoVNAGraphics(QMainWindow):
         main_layout_vertical.addLayout(panels_layout)
 
         self.markers = [
-            {"cursor": self.cursor_left, "cursor_2": self.cursor_left_2, "slider": self.slider_left, "slider_2": self.slider_left_2, "label": self.labels_left, "update_cursor": self.update_cursor, "update_cursor_2": self.update_cursor_2},
-            {"cursor": self.cursor_right, "cursor_2": self.cursor_right_2, "slider": self.slider_right, "slider_2": self.slider_right_2, "label": self.labels_right, "update_cursor": self.update_right_cursor, "update_cursor_2": self.update_right_cursor_2}
+            {"cursor": self.cursor_left, "cursor_2": self.cursor_left_2, "slider": self.slider_left, "slider_2": self.slider_left_2, "label": self.labels_left, "label_2": self.labels_left_2, "update_cursor": self.update_cursor, "update_cursor_2": self.update_cursor_2},
+            {"cursor": self.cursor_right, "cursor_2": self.cursor_right_2, "slider": self.slider_right, "slider_2": self.slider_right_2, "label": self.labels_right, "label_2": self.labels_right_2, "update_cursor": self.update_right_cursor, "update_cursor_2": self.update_right_cursor_2}
         ]
         
         # Clear all marker information fields until first sweep is completed
@@ -1065,6 +1067,31 @@ class NanoVNAGraphics(QMainWindow):
             self.labels_right.get("z") and self.labels_right["z"].setText("Zin (Z0): -- + j--")
             self.labels_right.get("il") and self.labels_right["il"].setText("IL: --")
             self.labels_right.get("vswr") and self.labels_right["vswr"].setText("VSWR: --")
+
+        if panel_side == 'left' and hasattr(self, 'labels_left_2') and self.labels_left_2:
+            if panel_side == 'left' and hasattr(self, 'labels_left_2') and self.labels_left_2:
+                # allow "--" temporarily
+                self.labels_left_2.get("freq") and self.labels_left_2["freq"].setText("--")
+                self.labels_right_2["freq"].deselect()
+                self.labels_right_2["freq"].clearFocus()
+            self.labels_left_2.get("val") and self.labels_left_2["val"].setText(f"{self.left_s_param}: -- + j--")
+            self.labels_left_2.get("mag") and self.labels_left_2["mag"].setText(f"|{self.left_s_param}|: --")
+            self.labels_left_2.get("phase") and self.labels_left_2["phase"].setText("Phase: --")
+            self.labels_left_2.get("z") and self.labels_left_2["z"].setText("Zin (Z0): -- + j--")
+            self.labels_left_2.get("il") and self.labels_left_2["il"].setText("IL: --")
+            self.labels_left_2.get("vswr") and self.labels_left_2["vswr"].setText("VSWR: --")
+        elif panel_side == 'right' and hasattr(self, 'labels_right_2') and self.labels_right_2:
+            if panel_side == 'left' and hasattr(self, 'labels_left_2') and self.labels_left_2:
+                # allow "--" temporarily
+                self.labels_left_2.get("freq") and self.labels_left_2["freq"].setText("--")
+                self.labels_right_2["freq"].deselect()
+                self.labels_right_2["freq"].clearFocus()
+            self.labels_right_2.get("val") and self.labels_right_2["val"].setText(f"{self.right_s_param}: -- + j--")
+            self.labels_right_2.get("mag") and self.labels_right_2["mag"].setText(f"|{self.right_s_param}|: --")
+            self.labels_right_2.get("phase") and self.labels_right_2["phase"].setText("Phase: --")
+            self.labels_right_2.get("z") and self.labels_right_2["z"].setText("Zin (Z0): -- + j--")
+            self.labels_right_2.get("il") and self.labels_right_2["il"].setText("IL: --")
+            self.labels_right_2.get("vswr") and self.labels_right_2["vswr"].setText("VSWR: --")
 
     def _clear_axis_and_show_message(self, panel_side='right', message_pos=(0.5, 0.5)):
         """Clear axis and show waiting message for a specific panel."""
@@ -2312,6 +2339,34 @@ class NanoVNAGraphics(QMainWindow):
             self.labels_right.get("il") and self.labels_right["il"].setText("IL: --")
             self.labels_right.get("vswr") and self.labels_right["vswr"].setText("VSWR: --")
 
+        # --- Clear left panel marker information ---
+        if hasattr(self, 'labels_left_2') and self.labels_left_2:
+            freq_left = self.labels_left_2.get("freq")
+            if freq_left:
+                freq_left.setText("--")    # set "--"
+                freq_left.deselect()       # remove selection
+                freq_left.clearFocus()     # remove focus so it's not blue
+            self.labels_left_2.get("val") and self.labels_left_2["val"].setText("S11: -- + j--")
+            self.labels_left_2.get("mag") and self.labels_left_2["mag"].setText("|S11|: --")
+            self.labels_left_2.get("phase") and self.labels_left_2["phase"].setText("Phase: --")
+            self.labels_left_2.get("z") and self.labels_left_2["z"].setText("Zin (Z0): -- + j--")
+            self.labels_left_2.get("il") and self.labels_left_2["il"].setText("IL: --")
+            self.labels_left_2.get("vswr") and self.labels_left_2["vswr"].setText("VSWR: --")
+
+        # --- Clear right panel marker information ---
+        if hasattr(self, 'labels_right_2') and self.labels_right_2:
+            freq_right = self.labels_right_2.get("freq")
+            if freq_right:
+                freq_right.setText("--")   # set "--"
+                freq_right.deselect()      # remove selection
+                freq_right.clearFocus()    # remove focus so it's not blue
+            self.labels_right_2.get("val") and self.labels_right_2["val"].setText("S21: -- + j--")
+            self.labels_right_2.get("mag") and self.labels_right_2["mag"].setText("|S21|: --")
+            self.labels_right_2.get("phase") and self.labels_right_2["phase"].setText("Phase: --")
+            self.labels_right_2.get("z") and self.labels_right_2["z"].setText("Zin (Z0): -- + j--")
+            self.labels_right_2.get("il") and self.labels_right_2["il"].setText("IL: --")
+            self.labels_right_2.get("vswr") and self.labels_right_2["vswr"].setText("VSWR: --")
+
         # Do NOT clear the graphs - leave them with the actual data
         logging.info("[graphics_window._clear_marker_fields_only] Marker fields cleared, graphs preserved")
 
@@ -3176,10 +3231,20 @@ class NanoVNAGraphics(QMainWindow):
          
             self.toggle_marker2_visibility(0, self.show_graphic1_marker2)
 
+            if self.show_graphic1_marker2:
+                self.info_panel_left_2.show()
+            if not self.show_graphic1_marker2:
+                self.info_panel_left_2.hide()
+
         elif selected_action == marker2_graphic2_action:
             self.show_graphic2_marker2 = not self.show_graphic2_marker2
          
             self.toggle_marker2_visibility(1, self.show_graphic2_marker2)
+
+            if self.show_graphic2_marker2:
+                self.info_panel_right_2.show()
+            if not self.show_graphic2_marker2:
+                self.info_panel_right_2.show()
 
         # --- Lock Markers ---
 
@@ -3436,6 +3501,7 @@ class NanoVNAGraphics(QMainWindow):
 
         cursor_2 = marker_2["cursor_2"]
         slider_2 = marker_2["slider_2"]
+        labels_2 = marker_2["label_2"]
 
         update_cursor_func_2 = marker_2.get("update_cursor_2", None)
 
@@ -3473,12 +3539,32 @@ class NanoVNAGraphics(QMainWindow):
 
             if update_cursor_func_2:
                 update_cursor_func_2(0)
-            
+
+            edit_value_2 = labels_2["freq"]
+            edit_value_2.setEnabled(True)
+            if self.freqs is not None and len(self.freqs) > 0:
+                if self.freqs[0] < 1e6:  
+                    edit_value_2.setText(f"{self.freqs[0]/1e3:.3f}")
+                elif self.freqs[0] < 1e9:  
+                    edit_value_2.setText(f"{self.freqs[0]/1e6:.3f}")
+                else: 
+                    edit_value_2.setText(f"{self.freqs[0]/1e9:.3f}")
+            else:
+                edit_value_2.setText("--") 
+   
         elif not show_markers:
 
             slider_2.set_val(0)
             slider_2.ax.set_visible(False)
             slider_2.set_active(False) 
+
+            # --- Limpiar otros labels ---
+            labels["val"].setText(f"{self.left_s_param if marker_index==0 else 'S11'}: -- + j--")
+            labels["mag"].setText("|S11|: --")
+            labels["phase"].setText("Phase: --")
+            labels["z"].setText("Z: -- + j--")
+            labels["il"].setText("IL: --")
+            labels["vswr"].setText("VSWR: --")
 
             slider.ax.set_position([0.25,0.04,0.5,0.03])
 

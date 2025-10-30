@@ -74,7 +74,7 @@ def parse_frequency_input(text):
 # =================== LEFT PANEL ========================================================= #
 #############################################################################################
 
-def create_left_panel(S_data, freqs, settings, graph_type="Smith Diagram", s_param="S11",
+def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram", s_param="S11",
                       tracecolor="red", markercolor="red", marker2color="red", linewidth=2,
                       markersize=5, marker2size=5, marker_visible=True, marker_visible_2=False):
 
@@ -383,6 +383,158 @@ def create_left_panel(S_data, freqs, settings, graph_type="Smith Diagram", s_par
         "unit": lbl_unit
     }
 
+    # --- Info panel (left side reorganized) duplicate for marker 2 ---
+    info_panel_2 = QWidget()
+    info_layout_2 = QVBoxLayout(info_panel_2)
+    info_layout_2.setSpacing(10)
+    info_layout_2.setContentsMargins(0, 0, 0, 0)
+
+    # --- Top QGroupBox with title ---
+    box_top_2 = QGroupBox("S-Parameter Details 2")
+    layout_top_2 = QHBoxLayout(box_top_2)
+    layout_top_2.setSpacing(20)
+    layout_top_2.setContentsMargins(12, 8, 12, 8)
+
+    center_layout_2 = QHBoxLayout()
+    center_layout_2.setSpacing(15)
+    center_layout_2.setAlignment(Qt.AlignCenter)
+
+    # --- Column 1: Frequency ---
+    col_left_2 = QVBoxLayout()
+    col_left_2.setSpacing(5)
+    col_left_2.setAlignment(Qt.AlignVCenter)
+
+    hbox_freq_2 = QHBoxLayout()
+    hbox_freq_2.setAlignment(Qt.AlignLeft)
+    hbox_freq_2.setContentsMargins(0, 0, 0, 0)
+
+    lbl_text_2 = QLabel("Frequency:")
+    lbl_text_2.setStyleSheet("font-size:14px;")
+    lbl_text_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    hbox_freq_2.addWidget(lbl_text_2)
+
+    initial_freq_value_2, initial_freq_unit_2 = format_frequency_smart_split(freqs[0])
+    edit_value_2 = QLineEdit(initial_freq_value_2)
+
+    def on_text_changed_2():
+        new_text = limit_frequency_input(edit_value_2.text(), 3, 3)
+        if new_text != edit_value_2.text():
+            edit_value_2.setText(new_text)
+        text_width = edit_value_2.fontMetrics().horizontalAdvance(edit_value_2.text())
+        min_width = max(text_width + 10, 40)
+        edit_value_2.setFixedWidth(min_width)
+
+    edit_value_2.textChanged.connect(on_text_changed_2)
+    edit_value_2.setStyleSheet("font-size:14px; border:none; background:transparent;")
+    edit_value_2.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+    text_width = edit_value_2.fontMetrics().horizontalAdvance(edit_value_2.text())
+    min_width = max(text_width + 10, 40)
+    edit_value_2.setFixedWidth(min_width)
+    hbox_freq_2.addWidget(edit_value_2)
+
+    lbl_unit_2 = QLabel(initial_freq_unit_2)
+    lbl_unit_2.setStyleSheet("font-size:14px;")
+    lbl_unit_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    lbl_unit_2.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+    hbox_freq_2.addWidget(lbl_unit_2)
+
+    col_left_2.addLayout(hbox_freq_2)
+
+    # --- Column 2: S11 real + imag ---
+    label_val_2 = QLabel(f"{s_param}: -- + j--")
+    label_val_2.setStyleSheet("font-size:14px; padding:1px;")
+    label_val_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    col_s11_2 = QVBoxLayout()
+    col_s11_2.setSpacing(5)
+    col_s11_2.setAlignment(Qt.AlignVCenter)
+    col_s11_2.addWidget(label_val_2)
+
+    # --- Column 3: |S11| ---
+    label_mag_2 = QLabel(f"|{s_param}|: --")
+    label_mag_2.setStyleSheet("font-size:14px; padding:1px;")
+    label_mag_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    col_mag_2 = QVBoxLayout()
+    col_mag_2.setSpacing(5)
+    col_mag_2.setAlignment(Qt.AlignVCenter)
+    col_mag_2.addWidget(label_mag_2)
+
+    # --- Column 4: Phase ---
+    label_phase_2 = QLabel("Phase: --")
+    label_phase_2.setStyleSheet("font-size:14px; padding:1px;")
+    label_phase_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    col_phase_2 = QVBoxLayout()
+    col_phase_2.setSpacing(5)
+    col_phase_2.setAlignment(Qt.AlignVCenter)
+    col_phase_2.addWidget(label_phase_2)
+
+    # --- Agregar columnas al layout centrado ---
+    center_layout_2.addLayout(col_left_2)
+
+    label_sep_2 = QLabel("-")
+    center_layout_2.addWidget(label_sep_2)
+
+    center_layout_2.addLayout(col_s11_2)
+
+    label_sep_2 = QLabel("-")
+    center_layout_2.addWidget(label_sep_2)
+
+    center_layout_2.addLayout(col_mag_2)
+
+    label_sep_2 = QLabel("-")
+    center_layout_2.addWidget(label_sep_2)
+
+    center_layout_2.addLayout(col_phase_2)
+
+    layout_top_2.addLayout(center_layout_2)
+
+    # --- Bottom QGroupBox ---
+    box_bottom_2 = QGroupBox("DUT Parameters 2")
+    layout_bottom_2 = QHBoxLayout(box_bottom_2)
+    layout_bottom_2.setSpacing(40)
+    layout_bottom_2.setContentsMargins(10, 8, 10, 8)
+    layout_bottom_2.setAlignment(Qt.AlignCenter)
+
+    label_z_2 = QLabel("Zin (Z0): -- + j--")
+    label_z_2.setStyleSheet("font-size:14px; padding:1px; border:none; background:transparent;")
+    label_z_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    layout_bottom_2.addWidget(label_z_2)
+
+    label_sep_2 = QLabel("-")
+    layout_bottom_2.addWidget(label_sep_2)
+
+    label_il_2 = QLabel("IL: -- dB")
+    label_il_2.setStyleSheet("font-size:14px; padding:1px; border:none; background:transparent;")
+    label_il_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    layout_bottom_2.addWidget(label_il_2)
+
+    label_sep_2 = QLabel("-")
+    layout_bottom_2.addWidget(label_sep_2)
+
+    label_vswr_2 = QLabel("VSWR: --")
+    label_vswr_2.setStyleSheet("font-size:14px; padding:1px; border:none; background:transparent;")
+    label_vswr_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    layout_bottom_2.addWidget(label_vswr_2)
+
+    # --- Agregar box_bottom al layout principal ---
+    info_layout_2.addWidget(box_top_2)
+    info_layout_2.addWidget(box_bottom_2)
+
+    left_layout.addWidget(info_panel_2)
+
+    # --- Labels dictionary 2 ---
+    labels_dict_2 = {
+        "val": label_val_2,
+        "mag": label_mag_2,
+        "phase": label_phase_2,
+        "z": label_z_2,
+        "il": label_il_2,
+        "vswr": label_vswr_2,
+        "freq": edit_value_2,
+        "unit": lbl_unit_2
+    }
+
+    info_panel_2.hide()
+
     def update_cursor(index, from_slider=False):
         import os
         from PySide6.QtCore import QSettings
@@ -613,13 +765,30 @@ def create_left_panel(S_data, freqs, settings, graph_type="Smith Diagram", s_par
         edit_value.editingFinished.disconnect()
         edit_value.editingFinished.connect(freq_edited)
 
-    return left_panel, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, update_cursor, update_cursor_2, update_data_references
+    def update_data_references_2(new_s_data, new_freqs):
+        nonlocal S_data, freqs
+        S_data = new_s_data
+        freqs = new_freqs
+        # Update freq_edited function to use new freqs
+        def freq_edited():
+            try:
+                freq_hz = parse_frequency_input(edit_value.text())
+                if freq_hz is not None:
+                    index = np.argmin(np.abs(freqs - freq_hz))
+                    update_cursor_2(index)
+                edit_value.clearFocus()
+            except:
+                pass
+        edit_value.editingFinished.disconnect()
+        edit_value.editingFinished.connect(freq_edited)
+
+    return left_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references
 
 #############################################################################################
 # =================== RIGHT PANEL ========================================================= #
 #############################################################################################
 
-def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diagram", s_param="S11",
+def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Smith Diagram", s_param="S11",
                        tracecolor="red", markercolor="red", marker2color="red", linewidth=2, markersize=5, marker2size=5, marker_visible=True):
 
     brackground_color_graphics = settings.value("Graphic2/BackgroundColor", "red")
@@ -921,6 +1090,157 @@ def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diag
         "unit": lbl_unit
     }
 
+    # --- Info panel (Right side reorganized) duplicate for marker 2 ---
+    info_panel_2 = QWidget()
+    info_layout_2 = QVBoxLayout(info_panel_2)
+    info_layout_2.setSpacing(10)
+    info_layout_2.setContentsMargins(0, 0, 0, 0)
+
+    # --- Top QGroupBox with title ---
+    box_top_2 = QGroupBox("S-Parameter Details 2")
+    layout_top_2 = QHBoxLayout(box_top_2)
+    layout_top_2.setSpacing(20)
+    layout_top_2.setContentsMargins(12, 8, 12, 8)
+
+    center_layout_2 = QHBoxLayout()
+    center_layout_2.setSpacing(15)
+    center_layout_2.setAlignment(Qt.AlignCenter)
+
+    # --- Column 1: Frequency ---
+    col_left_2 = QVBoxLayout()
+    col_left_2.setSpacing(5)
+    col_left_2.setAlignment(Qt.AlignVCenter)
+
+    hbox_freq_2 = QHBoxLayout()
+    hbox_freq_2.setAlignment(Qt.AlignLeft)
+    hbox_freq_2.setContentsMargins(0, 0, 0, 0)
+
+    lbl_text_2 = QLabel("Frequency:")
+    lbl_text_2.setStyleSheet("font-size:14px;")
+    lbl_text_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    hbox_freq_2.addWidget(lbl_text_2)
+
+    initial_freq_value_2, initial_freq_unit_2 = format_frequency_smart_split(freqs[0])
+    edit_value_2 = QLineEdit(initial_freq_value_2)
+
+    def on_text_changed_2():
+        new_text = limit_frequency_input(edit_value_2.text(), 3, 3, allow_dashes=True)
+        if new_text != edit_value_2.text():
+            edit_value_2.setText(new_text)
+        text_width = edit_value_2.fontMetrics().horizontalAdvance(edit_value_2.text())
+        min_width = max(text_width + 10, 40)
+        edit_value_2.setFixedWidth(min_width)
+
+    edit_value_2.textChanged.connect(on_text_changed_2)
+    edit_value_2.setStyleSheet("font-size:14px; border:none; background:transparent;")
+    edit_value_2.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+    text_width = edit_value_2.fontMetrics().horizontalAdvance(edit_value_2.text())
+    min_width = max(text_width + 10, 40)
+    edit_value_2.setFixedWidth(min_width)
+    hbox_freq_2.addWidget(edit_value_2)
+
+    lbl_unit_2 = QLabel(initial_freq_unit_2)
+    lbl_unit_2.setStyleSheet("font-size:14px;")
+    lbl_unit_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    lbl_unit_2.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+    hbox_freq_2.addWidget(lbl_unit_2)
+
+    col_left_2.addLayout(hbox_freq_2)
+
+    # --- Column 2: S11 real + imag ---
+    label_val_2 = QLabel(f"{s_param}: -- + j--")
+    label_val_2.setStyleSheet("font-size:14px; padding:1px;")
+    label_val_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    col_s11_2 = QVBoxLayout()
+    col_s11_2.setSpacing(5)
+    col_s11_2.setAlignment(Qt.AlignVCenter)
+    col_s11_2.addWidget(label_val_2)
+
+    # --- Column 3: |S11| ---
+    label_mag_2 = QLabel(f"|{s_param}|: --")
+    label_mag_2.setStyleSheet("font-size:14px; padding:1px;")
+    label_mag_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    col_mag_2 = QVBoxLayout()
+    col_mag_2.setSpacing(5)
+    col_mag_2.setAlignment(Qt.AlignVCenter)
+    col_mag_2.addWidget(label_mag_2)
+
+    # --- Column 4: Phase ---
+    label_phase_2 = QLabel("Phase: --")
+    label_phase_2.setStyleSheet("font-size:14px; padding:1px;")
+    label_phase_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    col_phase_2 = QVBoxLayout()
+    col_phase_2.setSpacing(5)
+    col_phase_2.setAlignment(Qt.AlignVCenter)
+    col_phase_2.addWidget(label_phase_2)
+
+    # --- Agregar columnas al layout centrado ---
+    center_layout_2.addLayout(col_left_2)
+
+    label_sep_2 = QLabel("-")
+    center_layout_2.addWidget(label_sep_2)
+
+    center_layout_2.addLayout(col_s11_2)
+
+    label_sep_2 = QLabel("-")
+    center_layout_2.addWidget(label_sep_2)
+
+    center_layout_2.addLayout(col_mag_2)
+
+    label_sep_2 = QLabel("-")
+    center_layout_2.addWidget(label_sep_2)
+
+    center_layout_2.addLayout(col_phase_2)
+
+    layout_top_2.addLayout(center_layout_2)
+
+    # --- Bottom QGroupBox ---
+    box_bottom_2 = QGroupBox("DUT Parameters 2")
+    layout_bottom_2 = QHBoxLayout(box_bottom_2)
+    layout_bottom_2.setSpacing(40)
+    layout_bottom_2.setContentsMargins(10, 8, 10, 8)
+    layout_bottom_2.setAlignment(Qt.AlignCenter)
+
+    label_z_2 = QLabel("Zin (Z0): -- + j--")
+    label_z_2.setStyleSheet("font-size:14px; padding:1px; border:none; background:transparent;")
+    label_z_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    layout_bottom_2.addWidget(label_z_2)
+
+    label_sep_2 = QLabel("-")
+    layout_bottom_2.addWidget(label_sep_2)
+
+    label_il_2 = QLabel("IL: -- dB")
+    label_il_2.setStyleSheet("font-size:14px; padding:1px; border:none; background:transparent;")
+    label_il_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    layout_bottom_2.addWidget(label_il_2)
+
+    label_sep_2 = QLabel("-")
+    layout_bottom_2.addWidget(label_sep_2)
+
+    label_vswr_2 = QLabel("VSWR: --")
+    label_vswr_2.setStyleSheet("font-size:14px; padding:1px; border:none; background:transparent;")
+    label_vswr_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+    layout_bottom_2.addWidget(label_vswr_2)
+
+    info_layout_2.addWidget(box_top_2)
+    info_layout_2.addWidget(box_bottom_2)
+
+    right_layout.addWidget(info_panel_2)
+
+    # --- Labels dictionary 2 ---
+    labels_dict_2 = {
+        "val": label_val_2,
+        "mag": label_mag_2,
+        "phase": label_phase_2,
+        "z": label_z_2,
+        "il": label_il_2,
+        "vswr": label_vswr_2,
+        "freq": edit_value_2,
+        "unit": lbl_unit_2
+    }
+
+    info_panel_2.hide()
+
     def update_cursor(index, from_slider=False):
         val_complex = S_data[index]
         magnitude = abs(val_complex)
@@ -1117,4 +1437,4 @@ def create_right_panel(settings, S_data=None, freqs=None, graph_type="Smith Diag
         S_data = new_s_data
         freqs = new_freqs
 
-    return right_panel, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, update_cursor, update_cursor_2, update_data_references
+    return right_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references
