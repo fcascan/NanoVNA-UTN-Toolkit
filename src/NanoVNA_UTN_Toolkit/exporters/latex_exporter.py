@@ -18,6 +18,8 @@ from pylatex import Document, Section, Subsection, Command, Figure, NewPage
 from pylatex.utils import NoEscape
 
 
+
+
 class LatexExporter:
     """
     Exports NanoVNA measurement data to PDF using LaTeX.
@@ -69,7 +71,7 @@ class LatexExporter:
         try:
             with tempfile.TemporaryDirectory() as tmpdirname:
                 image_files = self._generate_plots(freqs, s11_data, s21_data, tmpdirname)
-                self._create_latex_document(image_files, file_path, tmpdirname, file_path.name)
+                self._create_latex_document(freqs, image_files, file_path, tmpdirname, file_path.name, measurement_name)
 
             self._show_info("Success", f"LaTeX PDF exported successfully to:\\n{pdf_path}")
             return True
@@ -163,7 +165,7 @@ class LatexExporter:
 
         return image_files
     
-    def _create_latex_document(self, image_files, file_path, tmpdirname, measurement_name):
+    def _create_latex_document(self, freqs, image_files, file_path, tmpdirname, measurement_name, vna_name):
         """
         Create the LaTeX document with all sections and images.
         
@@ -188,8 +190,8 @@ class LatexExporter:
         )
 
         # Cover page
-        self._create_cover_page(doc, current_datetime, measurement_name, measurement_number, 
-                               calibration_method, calibrated_parameter)
+        self._create_cover_page(doc, freqs, current_datetime, measurement_name, measurement_number, 
+                               calibration_method, calibrated_parameter, vna_name)
 
         # S11 Section
         s11_images = {
@@ -221,8 +223,8 @@ class LatexExporter:
         # Generate PDF
         doc.generate_pdf(str(file_path), compiler="pdflatex", clean_tex=False)
     
-    def _create_cover_page(self, doc, current_datetime, measurement_name, measurement_number, 
-                          calibration_method, calibrated_parameter):
+    def _create_cover_page(self, doc, freqs, current_datetime, measurement_name, measurement_number, 
+                          calibration_method, calibrated_parameter, vna_name):
 
         # Use new calibration structure
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -237,6 +239,30 @@ class LatexExporter:
 
         no_calibration = settings_calibration.value("Calibration/NoCalibration", False, type=bool)
         is_import_dut = settings_calibration.value("Calibration/DUT", False, type=bool)
+
+        actual_dir = os.path.dirname(os.path.dirname(__file__))
+        self.config_dir = os.path.join(actual_dir, "ui" ,"sweep_window", "config")
+        os.makedirs(self.config_dir, exist_ok=True)
+        self.config_path = os.path.join(self.config_dir, "config.ini")
+        
+        settings_sweep = QSettings(self.config_path, QSettings.Format.IniFormat)
+
+        start_unit = settings_calibration.value("Frequency/StartUnit", "kHz")
+        stop_unit = settings_calibration.value("Frequency/StopUnit", "GHz")
+
+        if start_unit == "kHz":
+            start_freq = freqs[0]/1000
+        elif start_unit == "MHz":
+            start_freq = freqs[0]/1000000
+        elif start_unit == "GHz":
+            start_freq = freqs[0]/1000000000
+
+        if stop_unit == "kHz":
+            stop_freq = freqs[-1]/1000
+        elif stop_unit == "MHz":
+            stop_freq = freqs[-1]/1000000
+        elif stop_unit == "GHz":
+            stop_freq = freqs[-1]/1000000000
 
         """Create the cover page for the PDF."""
         doc.append(NoEscape(r'\begin{titlepage}'))
@@ -256,21 +282,42 @@ class LatexExporter:
         doc.append(NoEscape(rf'\item \textbf{{Measurement Number:}} {measurement_number}'))
 
         if kits_ok and not no_calibration and not is_import_dut:
+            date_time_calibration = settings_calibration.value("Calibration/DateTime_Kits", "1")
+            date_time_type = "Kit"
             doc.append(NoEscape(rf'\item \textbf{{Selected kit:}} {kit_name_only_tex}'))
             doc.append(NoEscape(rf'\item \textbf{{Calibration Kit Method:}} {calibration_method}'))
             doc.append(NoEscape(rf'\item \textbf{{Calibrated Parameter:}} {calibrated_parameter}'))
         elif not kits_ok and not no_calibration and not is_import_dut:
+            date_time_calibration = settings_calibration.value("Calibration/DateTime_Calibration", "1")
+            date_time_type = "Calibration"
             doc.append(NoEscape(rf'\item \textbf{{Calibration Wizard Method:}} {calibration_method}'))
             doc.append(NoEscape(rf'\item \textbf{{Calibrated Parameter:}} {calibrated_parameter}'))
         elif not kits_ok and no_calibration and not is_import_dut:
+            date_time_calibration = current_datetime
+            date_time_type = "No Calibration"
             doc.append(NoEscape(r'\item \textbf{{No Calibration}}'))
         elif is_import_dut:
+            date_time_calibration = current_datetime
+            date_time_type = "Dut"
             doc.append(NoEscape(r'\item \textbf{{DUT}}'))
             settings_calibration.setValue("Calibration/DUT", False)
 
-        doc.append(NoEscape(rf'\item \textbf{{Date and Time:}} {current_datetime}'))
+        if kits_ok or not kits_ok and not no_calibration and not is_import_dut:
+            doc.append(NoEscape(rf'\item \textbf{{Date and Time ({date_time_type}):}} {date_time_calibration}'))
+
         doc.append(NoEscape(r'\end{itemize}'))
         doc.append(NoEscape(r'\end{flushleft}'))
+
+        doc.append(NoEscape(r'\begin{flushleft}'))
+        doc.append(NoEscape(r'\Large \textbf{Instrument Details:} \\[0.5cm]'))
+        doc.append(NoEscape(r'\normalsize'))
+        doc.append(NoEscape(r'\begin{itemize}')) 
+        doc.append(NoEscape(rf'\item \textbf{{VNA:}} {vna_name}'))
+        doc.append(NoEscape(rf'\item \textbf{{Frequency Range:}} {start_freq} {start_unit} - {stop_freq} {stop_unit}'))
+        doc.append(NoEscape(rf'\item \textbf{{Normalization Impedance:}} 50 \textohm'))
+        doc.append(NoEscape(r'\end{itemize}')) 
+        doc.append(NoEscape(r'\end{flushleft}'))
+
         doc.append(NoEscape(r'\end{center}'))
         doc.append(NoEscape(r'\end{titlepage}'))
 

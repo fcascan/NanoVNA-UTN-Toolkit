@@ -29,6 +29,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 from NanoVNA_UTN_Toolkit.ui.calibration.methods import Methods
 from NanoVNA_UTN_Toolkit.ui.calibration.kits import KitsCalibrator
 
+from datetime import datetime
+
 # Suppress verbose matplotlib logging
 logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
 logging.getLogger('matplotlib.pyplot').setLevel(logging.WARNING)
@@ -2531,11 +2533,12 @@ class NanoVNAGraphics(QMainWindow):
                 name = settings.value(f"{g}/kit_name", "").strip()
                 method = settings.value(f"{g}/method", "").strip()
                 kit_id = int(settings.value(f"{g}/id", 0))
+                date_time_kits = settings.value(f"{g}/DateTime_Kits", "").strip()
                 if name:
                     item = QListWidgetItem(name)
                     item.setData(Qt.UserRole, g)
                     list_widget.addItem(item)
-                    kits_info[name] = {"id": kit_id, "method": method}
+                    kits_info[name] = {"id": kit_id, "method": method, "DateTime_Kits": date_time_kits}
 
         # --- Selected tag area (solo uno) ---
         selected_name = [None]  # lista de un elemento para mutabilidad
@@ -2610,6 +2613,7 @@ class NanoVNAGraphics(QMainWindow):
             settings.setValue("Name", kit_name_with_id)
             settings.setValue("id", kit_info["id"])
             settings.setValue("Method", kit_info["method"])
+            settings.setValue("DateTime_Kits", kit_info["DateTime_Kits"])
             settings.setValue("Kits", True)
             settings.setValue("NoCalibration", False)
             settings.setValue("Parameter", parameter)
@@ -2780,11 +2784,14 @@ class NanoVNAGraphics(QMainWindow):
                 calibration_entry_name = f"Kit_{next_id}"
                 full_calibration_name = f"{name}_{next_id}"
 
+                current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
                 # --- Save data ---
                 settings_calibration.beginGroup(calibration_entry_name)
                 settings_calibration.setValue("kit_name", name)
                 settings_calibration.setValue("method", selected_method)
                 settings_calibration.setValue("id", next_id)
+                settings_calibration.setValue("DateTime_Kits", current_datetime)
                 settings_calibration.endGroup()
 
                 # --- Update active calibration reference ---
@@ -2952,6 +2959,7 @@ class NanoVNAGraphics(QMainWindow):
                     kit_name = settings.value(f"{g}/kit_name", "").strip()
                     method = settings.value(f"{g}/method", "")
                     kit_id = int(settings.value(f"{g}/id", 0))
+                    date_time_Kits = settings.value(f"{g}/DateTime_Kits", "")
                     remaining_kits.append((kit_id, g, kit_name, method))
 
             remaining_kits.sort(key=lambda x: x[0])
@@ -2967,6 +2975,7 @@ class NanoVNAGraphics(QMainWindow):
                 settings.setValue("kit_name", kit_name)
                 settings.setValue("method", method)
                 settings.setValue("id", new_id)
+                settings.setValue("DateTime_Kits", date_time_Kits)
                 settings.endGroup()
 
             # --- Update [Calibration] Name and id ---
@@ -4942,13 +4951,13 @@ class NanoVNAGraphics(QMainWindow):
                 else:
                     parameter = "S11, S21"
 
-                settings.setValue("Calibration/Parameter", parameter)
-                settings.sync()
+                settings_calibration.setValue("Calibration/Parameter", parameter)
+                settings_calibration.sync()
 
                 logging.info(f"[welcome_windows.open_save_calibration] Saved calibration {full_calibration_name}")
 
             except Exception as e:
-                logging.error(f"[CalibrationWelcome] Error saving calibration: {e}")
+                logging.error(f"[CalibrationGraphics] Error saving calibration: {e}")
                 from PySide6.QtWidgets import QMessageBox
                 QMessageBox.critical(self, "Error", f"Error saving calibration: {str(e)}")
 

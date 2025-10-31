@@ -46,6 +46,8 @@ except ImportError as e:
     OSMCalibrationManager = None
     THRUCalibrationManager = None
 
+from datetime import datetime
+
 class NanoVNAWelcome(QMainWindow):
     def __init__(self, s11=None, freqs=None, vna_device=None):
         super().__init__()
@@ -574,11 +576,14 @@ class NanoVNAWelcome(QMainWindow):
                 calibration_entry_name = f"Kit_{next_id}"
                 full_calibration_name = f"{name}_{next_id}"
 
+                current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
                 # --- Save data ---
                 settings_calibration.beginGroup(calibration_entry_name)
                 settings_calibration.setValue("kit_name", name)
                 settings_calibration.setValue("method", selected_method)
                 settings_calibration.setValue("id", next_id)
+                settings_calibration.setValue("DateTime_Kits", current_datetime)
                 settings_calibration.endGroup()
 
                 # --- Update active calibration reference ---
@@ -599,8 +604,8 @@ class NanoVNAWelcome(QMainWindow):
                 else:
                     parameter = "S11, S21"
 
-                settings.setValue("Calibration/Parameter", parameter)
-                settings.sync()
+                settings_calibration.setValue("Calibration/Parameter", parameter)
+                settings_calibration.sync()
 
                 logging.info(f"[welcome_windows.open_save_calibration] Saved calibration {full_calibration_name}")
 
@@ -891,12 +896,14 @@ class NanoVNAWelcome(QMainWindow):
         self.kit_names = [settings_calibration.value(f"{g}/kit_name", "") for g in kit_groups]
         self.kit_ids = [int(settings_calibration.value(f"{g}/id", 0)) for g in kit_groups]
         self.kit_methods = [settings_calibration.value(f"{g}/method", "") for g in kit_groups]
+        self.kit_date_time = [settings_calibration.value(f"{g}/DateTime_Kits", "") for g in kit_groups]
 
         # --- Find the matching kit ---
         if kit_name in self.kit_names:
             idx = self.kit_names.index(kit_name)
             matched_id = self.kit_ids[idx]
             matched_method = self.kit_methods[idx]
+            matched_date_time_kit = self.kit_date_time[idx]
 
             # --- Append ID to the kit_name ---
             kit_name_with_id = f"{kit_name}_{matched_id}"
@@ -905,6 +912,7 @@ class NanoVNAWelcome(QMainWindow):
             settings_calibration.setValue("Calibration/Name", kit_name_with_id)
             settings_calibration.setValue("Calibration/id", matched_id)
             settings_calibration.setValue("Calibration/Method", matched_method)
+            settings_calibration.setValue("Calibration/DateTime_Kits", matched_date_time_kit)
 
             if matched_method == "OSM (Open - Short - Match)":
                 parameter = "S11"

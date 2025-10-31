@@ -24,11 +24,13 @@ except ImportError as e:
 
 import matplotlib.pyplot as plt
 
-plt.rcParams['mathtext.fontset'] = 'cm'   # Fuente Computer Modern
-plt.rcParams['text.usetex'] = False       # No requiere LaTeX externo
+plt.rcParams['mathtext.fontset'] = 'cm'   
+plt.rcParams['text.usetex'] = False      
 plt.rcParams['axes.labelsize'] = 12
-plt.rcParams['font.family'] = 'serif'     # Coincide con el estilo de LaTeX
-plt.rcParams['mathtext.rm'] = 'serif'     # Números y texto coherentes
+plt.rcParams['font.family'] = 'serif'    
+plt.rcParams['mathtext.rm'] = 'serif'     
+
+from datetime import datetime
 
 # Import calibration data storage
 try:
@@ -1313,11 +1315,14 @@ class CalibrationWizard(QMainWindow):
                 calibration_entry_name = f"Kit_{next_id}"
                 full_calibration_name = f"{name}_{next_id}"
 
+                current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
                 # --- Save data ---
                 settings_calibration.beginGroup(calibration_entry_name)
                 settings_calibration.setValue("kit_name", name)
                 settings_calibration.setValue("method", self.selected_method)
                 settings_calibration.setValue("id", next_id)
+                settings_calibration.setValue("DateTime_Kits", current_datetime)
                 settings_calibration.endGroup()
 
                 # --- Update active calibration reference ---
@@ -1483,7 +1488,10 @@ class CalibrationWizard(QMainWindow):
             config_path = os.path.join(config_dir, "calibration_config.ini")
             settings = QSettings(config_path, QSettings.Format.IniFormat)
 
+            current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
             settings.setValue("Calibration/Method", self.selected_method)
+            settings.setValue("Calibration/DateTime_Calibration", current_datetime)
             settings.setValue("Calibration/NoCalibration", False)
             settings.setValue("Calibration/Kits", False)
 
