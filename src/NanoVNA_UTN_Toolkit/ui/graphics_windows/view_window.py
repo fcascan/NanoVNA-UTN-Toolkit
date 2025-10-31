@@ -239,6 +239,9 @@ class View(QMainWindow):
     def on_apply_clicked(self):
         from NanoVNA_UTN_Toolkit.ui.utils.graphics_utils import create_left_panel, create_right_panel
 
+        import os
+        from PySide6.QtCore import QSettings
+
         ui_dir = os.path.dirname(os.path.dirname(__file__))  
         ruta_ini = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
 
@@ -251,19 +254,23 @@ class View(QMainWindow):
         
         trace_color1 = settings.value("Graphic1/TraceColor", "blue")
         marker_color1 = settings.value("Graphic1/MarkerColor", "blue")
+        marker2_color1 = settings.value("Graphic1/MarkerColor2", "blue")
         background_color1 = settings.value("Graphic1/BackgroundColor", "blue")
         text_color1 = settings.value("Graphic1/TextColor", "blue")
         axis_color1 = settings.value("Graphic1/AxisColor", "blue")
         trace_size1 = int(settings.value("Graphic1/TraceWidth", 2))
         marker_size1 = int(settings.value("Graphic1/MarkerWidth", 6))
+        marker2_size1 = int(settings.value("Graphic1/MarkerWidth", 6))
         
         trace_color2 = settings.value("Graphic2/TraceColor", "blue")
         marker_color2 = settings.value("Graphic2/MarkerColor", "blue")
+        marker2_color2 = settings.value("Graphic2/MarkerColor2", "blue")
         background_color2 = settings.value("Graphic2/BackgroundColor", "blue")
         text_color2 = settings.value("Graphic2/TextColor", "blue")
         axis_color2 = settings.value("Graphic2/AxisColor", "blue")
         trace_size2 = int(settings.value("Graphic2/TraceWidth", 2))
         marker_size2 = int(settings.value("Graphic2/MarkerWidth", 6))
+        marker2_size2 = int(settings.value("Graphic2/MarkerWidth2", 6))
 
         self.s11 = self.nano_window.s11
         self.s21 = self.nano_window.s21
@@ -277,22 +284,49 @@ class View(QMainWindow):
 
         settings.setValue("Tab1/SParameter", self.current_s_tab1)
         settings.setValue("Tab1/GraphType1", selected_graph_left)
-
         settings.setValue("Tab2/SParameter", self.current_s_tab2)
         settings.setValue("Tab2/GraphType2", selected_graph_right)
-
         settings.sync()
 
         unit_left = self.nano_window.get_graph_unit(1)
-
         unit_right = self.nano_window.get_graph_unit(2)
 
         if self.nano_window is not None:
-            # Datos para el gráfico izquierdo y derecho
-            data_left = self.s11 if self.current_s_tab1 == "S11" else self.s21
-            data_right = self.s11 if self.current_s_tab2 == "S11" else self.s21
+            # --- Guardar markers antes de recrear ---
+            left_markers_data = []
+            right_markers_data = []
 
-            self.nano_window.update_plots_with_new_data(skip_reset=True)
+            for marker in getattr(self.nano_window, "markers_left", []):
+                x, y = marker["cursor"].get_data()
+                left_markers_data.append((x, y))
+
+            for marker in getattr(self.nano_window, "markers_right", []):
+                x, y = marker["cursor"].get_data()
+                right_markers_data.append((x, y))
+
+            # --- Reset del aspect solo si cambia tipo de gráfico ---
+            if self.nano_window.left_graph_type == "Smith Diagram" and self.current_graph_tab1 != "Smith Diagram":
+                self.nano_window.ax_left.remove()
+                self.nano_window.ax_left = self.nano_window.fig_left.add_subplot(111)
+                self.nano_window.ax_left.set_aspect("auto")
+
+            elif self.nano_window.left_graph_type != "Smith Diagram" and self.current_graph_tab1 == "Smith Diagram":
+                self.nano_window.ax_left.remove()
+                self.nano_window.ax_left = self.nano_window.fig_left.add_subplot(111)
+                self.nano_window.ax_left.set_aspect("equal")
+
+            if self.nano_window.right_graph_type == "Smith Diagram" and self.current_graph_tab2 != "Smith Diagram":
+                self.nano_window.ax_right.remove()
+                self.nano_window.ax_right = self.nano_window.fig_right.add_subplot(111)
+                self.nano_window.ax_right.set_aspect("auto")
+
+            elif self.nano_window.right_graph_type != "Smith Diagram" and self.current_graph_tab2 == "Smith Diagram":
+                self.nano_window.ax_right.remove()
+                self.nano_window.ax_right = self.nano_window.fig_right.add_subplot(111)
+                self.nano_window.ax_right.set_aspect("equal")
+
+            self.nano_window.ax_left.clear()
+            self.nano_window.ax_right.clear()
 
             self.nano_window._recreate_single_plot(
                 ax=self.nano_window.ax_left,
@@ -332,7 +366,16 @@ class View(QMainWindow):
                 cursor_graph_2=self.nano_window.cursor_right_2
             )
 
-            # Actualizamos datos en nano_window
+            self.nano_window._force_marker_visibility(marker_color_left=marker_color1, marker_color_right=marker_color2, 
+                marker1_size_left=marker_size1, marker1_size_right=marker_size2)
+            self.nano_window._force_marker_visibility_2(marker_color_left=marker2_color1, marker_color_right=marker2_color2, 
+                marker_size_left=marker2_size1, marker_size_right=marker2_size2)
+
+
+            self.nano_window.fig_left.canvas.draw_idle()
+            self.nano_window.fig_right.canvas.draw_idle()
+
+            # --- Actualizar estados ---
             self.nano_window.s11 = self.s11
             self.nano_window.s21 = self.s21
             self.nano_window.freqs = self.freqs
@@ -343,9 +386,7 @@ class View(QMainWindow):
 
             self.nano_window.show()
 
-
         self.close()
-
 
 if __name__ == "__main__":
     app = QApplication([])

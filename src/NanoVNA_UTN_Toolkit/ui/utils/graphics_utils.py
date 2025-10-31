@@ -926,7 +926,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
         ax.grid(True, which='both', axis='both', color='white', linestyle='--', linewidth=0.5, alpha=0.3, zorder=1)
         
         cursor_graph, = ax.plot([], [], 'o', markersize=markersize, color=markercolor, visible=marker_visible)
-        cursor_graph_2, = ax.plot([], [], 'o', markersize=marker2size, color=marker2olor, visible=False)
+        cursor_graph_2, = ax.plot([], [], 'o', markersize=marker2size, color=marker2color, visible=False)
 
     # --- Info panel (Right side reorganized) ---
     info_panel = QWidget()

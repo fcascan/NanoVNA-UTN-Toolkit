@@ -3405,60 +3405,61 @@ class NanoVNAGraphics(QMainWindow):
             QMessageBox.warning(None, "Error", "No axis selected.")
             return
 
-        dlg = QDialog(self)
-        dlg.setWindowTitle("Set Y Range")
-        dlg.setFixedSize(250, 150)
+        if self.left_graph_type != "Smith Diagram" or self.right_graph_type != "Smith Diagram": 
 
-        layout = QVBoxLayout(dlg)
+            dlg = QDialog(self)
+            dlg.setWindowTitle("Set Y Range")
+            dlg.setFixedSize(250, 150)
 
-        # --- Inputs ---
-        l1 = QHBoxLayout()
-        l1.addWidget(QLabel("Y min:"))
-        ymin_edit = QLineEdit()
-        ymin_edit.setPlaceholderText(str(target_ax.get_ylim()[0]))
-        l1.addWidget(ymin_edit)
-        layout.addLayout(l1)
+            layout = QVBoxLayout(dlg)
 
-        l2 = QHBoxLayout()
-        l2.addWidget(QLabel("Y max:"))
-        ymax_edit = QLineEdit()
-        ymax_edit.setPlaceholderText(str(target_ax.get_ylim()[1]))
-        l2.addWidget(ymax_edit)
-        layout.addLayout(l2)
+            # --- Inputs ---
+            l1 = QHBoxLayout()
+            l1.addWidget(QLabel("Y min:"))
+            ymin_edit = QLineEdit()
+            ymin_edit.setPlaceholderText(str(target_ax.get_ylim()[0]))
+            l1.addWidget(ymin_edit)
+            layout.addLayout(l1)
 
-        # --- Buttons ---
-        btn_layout = QHBoxLayout()
-        apply_btn = QPushButton("Apply")
-        cancel_btn = QPushButton("Cancel")
-        btn_layout.addWidget(apply_btn)
-        btn_layout.addWidget(cancel_btn)
-        layout.addLayout(btn_layout)
+            l2 = QHBoxLayout()
+            l2.addWidget(QLabel("Y max:"))
+            ymax_edit = QLineEdit()
+            ymax_edit.setPlaceholderText(str(target_ax.get_ylim()[1]))
+            l2.addWidget(ymax_edit)
+            layout.addLayout(l2)
 
-        # --- Logic ---
-        def apply_clicked():
-            try:
-                ymin_text = ymin_edit.text().strip()
-                ymax_text = ymax_edit.text().strip()
+            # --- Buttons ---
+            btn_layout = QHBoxLayout()
+            apply_btn = QPushButton("Apply")
+            cancel_btn = QPushButton("Cancel")
+            btn_layout.addWidget(apply_btn)
+            btn_layout.addWidget(cancel_btn)
+            layout.addLayout(btn_layout)
 
-                if not ymin_text and not ymax_text:
-                    dlg.reject()
-                    return
+            # --- Logic ---
+            def apply_clicked():
+                try:
+                    ymin_text = ymin_edit.text().strip()
+                    ymax_text = ymax_edit.text().strip()
 
-                ymin = float(ymin_text) if ymin_text else target_ax.get_ylim()[0]
-                ymax = float(ymax_text) if ymax_text else target_ax.get_ylim()[1]
+                    if not ymin_text and not ymax_text:
+                        dlg.reject()
+                        return
 
-                target_ax.set_ylim(ymin, ymax)
-                target_ax.figure.canvas.draw_idle()
-                dlg.accept()
+                    ymin = float(ymin_text) if ymin_text else target_ax.get_ylim()[0]
+                    ymax = float(ymax_text) if ymax_text else target_ax.get_ylim()[1]
 
-            except ValueError:
-                QMessageBox.warning(dlg, "Invalid Input", "Please enter valid numbers for Y min and Y max.")
+                    target_ax.set_ylim(ymin, ymax)
+                    target_ax.figure.canvas.draw_idle()
+                    dlg.accept()
 
-        apply_btn.clicked.connect(apply_clicked)
-        cancel_btn.clicked.connect(dlg.reject)
+                except ValueError:
+                    QMessageBox.warning(dlg, "Invalid Input", "Please enter valid numbers for Y min and Y max.")
 
-        dlg.exec()
+            apply_btn.clicked.connect(apply_clicked)
+            cancel_btn.clicked.connect(dlg.reject)
 
+            dlg.exec()
 
     def show_frequency_difference_dialog(self):
         import os
