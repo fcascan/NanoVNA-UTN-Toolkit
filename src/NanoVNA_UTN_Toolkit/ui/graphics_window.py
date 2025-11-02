@@ -4733,6 +4733,31 @@ class NanoVNAGraphics(QMainWindow):
         for f in files:
             print(f)
 
+        # --- TRUNCADO A 101 PUNTOS
+        truncated_files = []
+        max_points = 101
+
+        for f in files:
+            try:
+                ntw = rf.Network(f)
+                if len(ntw.f) > max_points:
+                    idx = np.linspace(0, len(ntw.f) - 1, max_points, dtype=int)
+                    f_trunc = ntw.f[idx]
+                    s_trunc = ntw.s[idx]
+                    z0_trunc = ntw.z0[idx]
+                    ntw_trunc = rf.Network(f=f_trunc, s=s_trunc, z0=z0_trunc)
+
+                    base, ext = os.path.splitext(f)
+                    new_path = f"{base}_trunc{ext}"
+                    ntw_trunc.write_touchstone(new_path)
+                    truncated_files.append(new_path)
+                    print(f"Truncated {os.path.basename(f)} → {os.path.basename(new_path)} ({max_points} points)")
+                else:
+                    truncated_files.append(f)
+            except Exception as e:
+                QMessageBox.warning(self, "Error", f"Error processing {f}:\n{str(e)}")
+                return
+
         # "Select Method"
         dialog = QDialog(self)
         dialog.setWindowTitle("Select Method")
@@ -4794,7 +4819,7 @@ class NanoVNAGraphics(QMainWindow):
         button_layout.addWidget(cancel_button)
 
         calibrate_button = QPushButton("Calibrate", dialog)
-        calibrate_button.clicked.connect(lambda: self.start_calibration(files, self.select_method.currentText(), dialog))
+        calibrate_button.clicked.connect(lambda: self.start_calibration(truncated_files, self.select_method.currentText(), dialog))
         button_layout.addWidget(calibrate_button)
 
         main_layout.addLayout(button_layout)
