@@ -14,14 +14,20 @@ from PySide6.QtWidgets import QSizePolicy
 import matplotlib.pyplot as plt
 from typing import Optional, Dict, Tuple, List, Any
 
+plt.rcParams['mathtext.fontset'] = 'cm'   # Fuente Computer Modern
+plt.rcParams['text.usetex'] = False     
+plt.rcParams['axes.labelsize'] = 12
+plt.rcParams['font.family'] = 'serif'    
+plt.rcParams['mathtext.rm'] = 'serif'    
+
 
 class SmithChartConfig:
     """Configuration class for Smith chart styling and behavior."""
     
     def __init__(self):
         # Default colors
-        self.background_color = "#3a3a3a"
-        self.axis_color = "gray" 
+        self.background_color = "white"
+        self.axis_color = "black" 
         self.text_color = "black"
         self.trace_color = "blue"
         self.marker_color = "red"
@@ -36,7 +42,7 @@ class SmithChartConfig:
         self.z0 = 50
         
         # Center line styling
-        self.center_line_color = "gray"
+        self.center_line_color = "black"
         self.center_line_width = 1.1
         self.center_line_zorder = 10
 
@@ -105,8 +111,12 @@ class SmithChartBuilder:
         # Draw Smith chart base
         network.plot_s_smith(ax=self.ax, draw_labels=draw_labels, show_legend=show_legend)
         
-        # Configure Smith chart appearance
         self._configure_smith_chart_appearance()
+
+        self.ax.set_title(r"$\mathrm{Smith\ Diagram}$", 
+                  fontsize=14,       
+                  pad=30,           
+                  color=self.config.text_color)
         
         return self.ax
     
@@ -304,8 +314,8 @@ class SmithChartManager:
             
             # Add legend
             legend_line = Line2D([0], [0], color=color)
-            ax.legend([legend_line], [f"S11 - {standard_name}"], 
-                     loc='upper left', bbox_to_anchor=(-0.17, 1.14))
+            ax.legend([legend_line], [rf"$\mathrm{{S11 - {standard_name}}}$"], 
+                loc='upper left', bbox_to_anchor=(-0.17, 1.14))
             
             # Refresh canvas
             if canvas:

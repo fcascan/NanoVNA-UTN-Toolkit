@@ -28,9 +28,9 @@ class MagnitudeChartConfig:
     
     def __init__(self):
         # Colors
-        self.background_color = "#3a3a3a"
-        self.axis_color = "white"
-        self.text_color = "white"
+        self.background_color = "white"
+        self.axis_color = "black"
+        self.text_color = "black"
         self.trace_color = "blue"
         self.marker_color = "red"
         
@@ -51,9 +51,10 @@ class MagnitudeChartBuilder:
 
     def setup_figure(self, figsize=(6, 4), layout_params=None):
         if layout_params is None:
-            layout_params = {'left': 0.15, 'right': 0.95, 'top': 0.9, 'bottom': 0.15}
+            layout_params = {'left': 0.2, 'right': 0.9, 'top': 0.9, 'bottom': 0.15}
 
         self.fig, self.ax = plt.subplots(figsize=figsize)
+        self.fig.subplots_adjust(**layout_params)
         self.ax.tick_params(axis='x', colors=self.config.axis_color)
         self.ax.tick_params(axis='y', colors=self.config.axis_color)
         self.ax.xaxis.label.set_color(self.config.text_color)
@@ -67,10 +68,10 @@ class MagnitudeChartBuilder:
         self.ax.set_ylabel(r"$|S_{21}|\ (\mathrm{dB})$")
         self.ax.set_title(r"$\mathrm{Magnitude}$")
 
-        self.fig.tight_layout()
+        #self.fig.tight_layout()
 
         def on_resize(event):
-            self.fig.tight_layout()
+            #self.fig.tight_layout()
             self.canvas.draw_idle()
 
         self.fig.canvas.mpl_connect("resize_event", on_resize)
@@ -134,12 +135,12 @@ class MagnitudeChartManager:
         """Create magnitude chart for calibration wizard."""
         fig, ax = self.builder.setup_figure(figsize=figsize)
         freqs = np.linspace(start_freq, stop_freq, num_points)
-        ax.plot(freqs, np.zeros(num_points), color="gray", alpha=0.3)
-        ax.tick_params(axis="x", colors="white")
-        ax.tick_params(axis="y", colors="white")
-        ax.xaxis.label.set_color("white")
-        ax.yaxis.label.set_color("white")
-        ax.title.set_color("white")
+        ax.plot(freqs, np.zeros(num_points), color="white", alpha=0.3)
+        ax.tick_params(axis="x", colors="black")
+        ax.tick_params(axis="y", colors="black")
+        ax.xaxis.label.set_color("black")
+        ax.yaxis.label.set_color("black")
+        ax.title.set_color("black")
         
         canvas = self.builder.create_canvas()
         if container_layout:
@@ -166,9 +167,9 @@ class MagnitudeChartManager:
             self.apply_axis_style(ax)  # reaplica estilos
 
             # Etiquetas y título dinámico
-            ax.set_xlabel("Frequency (Hz)")
-            ax.set_ylabel("|S21| (dB)" if in_dB else "|S21| (times)")
-            ax.set_title(f"{standard_name.upper()} – Magnitude vs Frequency")  # título dinámico
+            ax.set_xlabel(r"$\mathrm{Frequency\ (Hz)}$")
+            ax.set_ylabel(r"$|S_{21}|\ (\mathrm{dB})$")
+            ax.set_title(rf"$\mathrm{{{standard_name.upper()}}}\ (\mathrm{{S21}})$")
 
             color = color_map.get(standard_name.lower(), self.config.trace_color)
             magnitude = np.abs(s21_data)
@@ -176,7 +177,8 @@ class MagnitudeChartManager:
 
             ax.plot(freqs, magnitude, '-', color=color, linewidth=self.config.linewidth)
             legend_line = Line2D([0], [0], color=color)
-            ax.legend([legend_line], [standard_name.upper()], loc='upper right', frameon=True)
+            ax.legend([legend_line], [rf"$\mathrm{{{standard_name.upper()}}}$"], 
+                loc='upper left', frameon=True)
 
             if canvas:
                 canvas.draw()
@@ -217,8 +219,8 @@ class MagnitudeChartManager:
                 if in_dB:
                     magnitude = 20 * np.log10(magnitude + 1e-12)
                 ax.plot(freqs, magnitude, '-', color=color, linewidth=self.config.linewidth, label=standard_name.upper())
-            ax.set_xlabel("Frequency (Hz)")
-            ax.set_ylabel("|S21| (times)" if not in_dB else "|S21| (dB)")
+            ax.set_xlabel(r"$\mathrm{Frequency\ (Hz)}$")
+            ax.set_ylabel(r"$|S_{21}|\ (\mathrm{dB})$" if in_dB else r"$|S_{21}|\ (\mathrm{dB})$")
             ax.grid(True, linestyle="--", alpha=0.5)
             ax.legend()
             if canvas:
