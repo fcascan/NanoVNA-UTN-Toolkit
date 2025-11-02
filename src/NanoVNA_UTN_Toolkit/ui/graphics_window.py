@@ -4641,13 +4641,13 @@ class NanoVNAGraphics(QMainWindow):
         """
         Export a PDF using LaTeX with a title page and structured sections.
         
-        This method has been refactored to use the LatexExporter module.
+        This method now uses the new dialog-based export with LaTeX verification.
         """
         device_name = None
         if self.vna_device:
             device_name = getattr(self.vna_device, 'name', type(self.vna_device).__name__)
         
-        return self.latex_exporter.export_to_pdf(
+        return self.latex_exporter.export_to_pdf_with_dialog(
             freqs=self.freqs,
             s11_data=self.s11,
             s21_data=self.s21,
