@@ -223,7 +223,7 @@ class NanoVNAStatusApp(QMainWindow):
             logger = logging.getLogger(__name__)
             logger.warning("icon.ico not found in expected locations")
             
-        self.setWindowTitle("NanoVNA UTN Toolkit")
+        self.setWindowTitle("NanoVNA UTN Toolkit - Connection Window")
         self.setGeometry(100, 100, 900, 700)
         
         # Main widget and layout

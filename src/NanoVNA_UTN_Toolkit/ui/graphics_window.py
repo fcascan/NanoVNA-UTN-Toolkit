@@ -87,10 +87,10 @@ class AboutDialog(QDialog):
         self.language = language
         
         if language == 'es':
-            self.setWindowTitle("Acerca de NanoVNA UTN Toolkit")
+            self.setWindowTitle("NanoVNA UTN Toolkit - Acerca de NanoVNA UTN Toolkit")
         else:
-            self.setWindowTitle("About NanoVNA UTN Toolkit")
-            
+            self.setWindowTitle("NanoVNA UTN Toolkit - About NanoVNA UTN Toolkit")
+
         self.setModal(True)
         self.setMinimumSize(700, 500)
         self.resize(800, 600)
@@ -665,23 +665,39 @@ class NanoVNAGraphics(QMainWindow):
                         background-color: #4d4d4d;
                     }
                     QComboBox {{
-                        color: black;                 
-                        background-color: white;
-                        border: 1px solid #5f5f5f;
-                        border-radius: 5px;
-                        padding-left: 5px;            
+                        background-color: #3b3b3b;
+                        color: white;
+                        border: 2px solid white;
+                        border-radius: 6px;
+                        padding: 8px;
+                        font-size: 14px;
+                        min-width: 200px;            
+                    }}
+                    QComboBox:hover {{
+                        background-color: #4d4d4d;
+                    }}
+                    QComboBox::drop-down {{
+                        width: 0px;
+                        border: none;
+                        background: transparent;
+                    }}
+                    QComboBox::down-arrow {{
+                        image: none;
+                        width: 0px;
+                        height: 0px;
                     }}
                     QComboBox QAbstractItemView {{
-                        color: black;
-                        background-color: white;             
-                        selection-background-color: lightgray; 
-                        selection-color: black;
+                        background-color: #3b3b3b;
+                        color: white;             
+                        selection-background-color: #4d4d4d; 
+                        selection-color: white;
+                        border: 1px solid white;
                     }}
                     QComboBox:focus {{
-                        background-color: white;
+                        background-color: #4d4d4d;
                     }}
                     QComboBox::placeholder {{
-                        color: lightgray;
+                        color: #cccccc;
                     }}
                 """)
 
@@ -855,23 +871,39 @@ class NanoVNAGraphics(QMainWindow):
                         background-color: #dcdcdc;
                     }
                     QComboBox {{
-                        color: black;                 
-                        background-color: white;
-                        border: 1px solid #5f5f5f;
-                        border-radius: 5px;
-                        padding-left: 5px;            
+                        background-color: #3b3b3b;
+                        color: white;
+                        border: 2px solid white;
+                        border-radius: 6px;
+                        padding: 8px;
+                        font-size: 14px;
+                        min-width: 200px;            
+                    }}
+                    QComboBox:hover {{
+                        background-color: #4d4d4d;
+                    }}
+                    QComboBox::drop-down {{
+                        width: 0px;
+                        border: none;
+                        background: transparent;
+                    }}
+                    QComboBox::down-arrow {{
+                        image: none;
+                        width: 0px;
+                        height: 0px;
                     }}
                     QComboBox QAbstractItemView {{
-                        color: black;
-                        background-color: white;             
-                        selection-background-color: lightgray; 
-                        selection-color: black;
+                        background-color: #3b3b3b;
+                        color: white;             
+                        selection-background-color: #4d4d4d; 
+                        selection-color: white;
+                        border: 1px solid white;
                     }}
                     QComboBox:focus {{
-                        background-color: white;
+                        background-color: #4d4d4d;
                     }}
                     QComboBox::placeholder {{
-                        color: lightgray;
+                        color: #cccccc;
                     }}
                 """)
 
@@ -959,7 +991,7 @@ class NanoVNAGraphics(QMainWindow):
             self.thru_calibration = None
             logging.warning("[CalibrationWizard] THRUCalibrationManager not available")
 
-        self.setWindowTitle("NanoVNA Graphics")
+        self.setWindowTitle("NanoVNA UTN Toolkit - Graphics Window")
         self.setGeometry(100, 100, 1300, 700)
 
         # Auto-run sweep if device is available and connected
@@ -2689,7 +2721,7 @@ class NanoVNAGraphics(QMainWindow):
 
         # --- Create dialog ---
         dialog = QDialog(self)
-        dialog.setWindowTitle("Select a Calibration Kit")
+        dialog.setWindowTitle("NanoVNA UTN Toolkit - Calibration Wizard - Select a Calibration Kit")
         dialog.setMinimumWidth(400)
 
         layout = QVBoxLayout(dialog)
@@ -2827,7 +2859,7 @@ class NanoVNAGraphics(QMainWindow):
     def show_calibration_warning(self):
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Warning)
-        msg.setWindowTitle("Calibration Warning")
+        msg.setWindowTitle("NanoVNA UTN Toolkit - Calibration Warning")
         msg.setText(
             "Save operation is disabled because calibration was not performed from scratch.\n"
             "Please use the calibration wizard to create a new calibration before saving."
@@ -2998,7 +3030,7 @@ class NanoVNAGraphics(QMainWindow):
 
         # --- Create dialog ---
         dialog = QDialog(self)
-        dialog.setWindowTitle("Delete Calibration Kits")
+        dialog.setWindowTitle("NanoVNA UTN Toolkit - Delete Calibration Kits")
         dialog.setMinimumWidth(400)
 
         layout = QVBoxLayout(dialog)
@@ -3596,7 +3628,7 @@ class NanoVNAGraphics(QMainWindow):
         if self.left_graph_type != "Smith Diagram" or self.right_graph_type != "Smith Diagram": 
 
             dlg = QDialog(self)
-            dlg.setWindowTitle("Set Y Range")
+            dlg.setWindowTitle("NanoVNA UTN Toolkit - Set Y Range")
             dlg.setFixedSize(250, 150)
 
             layout = QVBoxLayout(dlg)
@@ -3692,7 +3724,7 @@ class NanoVNAGraphics(QMainWindow):
 
         # --- CREATE DIALOG ---
         dialog = QDialog(self)
-        dialog.setWindowTitle("Marker Differences")
+        dialog.setWindowTitle("NanoVNA UTN Toolkit - Marker Differences")
         dialog.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
 
         layout = QHBoxLayout()
@@ -3841,7 +3873,7 @@ class NanoVNAGraphics(QMainWindow):
                 update_cursor_right = update_cursor_right
             )
 
-            self.export_dialog.setWindowTitle(f"Export Graph - {panel_name}")
+            self.export_dialog.setWindowTitle(f"NanoVNA UTN Toolkit - Export Graph - {panel_name}")
             self.export_dialog.exec()
             
         except Exception as e:
@@ -4939,7 +4971,7 @@ class NanoVNAGraphics(QMainWindow):
 
         # "Select Method"
         dialog = QDialog(self)
-        dialog.setWindowTitle("Select Method")
+        dialog.setWindowTitle("NanoVNA UTN Toolkit - Select Method")
 
         main_layout = QVBoxLayout(dialog)
         main_layout.setContentsMargins(20, 20, 20, 20)
@@ -4951,23 +4983,39 @@ class NanoVNAGraphics(QMainWindow):
         self.select_method = QComboBox()
         self.select_method.setStyleSheet("""
             QComboBox {
-                color: black;
-                background-color: white;
-                border: 1px solid #5f5f5f;
-                border-radius: 5px;
-                padding-left: 5px;
+                background-color: #3b3b3b;
+                color: white;
+                border: 2px solid white;
+                border-radius: 6px;
+                padding: 8px;
+                font-size: 14px;
+                min-width: 200px;
+            }
+            QComboBox:hover {
+                background-color: #4d4d4d;
+            }
+            QComboBox::drop-down {
+                width: 0px;
+                border: none;
+                background: transparent;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                width: 0px;
+                height: 0px;
             }
             QComboBox QAbstractItemView {
-                color: black;
-                background-color: white;
-                selection-background-color: lightgray;
-                selection-color: black;
+                background-color: #3b3b3b;
+                color: white;
+                selection-background-color: #4d4d4d;
+                selection-color: white;
+                border: 1px solid white;
             }
             QComboBox:focus {
-                background-color: white;
+                background-color: #4d4d4d;
             }
             QComboBox::placeholder {
-                color: lightgray;
+                color: #cccccc;
             }
         """)
 

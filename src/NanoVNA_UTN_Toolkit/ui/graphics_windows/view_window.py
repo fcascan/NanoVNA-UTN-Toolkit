@@ -182,7 +182,7 @@ class View(QMainWindow):
 
         self.nano_window = nano_window 
 
-        self.setWindowTitle("Graphic View")
+        self.setWindowTitle("NanoVNA UTN Toolkit - Graphic View")
         self.setFixedSize(800, 500)
 
         # --- Frequency array placeholder ---

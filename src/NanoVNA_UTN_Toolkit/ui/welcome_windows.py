@@ -591,7 +591,7 @@ class NanoVNAWelcome(QMainWindow):
 
         # "Select Method"
         dialog = QDialog(self)
-        dialog.setWindowTitle("Select Method")
+        dialog.setWindowTitle("NanoVNA UTN Toolkit - Select Calibration Method")
 
         main_layout = QVBoxLayout(dialog)
         main_layout.setContentsMargins(20, 20, 20, 20)

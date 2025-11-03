@@ -439,7 +439,7 @@ class SweepOptionsWindow(QMainWindow):
 
     def init_ui(self):
         """Initialize the user interface."""
-        self.setWindowTitle("Sweep Options")
+        self.setWindowTitle("NanoVNA UTN Toolkit - Sweep Options")
         self.setGeometry(200, 200, 400, 300)
         
         # Set window icon

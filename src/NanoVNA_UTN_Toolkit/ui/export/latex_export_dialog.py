@@ -77,7 +77,7 @@ class LaTeXExportDialog(QDialog):
             default_filename: Default filename for the export
         """
         super().__init__(parent)
-        self.setWindowTitle("LaTeX PDF Export Setup")
+        self.setWindowTitle("NanoVNA UTN Toolkit - LaTeX PDF Export Setup")
         self.setModal(True)
         self.setMinimumSize(500, 400)
         

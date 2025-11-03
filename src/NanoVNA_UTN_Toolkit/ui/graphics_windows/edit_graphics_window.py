@@ -192,7 +192,7 @@ class EditGraphics(QMainWindow):
 
         self.nano_window = nano_window
 
-        self.setWindowTitle("Edit Graphics")
+        self.setWindowTitle("NanoVNA UTN Toolkit - Edit Graphics")
         self.setFixedSize(800, 630)
 
         # --- Frequency array placeholder ---

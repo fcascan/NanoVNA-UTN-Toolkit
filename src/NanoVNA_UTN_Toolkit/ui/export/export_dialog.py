@@ -187,7 +187,7 @@ class ExportDialog(QDialog):
         
     def setup_ui(self):
         """Set up the user interface for the export dialog."""
-        self.setWindowTitle("Export Graph")
+        self.setWindowTitle("NanoVNA UTN Toolkit - Export Graph")
         self.setModal(True)
         self.resize(600, 500)
         

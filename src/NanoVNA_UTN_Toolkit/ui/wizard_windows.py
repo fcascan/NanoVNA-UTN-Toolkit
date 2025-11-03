@@ -153,10 +153,54 @@ class CalibrationWizard(QMainWindow):
                 color: {tabbar_selected_color};
             }}
             QSpinBox {{
-                background-color: {spinbox_bg};
-                color: {spinbox_color};
-                border: {spinbox_border};
-                border-radius: {spinbox_border_radius};
+                background-color: #3b3b3b;
+                color: white;
+                border: 2px solid white;
+                border-radius: 6px;
+                padding: 8px;
+                font-size: 14px;
+                min-width: 150px;
+            }}
+            QSpinBox:hover {{
+                background-color: #4d4d4d;
+            }}
+            QSpinBox:focus {{
+                background-color: #4d4d4d;
+                border: 2px solid #4CAF50;
+            }}
+            QSpinBox::up-button, QSpinBox::down-button {{
+                background-color: #4d4d4d;
+                border: 1px solid white;
+                border-radius: 3px;
+                width: 16px;
+            }}
+            QSpinBox::up-button:hover, QSpinBox::down-button:hover {{
+                background-color: #5d5d5d;
+            }}
+            QDoubleSpinBox {{
+                background-color: #3b3b3b;
+                color: white;
+                border: 2px solid white;
+                border-radius: 6px;
+                padding: 8px;
+                font-size: 14px;
+                min-width: 150px;
+            }}
+            QDoubleSpinBox:hover {{
+                background-color: #4d4d4d;
+            }}
+            QDoubleSpinBox:focus {{
+                background-color: #4d4d4d;
+                border: 2px solid #4CAF50;
+            }}
+            QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {{
+                background-color: #4d4d4d;
+                border: 1px solid white;
+                border-radius: 3px;
+                width: 16px;
+            }}
+            QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {{
+                background-color: #5d5d5d;
             }}
             QGroupBox:title {{
                 color: {groupbox_title_color};  
@@ -209,27 +253,43 @@ class CalibrationWizard(QMainWindow):
                 background-color: {menu_item_color};
             }}
             QComboBox {{
-                color: black;                 
-                background-color: white;
-                border: 1px solid #5f5f5f;
-                border-radius: 5px;
-                padding-left: 5px;            
+                background-color: #3b3b3b;
+                color: white;
+                border: 2px solid white;
+                border-radius: 6px;
+                padding: 8px;
+                font-size: 14px;
+                min-width: 200px;
+            }}
+            QComboBox:hover {{
+                background-color: #4d4d4d;
+            }}
+            QComboBox::drop-down {{
+                width: 0px;
+                border: none;
+                background: transparent;
+            }}
+            QComboBox::down-arrow {{
+                image: none;
+                width: 0px;
+                height: 0px;
             }}
             QComboBox QAbstractItemView {{
-                color: black;
-                background-color: white;             
-                selection-background-color: lightgray; 
-                selection-color: black;
+                background-color: #3b3b3b;
+                color: white;
+                selection-background-color: #4d4d4d;
+                selection-color: white;
+                border: 1px solid white;
             }}
             QComboBox:focus {{
-                background-color: white;
+                background-color: #4d4d4d;
             }}
             QComboBox::placeholder {{
-                color: lightgray;
+                color: #cccccc;
             }}
         """)
 
-        self.setWindowTitle("Calibration Wizard")
+        self.setWindowTitle("NanoVNA UTN Toolkit - Calibration Wizard")
         self.setGeometry(150, 150, 1000, 600)
 
         icon_path = "icon.ico"
@@ -454,7 +514,33 @@ class CalibrationWizard(QMainWindow):
         self.start_freq_input = QDoubleSpinBox()
         self.start_freq_input.setDecimals(4)
         self.start_freq_input.setValue(50)  # 50 kHz inicial
-        self.start_freq_input.setStyleSheet("background-color: white; color: black;")
+        self.start_freq_input.setStyleSheet("""
+            QDoubleSpinBox {
+                background-color: #3b3b3b;
+                color: white;
+                border: 2px solid white;
+                border-radius: 6px;
+                padding: 8px;
+                font-size: 14px;
+                min-width: 150px;
+            }
+            QDoubleSpinBox:hover {
+                background-color: #4d4d4d;
+            }
+            QDoubleSpinBox:focus {
+                background-color: #4d4d4d;
+                border: 2px solid #4CAF50;
+            }
+            QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
+                background-color: #4d4d4d;
+                border: 1px solid white;
+                border-radius: 3px;
+                width: 16px;
+            }
+            QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {
+                background-color: #5d5d5d;
+            }
+        """)
         start_freq_layout.addWidget(self.start_freq_input)
         
         self.start_freq_unit = QComboBox()
@@ -469,7 +555,33 @@ class CalibrationWizard(QMainWindow):
         self.stop_freq_input = QDoubleSpinBox()
         self.stop_freq_input.setDecimals(4)
         self.stop_freq_input.setValue(1.5)
-        self.stop_freq_input.setStyleSheet("background-color: white; color: black;")
+        self.stop_freq_input.setStyleSheet("""
+            QDoubleSpinBox {
+                background-color: #3b3b3b;
+                color: white;
+                border: 2px solid white;
+                border-radius: 6px;
+                padding: 8px;
+                font-size: 14px;
+                min-width: 150px;
+            }
+            QDoubleSpinBox:hover {
+                background-color: #4d4d4d;
+            }
+            QDoubleSpinBox:focus {
+                background-color: #4d4d4d;
+                border: 2px solid #4CAF50;
+            }
+            QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
+                background-color: #4d4d4d;
+                border: 1px solid white;
+                border-radius: 3px;
+                width: 16px;
+            }
+            QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {
+                background-color: #5d5d5d;
+            }
+        """)
         stop_freq_layout.addWidget(self.stop_freq_input)
         
         self.stop_freq_unit = QComboBox()
