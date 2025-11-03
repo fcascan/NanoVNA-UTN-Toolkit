@@ -631,19 +631,36 @@ class LatexExporter:
             calibration_method = settings.value("Calibration/Method", "---")
             calibrated_parameter = settings.value("Calibration/Parameter", "---")
 
-            # Handle measurement numbering
+            # Handle measurement numbering with daily reset
             measurement_number = 1
             tracking_file = os.path.join(base_dir, "calibration", "config", "measurement_numbers.ini")
             tracking_settings = QSettings(tracking_file, QSettings.Format.IniFormat)
             
-            if tracking_settings.contains(measurement_name):
-                measurement_number = int(tracking_settings.value(measurement_name))
+            # Get current date as string (YYYY-MM-DD format)
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            
+            # Check if we have a date stored and if it's different from today
+            stored_date = tracking_settings.value("LastResetDate", "")
+            
+            # If the date has changed, reset all counters
+            if stored_date != current_date:
+                # Clear all existing measurement numbers
+                tracking_settings.clear()
+                # Store the new date
+                tracking_settings.setValue("LastResetDate", current_date)
+                measurement_number = 1
             else:
-                all_numbers = [int(tracking_settings.value(k)) for k in tracking_settings.allKeys()]
-                if all_numbers:
-                    measurement_number = max(all_numbers) + 1
-                tracking_settings.setValue(measurement_name, measurement_number)
-                tracking_settings.sync()
+                # Same day, get current counter for this specific measurement name
+                if tracking_settings.contains(measurement_name):
+                    # This measurement name has been used today, increment its counter
+                    measurement_number = int(tracking_settings.value(measurement_name)) + 1
+                else:
+                    # First time using this measurement name today
+                    measurement_number = 1
+            
+            # Save the updated measurement number for this specific name
+            tracking_settings.setValue(measurement_name, measurement_number)
+            tracking_settings.sync()
                 
             return calibration_method, calibrated_parameter, measurement_number
         except Exception:
