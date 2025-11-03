@@ -1,83 +1,83 @@
 # NanoVNA-UTN-Toolkit
 
-UTN FRBA 2025 - MEDIDAS ELECTRÓNICAS II - Curso R5052
+UTN FRBA 2025 - ELECTRONIC MEASUREMENTS II - Course R5052
 
-**Autores:**
+**Authors:**
 - Axel Nathanel Nahum ([@Axel-Nahum](https://github.com/Axel-Nahum))
 - Fernando Castro Canosa ([@fcascan](https://github.com/fcascan))
 - Hugo Alejandro Gomez ([@hugomezok](https://github.com/hugomezok))
 - Uriel Sandomir Laham ([@usandomir](https://github.com/usandomir))
 
-## Pasos para la conexión a la PC
-### 1. Instalar driver
-- **Solo para Windows**: 
-  1. Instalar el driver que se encuentra en "windows-driver": CypressDriverInstaller_1.exe
-  2. Reiniciar el equipo
+## PC Connection Steps
+### 1. Install driver
+- **Windows only**: 
+  1. Install the driver found in "windows-driver": CypressDriverInstaller_1.exe
+  2. Restart the computer
 
-### 2. Configurar el baudrate en el nanoVNA
-  1. Pulsar el botón rocker para desplegar el menú, navegar a Config / CONNECTION
-  2. En el primer item configurar CONNECTION como "USB"
-  3. En el segundo item configurar SERIAL SPEED a un baudrate de conveniencia (por ejemplo a 38400)
+### 2. Configure baudrate on the nanoVNA
+  1. Press the rocker button to open the menu, navigate to Config / CONNECTION
+  2. In the first item, set CONNECTION to "USB"
+  3. In the second item, set SERIAL SPEED to a convenient baudrate (e.g., 38400)
 
-### 3. Configurar el baudrate en el sistema operativo
+### 3. Configure baudrate in the operating system
 - **Windows**: 
-  1. Conectar el nanoVNA a la PC sin pulsar ningun botón
-  2. Abrir el Administrador de Dispositivos y buscar el nanoVNA en la sección "Puertos (COM y LPT)"
-  3. En Propiedades / Configuración del puerto seleccionar el baudrate correspondiente en el menú desplegable de "Bits por segundo"
+  1. Connect the nanoVNA to the PC without pressing any button
+  2. Open Device Manager and look for the nanoVNA in the "Ports (COM & LPT)" section
+  3. In Properties / Port Settings, select the corresponding baudrate in the "Bits per second" dropdown menu
 
-## Pasos para ejecutar el programa
-### 1. Instalar Python
+## Steps to run the program
+### 1. Install Python
 - **Windows**: 
-  1. Abrir la terminal (cmd).
-  2. Ejecutar el comando `python`. Esto redirigirá a la tienda de Windows para instalar la última versión de **Python Interpreter & Runtime**.
+  1. Open the terminal (cmd).
+  2. Run the command `python`. This will redirect to the Windows store to install the latest version of **Python Interpreter & Runtime**.
 
-### 2. Actualizar `pip`
-Ejecutar el siguiente comando en la terminal para actualizar `pip` a su última versión:
+### 2. Update `pip`
+Run the following command in the terminal to update `pip` to its latest version:
 ```bash
 pip install --upgrade pip
 ```
 
-### 3. Instalar dependencias
-Instalar las dependencias necesarias para el programa:
+### 3. Install dependencies
+Install the necessary dependencies for the program:
 ```bash
 pip install -r requirements.txt
 ```
 
-**Alternativa (instalación manual):**
+**Alternative (manual installation):**
 ```bash
 pip install PySide6 numpy scipy pyserial matplotlib qtawesome pylatex
 ```
 
-### 4. Ejecutar el programa
-Ejecutar el programa principal en un entorno Python desde la raíz del proyecto:
+### 4. Run the program
+Execute the main program in a Python environment from the project root:
 ```bash
 python main.py
 ```
 
 
-## Pasos para compilar una versión ejecutable
-### 1. Instalar PyInstaller
-Instalar el paquete PyInstaller con el siguiente comando:
+## Steps to compile an executable version
+### 1. Install PyInstaller
+Install the PyInstaller package with the following command:
 ```bash
 pip install pyinstaller
 ```
 
-### 2. Construir el ejecutable
-Ejecutar el siguiente comando para generar un archivo ejecutable usando el archivo de configuración:
+### 2. Build the executable
+Run the following command to generate an executable file using the configuration file:
 ```bash
 python -m PyInstaller NanoVNA-UTN-Toolkit.spec
 ```
 
-**Alternativa (comando directo):**
+**Alternative (direct command):**
 ```bash
 python -m PyInstaller --onefile main.py --name "NanoVNA-UTN-Toolkit" --icon=icon.ico --hidden-import=PySide6 --hidden-import=NanoVNA_UTN_Toolkit --hidden-import=NanoVNA_UTN_Toolkit.compat --hidden-import=NanoVNA_UTN_Toolkit.Hardware --hidden-import=NanoVNA_UTN_Toolkit.Hardware.Hardware --hidden-import=NanoVNA_UTN_Toolkit.utils --paths=src
 ```
 
-### 3. Ejecutar el programa compilado
-El ejecutable generado estará en el directorio dist/. Para ejecutarlo:
+### 3. Run the compiled program
+The generated executable will be in the dist/ directory. To run it:
 ```bash
 dist/NanoVNA-UTN-Toolkit.exe
 ```
 
-## Créditos
-Este proyecto fue desarrollado como parte de los requisitos de la materia **Medidas Electrónicas II** en la UTN FRBA durante el ciclo lectivo 2025.
+## Credits
+This project was developed as part of the requirements for the **Electronic Measurements II** course at UTN FRBA during the 2025 academic year.
