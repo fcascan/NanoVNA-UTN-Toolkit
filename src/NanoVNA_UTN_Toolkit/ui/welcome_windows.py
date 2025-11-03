@@ -246,85 +246,288 @@ class NanoVNAWelcome(QMainWindow):
             self.thru_calibration = None
             logging.warning("[CalibrationWizard] THRUCalibrationManager not available")
 
-        self.setWindowTitle("Welcome")
-        self.setGeometry(100, 100, 1000, 600)
+        self.setWindowTitle("NanoVNA UTN Toolkit - Welcome Window")
+        self.setGeometry(100, 100, 1000, 700)
 
         # === Central widget and main layout ===
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
+        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(20, 20, 20, 20)
 
-        # --- Welcome label ---
-        welcome_label = QLabel("Welcome to the NanoVNA UTN Toolkit!")
-        welcome_label.setStyleSheet("font-size: 24px; font-weight: bold; padding: 20px;")
-        main_layout.addWidget(welcome_label, alignment=Qt.AlignTop | Qt.AlignHCenter)
+        # === Create main content area ===
+        self._create_calibration_group(main_layout)
+        self._create_measurements_group(main_layout)
+        
+        main_layout.addStretch()
 
-        # --- Horizontal buttons layout ---
-        middle_layout = QVBoxLayout()
-        middle_layout.addStretch()
-        button_layout = QHBoxLayout()
+    def _create_calibration_group(self, parent_layout):
+        """
+        Create the calibration wizard group box with description.
+        Provides information about VNA calibration importance and wizard access.
+        """
+        logging.info("[welcome_windows._create_calibration_group] Creating calibration group")
+        
+        calibration_group = QGroupBox("Calibration Wizard")
+        calibration_group.setStyleSheet("QGroupBox { font-weight: bold; font-size: 16px; }")
+        calibration_layout = QVBoxLayout(calibration_group)
+        calibration_layout.setSpacing(15)
 
-        self.right_button = QPushButton("Calibration Wizard")
-        self.bottom_button = QPushButton("Graphics")
-        self.right_button.clicked.connect(self.open_calibration_wizard)
-        self.bottom_button.clicked.connect(self.graphics_clicked)
+        # Calibration description
+        description_text = (
+            "Calibration is essential for accurate VNA measurements. It removes systematic errors "
+            "from cables, connectors, and the VNA itself by measuring known reference standards. "
+            "The Calibration Wizard guides you through this process step-by-step, ensuring your "
+            "measurements are precise and reliable."
+        )
+        
+        description_label = QLabel(description_text)
+        description_label.setWordWrap(True)
+        description_label.setStyleSheet("font-weight: normal; font-size: 14px; color: #cccccc; padding: 10px;")
+        calibration_layout.addWidget(description_label)
 
-        self.right_button.setFixedHeight(45)
-        self.bottom_button.setFixedHeight(45)
-        self.right_button.setStyleSheet("font-size: 16px; margin: 10px;")
-        self.bottom_button.setStyleSheet("font-size: 16px; margin: 10px;")
+        # Calibration wizard button
+        self.calibration_wizard_button = QPushButton("Open Calibration Wizard")
+        self.calibration_wizard_button.clicked.connect(self.open_calibration_wizard)
+        self.calibration_wizard_button.setFixedHeight(45)
+        self.calibration_wizard_button.setStyleSheet("font-size: 16px; margin: 10px;")
+        calibration_layout.addWidget(self.calibration_wizard_button, alignment=Qt.AlignCenter)
 
-        button_layout.addStretch()
-        button_layout.addWidget(self.right_button)
-        button_layout.addSpacing(30)
-        button_layout.addWidget(self.bottom_button)
-        button_layout.addStretch()
+        parent_layout.addWidget(calibration_group)
+        logging.info("[welcome_windows._create_calibration_group] Calibration group created successfully")
 
-        middle_layout.addLayout(button_layout)
-        middle_layout.addStretch()
-        main_layout.addLayout(middle_layout)
+    def _create_measurements_group(self, parent_layout):
+        """
+        Create the measurements group box with calibration kit selector and navigation buttons.
+        Contains kit selection, graphics navigation, and calibration import functionality.
+        """
+        logging.info("[welcome_windows._create_measurements_group] Creating measurements group")
+        
+        measurements_group = QGroupBox("Measurements")
+        measurements_group.setStyleSheet("QGroupBox { font-weight: bold; font-size: 16px; }")
+        measurements_layout = QVBoxLayout(measurements_group)
+        measurements_layout.setSpacing(15)
 
-        # === Calibration QToolButton ===
-        self.left_button = QToolButton()
-        self.left_button.setFixedSize(400, 200)
-        self.left_button.setToolButtonStyle(Qt.ToolButtonTextOnly)
-        self.left_button.setAutoRaise(False)
-        self.left_button.setArrowType(Qt.NoArrow)
-        self.left_button.setStyleSheet(f"""
-            QToolButton {{
-                background-color: {pushbutton_bg};
-                color: {pushbutton_color};
-                border: 2px solid {pushbutton_color};
-                border-radius: {pushbutton_border_radius};
-                font-size: 16px;
-                font-weight: bold;
-                padding: {pushbutton_padding};
-                margin: 0px;
-            }}
-            QToolButton:hover {{
-                background-color: {pushbutton_hover_bg};
-            }}
-            QToolButton:pressed {{
-                background-color: {pushbutton_pressed_bg};
-            }}
-            QToolButton::menu-indicator {{
+        # Create calibration kit selector
+        self._create_calibration_kit_selector(measurements_layout)
+        
+        # Create action buttons
+        self._create_action_buttons(measurements_layout)
+
+        parent_layout.addWidget(measurements_group)
+        logging.info("[welcome_windows._create_measurements_group] Measurements group created successfully")
+
+    def _create_calibration_kit_selector(self, parent_layout):
+        """
+        Create the calibration kit selector dropdown with available kits.
+        Displays available calibration kits in a dropdown with None as default.
+        """
+        logging.info("[welcome_windows._create_calibration_kit_selector] Creating kit selector dropdown")
+
+        # Add label for calibration kit selector
+        kit_selector_label = QLabel("Calibration Kit Selection:")
+        kit_selector_label.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 10px;")
+        parent_layout.addWidget(kit_selector_label)
+
+        # Load calibration kits first
+        self._load_calibration_kits()
+
+        # Create dropdown for kit selection
+        self.kit_dropdown = QComboBox()
+        self.kit_dropdown.setFixedHeight(40)
+        self.kit_dropdown.setMinimumWidth(400)  # Set minimum width for better appearance
+        self.kit_dropdown.setStyleSheet("""
+            QComboBox {
+                background-color: #3b3b3b;
+                color: white;
+                border: 2px solid white;
+                border-radius: 6px;
+                padding: 8px;
+                font-size: 14px;
+                min-width: 400px;
+            }
+            QComboBox:hover {
+                background-color: #4d4d4d;
+            }
+            QComboBox::drop-down {
+                width: 0px;
+                border: none;
+                background: transparent;
+            }
+            QComboBox::down-arrow {
                 image: none;
-            }}
+                width: 0px;
+                height: 0px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #3b3b3b;
+                color: white;
+                selection-background-color: #4d4d4d;
+                selection-color: white;
+                border: 1px solid white;
+            }
         """)
 
-        # --- Load calibration kits ---
+        # Add None as default option
+        self.kit_dropdown.addItem("None")
+        
+        # Add available calibration kits
+        for kit_name in self.kit_names:
+            self.kit_dropdown.addItem(kit_name)
+
+        # Set current selection based on existing calibration
+        self._set_current_kit_selection()
+
+        # Connect selection change handler
+        self.kit_dropdown.currentTextChanged.connect(self._on_kit_selection_changed)
+
+        # Add dropdown to parent layout
+        parent_layout.addWidget(self.kit_dropdown, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        # Display current selection info
+        self.kit_info_label = QLabel("")
+        self.kit_info_label.setStyleSheet("font-size: 12px; color: #cccccc; margin-top: 10px; margin-left: 0px; padding: 5px;")
+        self.kit_info_label.setWordWrap(True)
+        self.kit_info_label.setMinimumWidth(400)  # Ensure minimum width for better text display
+        parent_layout.addWidget(self.kit_info_label, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        # Initialize selected_kit_name based on current dropdown selection
+        current_text = self.kit_dropdown.currentText()
+        if current_text.startswith("None"):
+            self.selected_kit_name = None
+        else:
+            self.selected_kit_name = current_text
+
+        self._update_kit_info_display()
+        
+        logging.info(f"[welcome_windows._create_calibration_kit_selector] Kit dropdown created with {len(self.kit_names)} kits available")
+
+    def _set_current_kit_selection(self):
+        """
+        Set the current kit selection in the dropdown based on saved calibration.
+        Updates dropdown to show currently active calibration kit.
+        """
+        calibration_name = self._get_current_calibration_name()
+        
+        if "_" in str(calibration_name):
+            calibration_name_split = str(calibration_name).rsplit("_", 1)[0]
+        else:
+            calibration_name_split = str(calibration_name)
+
+        # Find matching kit in dropdown
+        if calibration_name_split in self.kit_names:
+            kit_index = self.kit_names.index(calibration_name_split) + 1  # +1 because "None" is at index 0
+            self.kit_dropdown.setCurrentIndex(kit_index)
+            logging.info(f"[welcome_windows._set_current_kit_selection] Set dropdown to kit: {calibration_name_split}")
+        else:
+            # Set to "None" if no matching kit found
+            self.kit_dropdown.setCurrentIndex(0)
+            logging.info("[welcome_windows._set_current_kit_selection] Set dropdown to None - no matching kit found")
+
+    def _on_kit_selection_changed(self, selected_text):
+        """
+        Handle calibration kit selection change from dropdown.
+        Updates display and saves selection for graphics window navigation.
+        """
+        logging.info(f"[welcome_windows._on_kit_selection_changed] Kit selection changed to: {selected_text}")
+        
+        if selected_text.startswith("None"):
+            self.selected_kit_name = None
+            logging.info("[welcome_windows._on_kit_selection_changed] No kit selected")
+        else:
+            self.selected_kit_name = selected_text
+            logging.info(f"[welcome_windows._on_kit_selection_changed] Selected kit: {selected_text}")
+        
+        self._update_kit_info_display()
+
+    def _update_kit_info_display(self):
+        """
+        Update the information display below the kit selector.
+        Shows details about the currently selected calibration kit.
+        """
+        if hasattr(self, 'selected_kit_name') and self.selected_kit_name:
+            # Find kit details
+            if self.selected_kit_name in self.kit_names:
+                kit_index = self.kit_names.index(self.selected_kit_name)
+                kit_id = self.kit_ids[kit_index] if kit_index < len(self.kit_ids) else "Unknown"
+                
+                # Get additional kit information if available
+                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                config_path = os.path.join(base_dir, "calibration", "config", "calibration_config.ini")
+                settings = QSettings(config_path, QSettings.Format.IniFormat)
+                
+                kit_method = settings.value(f"Kit_{kit_id}/method", "Unknown")
+                kit_datetime = settings.value(f"Kit_{kit_id}/DateTime_Kits", "Unknown")
+                
+                info_text = f"Selected Kit: {self.selected_kit_name}\nMethod: {kit_method}\nCreated: {kit_datetime}"
+                self.kit_info_label.setText(info_text)
+                logging.info(f"[welcome_windows._update_kit_info_display] Updated info for kit: {self.selected_kit_name}")
+            else:
+                self.kit_info_label.setText(f"Selected Kit: {self.selected_kit_name}\n(Kit details not found)")
+        else:
+            self.kit_info_label.setText("No calibration kit selected")
+            logging.info("[welcome_windows._update_kit_info_display] Cleared kit info - no selection")
+
+    def _create_action_buttons(self, parent_layout):
+        """
+        Create action buttons for graphics navigation and calibration import.
+        Provides access to measurement graphics and external calibration import.
+        """
+        logging.info("[welcome_windows._create_action_buttons] Creating action buttons")
+
+        # Button layout
+        button_layout = QHBoxLayout()
+        button_layout.setSpacing(20)
+
+        # Graphics button
+        self.graphics_button = QPushButton("Open Graphics Window")
+        self.graphics_button.clicked.connect(self.graphics_clicked)
+        self.graphics_button.setFixedHeight(45)
+        self.graphics_button.setStyleSheet("font-size: 16px; margin: 10px;")
+        button_layout.addWidget(self.graphics_button)
+
+        # Import calibration button
+        self.import_button = QPushButton("Import Calibration")
+        self.import_button.clicked.connect(self.import_calibration)
+        self.import_button.setFixedHeight(45)
+        self.import_button.setStyleSheet("font-size: 16px; margin: 10px;")
+        button_layout.addWidget(self.import_button)
+
+        parent_layout.addLayout(button_layout)
+        logging.info("[welcome_windows._create_action_buttons] Action buttons created successfully")
+
+    def _load_calibration_kits(self):
+        """
+        Load available calibration kits from configuration.
+        Reads kit information from calibration config file.
+        """
+        logging.info("[welcome_windows._load_calibration_kits] Loading calibration kits")
+        
         # Use new calibration structure
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         config_path = os.path.join(base_dir, "calibration", "config", "calibration_config.ini")
-        settings_calibration = QSettings(config_path, QSettings.IniFormat)
+        settings_calibration = QSettings(config_path, QSettings.Format.IniFormat)
         kit_groups = [g for g in settings_calibration.childGroups() if g.startswith("Kit_")]
 
         # --- Get kit names and IDs ---
         self.kit_names = [settings_calibration.value(f"{g}/kit_name", "") for g in kit_groups]
         self.kit_ids = [int(settings_calibration.value(f"{g}/id", 0)) for g in kit_groups]
+        
+        logging.info(f"[welcome_windows._load_calibration_kits] Loaded {len(self.kit_names)} calibration kits")
 
+    def _get_current_calibration_name(self):
+        """
+        Get the currently selected calibration name from settings.
+        Returns the active calibration name or default value.
+        """
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        config_path = os.path.join(base_dir, "calibration", "config", "calibration_config.ini")
+        settings_calibration = QSettings(config_path, QSettings.Format.IniFormat)
+        
         # --- Get current calibration ---
         calibration_name = settings_calibration.value("Calibration/Name", "No Calibration")
+        logging.info(f"[welcome_windows._get_current_calibration_name] Current calibration: {calibration_name}")
 
         if "_" in calibration_name:
             calibration_name_split = calibration_name.rsplit("_", 1)[0]
@@ -335,35 +538,13 @@ class NanoVNAWelcome(QMainWindow):
         self.current_index = -1  
 
         if calibration_name_split in self.kit_names:
-            idx = self.kit_names.index(calibration_name_split)
-            matched_id = self.kit_ids[idx]
-
-            self.current_index = matched_id - 1
-
-            settings_calibration.setValue("Calibration/id", matched_id)
-            print(f"Matched kit '{calibration_name_split}' -> ID {matched_id}")
+            self.current_index = self.kit_names.index(calibration_name_split)
+            matched_id = self.kit_ids[self.current_index]
+            logging.info(f"[welcome_windows._get_current_calibration_name] Found matching kit at index {self.current_index}")
         else:
-            print(f"No kit match found for '{calibration_name_split}'")
+            logging.warning(f"[welcome_windows._get_current_calibration_name] No matching kit found for {calibration_name_split}")
 
-        print(f"Selected kit index: {self.current_index}")
-        
-        # --- Update button text with arrows inside ---
-        self.update_left_button_text(calibration_name)
-
-        # --- Add calibration button to layout ---
-        main_layout.addWidget(self.left_button, alignment=Qt.AlignHCenter | Qt.AlignBottom)
-
-        main_layout.addSpacing(40)
-
-        # --- Import Button ---
-
-        self.import_button = QPushButton("Import Calibration")
-        self.import_button.clicked.connect(self.import_calibration)
-
-
-        main_layout.addWidget(self.import_button, alignment=Qt.AlignCenter)
-
-        main_layout.addSpacing(40)
+        return calibration_name
 
     def import_calibration(self):
         from PySide6.QtWidgets import QFileDialog, QMessageBox, QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox
@@ -619,326 +800,6 @@ class NanoVNAWelcome(QMainWindow):
         from datetime import datetime
         return datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    def update_left_button_text(self, calibration_name):
-        for child in self.left_button.findChildren(QWidget):
-            child.deleteLater()
-
-        arrow_width = 40
-        hover_color = self.pushbutton_hover_bg
-        normal_color = self.pushbutton_bg
-        border_radius = self.pushbutton_border_radius
-
-        self.left_container = QWidget(self.left_button)
-        self.left_container.setGeometry(0, 0, self.left_button.width(), self.left_button.height())
-
-        # --- Flecha izquierda ---
-        self.left_arrow_button = QPushButton("<", self.left_container)
-        self.left_arrow_button.setGeometry(0, 2, arrow_width, self.left_container.height() - 4)
-        self.left_arrow_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {normal_color};
-                border: none;
-                font-size: 20px;
-                border-top-left-radius: {border_radius};
-                border-bottom-left-radius: {border_radius};
-                border-top-right-radius: 0px;
-                border-bottom-right-radius: 0px;
-            }}
-        """)
-        self.left_arrow_button.clicked.connect(lambda: self.cycle_kit_side(-1, calibration_name))
-
-        def left_enter(event):
-            self.left_arrow_button.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {hover_color};
-                    border: none;
-                    font-size: 20px;
-                    border-top-left-radius: {border_radius};
-                    border-bottom-left-radius: {border_radius};
-                    border-top-right-radius: 0px;
-                    border-bottom-right-radius: 0px;
-                }}
-            """)
-        def left_leave(event):
-            self.left_arrow_button.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {normal_color};
-                    border: none;
-                    font-size: 20px;
-                    border-top-left-radius: {border_radius};
-                    border-bottom-left-radius: {border_radius};
-                    border-top-right-radius: 0px;
-                    border-bottom-right-radius: 0px;
-                }}
-            """)
-        self.left_arrow_button.enterEvent = left_enter
-        self.left_arrow_button.leaveEvent = left_leave
-
-        # --- Flecha derecha ---
-        self.right_arrow_button = QPushButton(">", self.left_container)
-        self.right_arrow_button.setGeometry(self.left_container.width() - arrow_width, 2, arrow_width, self.left_container.height() - 4)
-        self.right_arrow_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {normal_color};
-                border: none;
-                font-size: 20px;
-                border-top-left-radius: 0px;
-                border-bottom-left-radius: 0px;
-                border-top-right-radius: {border_radius};
-                border-bottom-right-radius: {border_radius};
-            }}
-        """)
-        self.right_arrow_button.clicked.connect(lambda: self.cycle_kit_side(1, calibration_name))
-
-        def right_enter(event):
-            self.right_arrow_button.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {hover_color};
-                    border: none;
-                    font-size: 20px;
-                    border-top-left-radius: 0px;
-                    border-bottom-left-radius: 0px;
-                    border-top-right-radius: {border_radius};
-                    border-bottom-right-radius: {border_radius};
-                }}
-            """)
-        def right_leave(event):
-            self.right_arrow_button.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {normal_color};
-                    border: none;
-                    font-size: 20px;
-                    border-top-left-radius: 0px;
-                    border-bottom-left-radius: 0px;
-                    border-top-right-radius: {border_radius};
-                    border-bottom-right-radius: {border_radius};
-                }}
-            """)
-        self.right_arrow_button.enterEvent = right_enter
-        self.right_arrow_button.leaveEvent = right_leave
-
-        self.left_arrow_button.raise_()
-        self.right_arrow_button.raise_()
-
-        # --- Frame central ---
-        inner_x = arrow_width
-        inner_width = self.left_container.width() - 2 * arrow_width
-        inner_y = 2
-        inner_height = self.left_container.height() - 4
-
-        self.kit_frame = QFrame(self.left_container)
-        self.kit_frame.setGeometry(inner_x, inner_y, inner_width, inner_height)
-        self.kit_frame.setStyleSheet(f"""
-            QFrame {{
-                background-color: {normal_color};
-                border-radius: 0;
-                border-top-left-radius: 0;
-                border-top-right-radius: 0;
-                border-bottom-left-radius: 0;
-                border-bottom-right-radius: 0;
-            }}
-        """)
-
-        def center_enter(event):
-            self.kit_frame.setStyleSheet(f"""
-                QFrame {{
-                    background-color: {hover_color};
-                    border-radius: 0;
-                    border-top-left-radius: 0;
-                    border-top-right-radius: 0;
-                    border-bottom-left-radius: 0;
-                    border-bottom-right-radius: 0;
-                }}
-            """)
-        def center_leave(event):
-            self.kit_frame.setStyleSheet(f"""
-                QFrame {{
-                    background-color: {normal_color};
-                    border-radius: 0;
-                    border-top-left-radius: 0;
-                    border-top-right-radius: 0;
-                    border-bottom-left-radius: 0;
-                    border-bottom-right-radius: 0;
-                }}
-            """)
-        self.kit_frame.enterEvent = center_enter
-        self.kit_frame.leaveEvent = center_leave
-
-        if self.current_index == -1:
-            current_text = "------------------"
-            self.kit_label = QLabel(current_text, self.kit_frame)
-        else:
-            current_text = self.kit_names[self.current_index]
-            self.kit_label = QLabel(current_text, self.kit_frame)
-
-        self.kit_label.setAlignment(Qt.AlignCenter)
-        self.kit_label.setGeometry(0, 0, inner_width, inner_height)
-        self.kit_label.setStyleSheet("background-color: transparent;")
-
-        self.kit_frame.mousePressEvent = lambda event, name=current_text: self.toolbutton_main_clicked_checked(name)
-
-    def toolbutton_main_clicked_checked(self, kit_name):
-        if kit_name == "------------------":
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.warning(self, "No Kit Selected", "Please select a valid calibration kit before proceeding.")
-            logging.warning("Attempted to advance with no kit selected")
-            return
-
-        self.toolbutton_main_clicked(kit_name)
-
-
-    def cycle_kit_side(self, direction, calibration_name):
-        old_frame = self.kit_frame
-        old_label = self.kit_label
-        self.current_index = (self.current_index + direction) % len(self.kit_names)
-        new_text = self.kit_names[self.current_index]
-
-        normal_color = self.pushbutton_bg
-        hover_color = self.pushbutton_hover_bg
-
-        # --- Frame central nuevo ---
-        inner_x = self.left_arrow_button.width()
-        inner_width = self.left_container.width() - 2 * self.left_arrow_button.width()
-        inner_y = 2
-        inner_height = self.left_container.height() - 4
-
-        new_frame = QFrame(self.left_container)
-        new_frame.setGeometry(inner_x, inner_y, inner_width, inner_height)
-        new_frame.setStyleSheet(f"""
-            QFrame {{
-                background-color: {normal_color};
-                border-radius: 0;
-            }}
-        """)
-        new_frame.show()
-
-        # --- Label nuevo ---
-        new_label = QLabel(new_text, new_frame)
-        new_label.setAlignment(Qt.AlignCenter)
-        new_label.setGeometry(0, 0, inner_width, inner_height)
-        new_label.setStyleSheet("background-color: transparent;")
-        new_label.show()
-
-        # --- Hover frame central ---
-        def center_enter(event):
-            new_frame.setStyleSheet(f"""
-                QFrame {{
-                    background-color: {hover_color};
-                    border-radius: 0;
-                }}
-            """)
-        def center_leave(event):
-            new_frame.setStyleSheet(f"""
-                QFrame {{
-                    background-color: {normal_color};
-                    border-radius: 0;
-                }}
-            """)
-        new_frame.enterEvent = center_enter
-        new_frame.leaveEvent = center_leave
-        new_frame.mousePressEvent = lambda event, name=new_text: self.toolbutton_main_clicked(name)
-
-        # --- Posición inicial para animación ---
-        offset = self.left_arrow_button.width() - 10
-        start_x = inner_x + offset if direction > 0 else inner_x - offset
-        new_frame.move(start_x, inner_y)
-
-        # --- Animaciones ---
-        anim_old = QPropertyAnimation(old_frame, b"pos", self)
-        anim_old.setDuration(100)
-        anim_old.setStartValue(old_frame.pos())
-        anim_old.setEndValue(QPoint(inner_x - offset if direction > 0 else inner_x + offset, inner_y))
-
-        anim_new = QPropertyAnimation(new_frame, b"pos", self)
-        anim_new.setDuration(100)
-        anim_new.setStartValue(new_frame.pos())
-        anim_new.setEndValue(QPoint(inner_x, inner_y))
-
-        # --- Mantener flechas arriba ---
-        def keep_arrows_on_top():
-            self.left_arrow_button.raise_()
-            self.right_arrow_button.raise_()
-        anim_new.valueChanged.connect(keep_arrows_on_top)
-        anim_old.valueChanged.connect(keep_arrows_on_top)
-
-        # --- Mantener flechas arriba solo al final ---
-        def on_finished():
-            old_frame.deleteLater()
-            old_label.deleteLater()
-            self.kit_frame = new_frame
-            self.kit_label = new_label
-
-            # Flechas siempre arriba SOLO al final
-            self.left_arrow_button.raise_()
-            self.right_arrow_button.raise_()
-
-            if new_frame.underMouse():
-                center_enter(None)
-            else:
-                center_leave(None)
-
-        anim_new.finished.connect(on_finished)
-
-
-        anim_old.start()
-        anim_new.start()
-
-    def toolbutton_main_clicked(self, kit_name):
-        logging.info("[welcome_windows.open_calibration_wizard] Opening calibration wizard")
-
-        # Use new calibration structure
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        config_path = os.path.join(base_dir, "calibration", "config", "calibration_config.ini")
-        settings_calibration = QSettings(config_path, QSettings.IniFormat)
-
-        # --- Get all kit names, IDs, and methods ---
-        kit_groups = [g for g in settings_calibration.childGroups() if g.startswith("Kit_")]
-        self.kit_names = [settings_calibration.value(f"{g}/kit_name", "") for g in kit_groups]
-        self.kit_ids = [int(settings_calibration.value(f"{g}/id", 0)) for g in kit_groups]
-        self.kit_methods = [settings_calibration.value(f"{g}/method", "") for g in kit_groups]
-        self.kit_date_time = [settings_calibration.value(f"{g}/DateTime_Kits", "") for g in kit_groups]
-
-        # --- Find the matching kit ---
-        if kit_name in self.kit_names:
-            idx = self.kit_names.index(kit_name)
-            matched_id = self.kit_ids[idx]
-            matched_method = self.kit_methods[idx]
-            matched_date_time_kit = self.kit_date_time[idx]
-
-            # --- Append ID to the kit_name ---
-            kit_name_with_id = f"{kit_name}_{matched_id}"
-
-            # --- Save updated values in [Calibration] ---
-            settings_calibration.setValue("Calibration/Name", kit_name_with_id)
-            settings_calibration.setValue("Calibration/id", matched_id)
-            settings_calibration.setValue("Calibration/Method", matched_method)
-            settings_calibration.setValue("Calibration/DateTime_Kits", matched_date_time_kit)
-
-            if matched_method == "OSM (Open - Short - Match)":
-                parameter = "S11"
-            elif matched_method == "Normalization":
-                parameter = "S21"
-            else:
-                parameter = "S11, S21"
-
-            settings_calibration.setValue("Calibration/Parameter", parameter)
-            settings_calibration.sync()
-
-            logging.info(f"Saved calibration: {kit_name_with_id} (ID {matched_id}, Method {matched_method})")
-        else:
-            logging.warning(f"No matching kit found for '{kit_name}'")
-
-        settings_calibration.setValue("Calibration/Kits", True)
-        settings_calibration.setValue("Calibration/NoCalibration", False)
-        settings_calibration.sync()
-
-        if self.vna_device:
-            graphics_window = NanoVNAGraphics(vna_device=self.vna_device)
-        else:
-            graphics_window = NanoVNAGraphics()
-        graphics_window.show()
-        self.close()
-
     def open_calibration_wizard(self):
 
         # Use new calibration structure
@@ -959,22 +820,91 @@ class NanoVNAWelcome(QMainWindow):
         self.close()
 
     def graphics_clicked(self):
+        """
+        Navigate to graphics window with selected calibration kit.
+        Applies the selected calibration kit before opening graphics.
+        """
+        logging.info("[welcome_windows.graphics_clicked] Opening graphics window")
 
         # Use new calibration structure
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         config_path = os.path.join(base_dir, "calibration", "config", "calibration_config.ini")
-        settings_calibration = QSettings(config_path, QSettings.IniFormat)
+        settings_calibration = QSettings(config_path, QSettings.Format.IniFormat)
 
-        settings_calibration.setValue("Calibration/Kits", False)
-        settings_calibration.setValue("Calibration/NoCalibration", True)
-        settings_calibration.sync()
+        # Get currently selected kit from dropdown
+        current_selection = self.kit_dropdown.currentText()
+        logging.info(f"[welcome_windows.graphics_clicked] Current dropdown selection: {current_selection}")
 
+        # Check if a kit is selected in the dropdown (not "None")
+        if current_selection and not current_selection.startswith("None"):
+            # Apply the selected calibration kit
+            self._apply_selected_kit_calibration(current_selection)
+            logging.info(f"[welcome_windows.graphics_clicked] Applied selected kit: {current_selection}")
+        else:
+            # No calibration kit selected
+            settings_calibration.setValue("Calibration/Kits", False)
+            settings_calibration.setValue("Calibration/NoCalibration", True)
+            settings_calibration.sync()
+            logging.info("[welcome_windows.graphics_clicked] No calibration kit selected - proceeding without calibration")
+
+        # Open graphics window
         if self.vna_device:
             graphics_window = NanoVNAGraphics(vna_device=self.vna_device)
         else:
             graphics_window = NanoVNAGraphics()
         graphics_window.show()
         self.close()
+
+    def _apply_selected_kit_calibration(self, kit_name):
+        """
+        Apply the selected calibration kit settings.
+        Updates configuration to use the specified kit for measurements.
+        """
+        logging.info(f"[welcome_windows._apply_selected_kit_calibration] Applying kit: {kit_name}")
+
+        # Use new calibration structure
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        config_path = os.path.join(base_dir, "calibration", "config", "calibration_config.ini")
+        settings_calibration = QSettings(config_path, QSettings.Format.IniFormat)
+
+        # --- Get all kit names, IDs, and methods ---
+        kit_groups = [g for g in settings_calibration.childGroups() if g.startswith("Kit_")]
+        kit_names = [settings_calibration.value(f"{g}/kit_name", "") for g in kit_groups]
+        kit_ids = [int(settings_calibration.value(f"{g}/id", 0)) for g in kit_groups]
+        kit_methods = [settings_calibration.value(f"{g}/method", "") for g in kit_groups]
+        kit_date_times = [settings_calibration.value(f"{g}/DateTime_Kits", "") for g in kit_groups]
+
+        # --- Find the matching kit ---
+        if kit_name in kit_names:
+            idx = kit_names.index(kit_name)
+            matched_id = kit_ids[idx]
+            matched_method = kit_methods[idx]
+            matched_date_time_kit = kit_date_times[idx]
+
+            # --- Append ID to the kit_name ---
+            kit_name_with_id = f"{kit_name}_{matched_id}"
+
+            # --- Save updated values in [Calibration] ---
+            settings_calibration.setValue("Calibration/Name", kit_name_with_id)
+            settings_calibration.setValue("Calibration/id", matched_id)
+            settings_calibration.setValue("Calibration/Method", matched_method)
+            settings_calibration.setValue("Calibration/DateTime_Kits", matched_date_time_kit)
+
+            if matched_method == "OSM (Open - Short - Match)":
+                parameter = "S11"
+            elif matched_method == "Normalization":
+                parameter = "S21"
+            else:
+                parameter = "S11, S21"
+
+            settings_calibration.setValue("Calibration/Parameter", parameter)
+            settings_calibration.setValue("Calibration/Kits", True)
+            settings_calibration.setValue("Calibration/NoCalibration", False)
+            settings_calibration.sync()
+
+            logging.info(f"[welcome_windows._apply_selected_kit_calibration] Applied calibration: {kit_name_with_id} (ID {matched_id}, Method {matched_method})")
+        else:
+            logging.warning(f"[welcome_windows._apply_selected_kit_calibration] No matching kit found for '{kit_name}'")
 
 if __name__ == "__main__":
     from PySide6.QtWidgets import QApplication
