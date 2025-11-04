@@ -105,7 +105,7 @@ class LatexExporter:
     - S21 section: Magnitude, Phase
     """
     
-    def __init__(self, parent_widget=None):
+    def __init__(self, parent_widget=None, figures=None):
         """
         Initialize the LaTeX exporter.
         
@@ -113,6 +113,8 @@ class LatexExporter:
             parent_widget: Parent widget for dialog boxes (optional)
         """
         self.parent_widget = parent_widget
+
+        self.figures = figures
     
     def check_latex_installation(self):
         """
@@ -144,43 +146,78 @@ class LatexExporter:
         Returns:
             bool: True if export successful, False otherwise
         """
-        if freqs is None or s11_data is None or s21_data is None:
-            self._show_warning("Missing Data", "S11, S21 or frequencies are not available.")
-            return False
 
-        # Check LaTeX installation before proceeding
-        is_available, compiler_info, error_msg = self.check_latex_installation()
-        if not is_available:
-            self._show_error("LaTeX Installation Error", error_msg)
-            return False
+        if self.figures and len(self.figures) > 0:
+            if output_path is None:
+                filename, _ = QFileDialog.getSaveFileName(
+                    self.parent_widget,
+                    "Export LaTeX PDF",
+                    "",
+                    "PDF Files (*.pdf)"
+                )
+                if not filename:
+                    return False
+                file_path = Path(filename).with_suffix('')
+            else:
+                file_path = Path(output_path).with_suffix('')
 
-        # Use the provided output path or ask the user for a location
-        if output_path is None:
-            filename, _ = QFileDialog.getSaveFileName(
-                self.parent_widget, 
-                "Export LaTeX PDF", 
-                "", 
-                "PDF Files (*.pdf)"
-            )
-            if not filename:
+            # Asegurarse de tener un compilador LaTeX válido
+            is_available, compiler_info, error_msg = self.check_latex_installation()
+            if not is_available:
+                self._show_error("LaTeX Installation Error", error_msg)
                 return False
-            file_path = Path(filename).with_suffix('')
-        else:
-            file_path = Path(output_path).with_suffix('')
+            compiler_path = compiler_info[1]
 
-        pdf_path = str(file_path) + ".pdf"
-
-        try:
             with tempfile.TemporaryDirectory() as tmpdirname:
-                image_files = self._generate_plots(freqs, s11_data, s21_data, tmpdirname)
-                self._create_latex_document(freqs, image_files, file_path, tmpdirname, file_path.name, measurement_name)
-
-            self._show_info("Success", f"LaTeX PDF exported successfully to:\n{pdf_path}")
+                image_files = self._generate_plots_from_figures(self.figures, tmpdirname)
+                self._create_latex_document_with_compiler(
+                    freqs=None,
+                    image_files=image_files,
+                    file_path=file_path,
+                    tmpdirname=tmpdirname,
+                    measurement_name=measurement_name,
+                    vna_name="NanoVNA",
+                    specific_compiler_path=compiler_path
+                )
             return True
+        else:
+            if freqs is None or s11_data is None or s21_data is None:
+                self._show_warning("Missing Data", "S11, S21 or frequencies are not available.")
+                return False
 
-        except Exception as e:
-            self._show_error("Error generating LaTeX PDF", str(e))
-            return False
+            # Check LaTeX installation before proceeding
+            is_available, compiler_info, error_msg = self.check_latex_installation()
+            if not is_available:
+                self._show_error("LaTeX Installation Error", error_msg)
+                return False
+
+            # Use the provided output path or ask the user for a location
+            if output_path is None:
+                filename, _ = QFileDialog.getSaveFileName(
+                    self.parent_widget, 
+                    "Export LaTeX PDF", 
+                    "", 
+                    "PDF Files (*.pdf)"
+                )
+                if not filename:
+                    return False
+                file_path = Path(filename).with_suffix('')
+            else:
+                file_path = Path(output_path).with_suffix('')
+
+            pdf_path = str(file_path) + ".pdf"
+
+            try:
+                with tempfile.TemporaryDirectory() as tmpdirname:
+                    image_files = self._generate_plots(freqs, s11_data, s21_data, tmpdirname)
+                    self._create_latex_document(freqs, image_files, file_path, tmpdirname, file_path.name, measurement_name)
+
+                self._show_info("Success", f"LaTeX PDF exported successfully to:\n{pdf_path}")
+                return True
+
+            except Exception as e:
+                self._show_error("Error generating LaTeX PDF", str(e))
+                return False
     
     def export_to_pdf_with_dialog(self, freqs, s11_data, s21_data, measurement_name=None):
         """
@@ -377,8 +414,13 @@ class LatexExporter:
         )
 
         # Cover page
-        self._create_cover_page(doc, freqs, current_datetime, measurement_name, measurement_number, 
-                               calibration_method, calibrated_parameter, vna_name)
+        self._create_cover_page(doc, freqs=None, current_datetime=current_datetime,
+                                measurement_name=measurement_name,
+                                measurement_number=measurement_number, 
+                                calibration_method=calibration_method,
+                                calibrated_parameter=calibrated_parameter,
+                                vna_name=vna_name)
+
 
         # S11 Section
         s11_images = {
@@ -437,10 +479,10 @@ class LatexExporter:
     
     def _create_latex_document_with_compiler(self, freqs, image_files, file_path, tmpdirname, measurement_name, vna_name, specific_compiler_path):
         """
-        Create the LaTeX document with all sections and images using a specific compiler.
-        
+        Create the LaTeX document with cover page and all images using a specific compiler.
+
         Args:
-            freqs: Frequency array
+            freqs: Frequency array (can be None)
             image_files: Dictionary of image file paths
             file_path: Output file path
             tmpdirname: Temporary directory name
@@ -456,65 +498,35 @@ class LatexExporter:
         doc.preamble.append(Command('usepackage', 'graphicx'))
 
         current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        calibration_method, calibrated_parameter, measurement_number = self._get_calibration_info(measurement_name)
 
-        # Read calibration info from config
-        calibration_method, calibrated_parameter, measurement_number = self._get_calibration_info(
-            measurement_name
-        )
+        # --- COVER PAGE ---
+        self._create_cover_page(doc, freqs=None, current_datetime=current_datetime,
+                                measurement_name=measurement_name,
+                                measurement_number=measurement_number,
+                                calibration_method=calibration_method,
+                                calibrated_parameter=calibrated_parameter,
+                                vna_name=vna_name)
 
-        # Cover page
-        self._create_cover_page(doc, freqs, current_datetime, measurement_name, measurement_number, 
-                               calibration_method, calibrated_parameter, vna_name)
-
-        # S11 Section
-        s11_images = {
-            "Magnitude": "mag_s11",
-            "Phase": "phase_s11",
-            "Smith Diagram": "smith"
-        }
-        with doc.create(Section("S11")):
-            for subname, key in s11_images.items():
-                with doc.create(Subsection(subname)):
+        # --- PAGES WITH IMAGES ---
+        doc.append(NewPage())  # Start from the second page
+        with doc.create(Section("Measurement Graphs")):
+            for key, path in image_files.items():
+                with doc.create(Subsection(key)):
                     doc.append(NoEscape(r'\begin{center}'))
-                    doc.append(NoEscape(r'\includegraphics[width=0.8\linewidth]{' +
-                                        image_files[key].replace("\\", "/") + '}'))
+                    doc.append(NoEscape(r'\includegraphics[width=0.8\linewidth]{' + path.replace("\\", "/") + '}'))
                     doc.append(NoEscape(r'\end{center}'))
+                    doc.append(NewPage())  # Optional: each image on a new page
 
-        # S21 Section
-        s21_images = {
-            "Magnitude": "mag_s21",
-            "Phase": "phase_s21"
-        }
-        with doc.create(Section("S21")):
-            for subname, key in s21_images.items():
-                with doc.create(Subsection(subname)):
-                    doc.append(NoEscape(r'\begin{center}'))
-                    doc.append(NoEscape(r'\includegraphics[width=0.8\linewidth]{' +
-                                        image_files[key].replace("\\", "/") + '}'))
-                    doc.append(NoEscape(r'\end{center}'))
-
-        # Generate PDF using the specific compiler
+        # --- GENERATE PDF USING SPECIFIC COMPILER ---
+        compiler_name = os.path.basename(specific_compiler_path).replace('.exe', '')
+        original_path = os.environ.get('PATH', '')
+        os.environ['PATH'] = os.path.dirname(specific_compiler_path) + os.pathsep + original_path
         try:
-            compiler_name = os.path.basename(specific_compiler_path).replace('.exe', '')
-            
-            if os.path.isabs(specific_compiler_path):
-                # Add the compiler directory to PATH temporarily
-                original_path = os.environ.get('PATH', '')
-                compiler_dir = os.path.dirname(specific_compiler_path)
-                os.environ['PATH'] = compiler_dir + os.pathsep + original_path
-                
-                try:
-                    logger.info(f"Generating PDF using specific compiler: {compiler_name}")
-                    doc.generate_pdf(str(file_path), compiler=compiler_name, clean_tex=False)
-                finally:
-                    # Restore original PATH
-                    os.environ['PATH'] = original_path
-            else:
-                # Compiler is in PATH, use normally
-                logger.info(f"Generating PDF using system compiler: {compiler_name}")
-                doc.generate_pdf(str(file_path), compiler=compiler_name, clean_tex=False)
-        except Exception as e:
-            raise Exception(f"Failed to generate PDF with specific compiler {specific_compiler_path}: {str(e)}. Please check your LaTeX installation and ensure all required packages are installed.")
+            logger.info(f"Generating PDF using specific compiler: {compiler_name}")
+            doc.generate_pdf(str(file_path), compiler=compiler_name, clean_tex=False)
+        finally:
+            os.environ['PATH'] = original_path
     
     def _create_cover_page(self, doc, freqs, current_datetime, measurement_name, measurement_number, 
                           calibration_method, calibrated_parameter, vna_name):
@@ -543,19 +555,28 @@ class LatexExporter:
         start_unit = settings_calibration.value("Frequency/StartUnit", "kHz")
         stop_unit = settings_calibration.value("Frequency/StopUnit", "GHz")
 
-        if start_unit == "kHz":
-            start_freq = freqs[0]/1000
-        elif start_unit == "MHz":
-            start_freq = freqs[0]/1000000
-        elif start_unit == "GHz":
-            start_freq = freqs[0]/1000000000
+        start_unit = "MHz"  # o lo que quieras mostrar por defecto
+        stop_unit = "MHz"
 
-        if stop_unit == "kHz":
-            stop_freq = freqs[-1]/1000
-        elif stop_unit == "MHz":
-            stop_freq = freqs[-1]/1000000
-        elif stop_unit == "GHz":
-            stop_freq = freqs[-1]/1000000000
+        if freqs is not None:
+            # Solo si hay freqs reales
+            start_freq = freqs[0]
+            stop_freq = freqs[-1]
+            if start_unit == "kHz":
+                start_freq /= 1e3
+            elif start_unit == "MHz":
+                start_freq /= 1e6
+            elif start_unit == "GHz":
+                start_freq /= 1e9
+            if stop_unit == "kHz":
+                stop_freq /= 1e3
+            elif stop_unit == "MHz":
+                stop_freq /= 1e6
+            elif stop_unit == "GHz":
+                stop_freq /= 1e9
+        else:
+            start_freq = "N/A"
+            stop_freq = "N/A"
 
         """Create the cover page for the PDF."""
         doc.append(NoEscape(r'\begin{titlepage}'))
@@ -686,3 +707,21 @@ class LatexExporter:
         """Show error message box."""
         if self.parent_widget:
             QMessageBox.critical(self.parent_widget, title, message)
+
+    def _generate_plots_from_figures(self, figures, output_dir):
+        """
+        Save existing Matplotlib figures as PNG for LaTeX PDF.
+        
+        Args:
+            figures: list of matplotlib.figure.Figure
+            output_dir: directory to save PNGs
+        
+        Returns:
+            dict: mapping keys to file paths
+        """
+        image_files = {}
+        for i, fig in enumerate(figures):
+            path = os.path.join(output_dir, f"figure_{i}.png")
+            fig.savefig(path, dpi=300)
+            image_files[f"fig_{i}"] = path
+        return image_files
