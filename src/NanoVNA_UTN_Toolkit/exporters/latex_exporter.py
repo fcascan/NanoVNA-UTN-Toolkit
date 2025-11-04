@@ -130,16 +130,17 @@ class LatexExporter:
         
         return True, (compiler_name, compiler_path), None
     
-    def export_to_pdf(self, freqs, s11_data, s21_data, measurement_name=None):
+    def export_to_pdf(self, freqs, s11_data, s21_data, measurement_name=None, output_path=None):
         """
         Export S-parameter data to PDF using LaTeX.
-        
+
         Args:
             freqs: Frequency array in Hz
             s11_data: S11 parameter data (complex array)
             s21_data: S21 parameter data (complex array)
             measurement_name: Optional measurement name for the report
-            
+            output_path: Path where the PDF should be saved
+
         Returns:
             bool: True if export successful, False otherwise
         """
@@ -153,16 +154,20 @@ class LatexExporter:
             self._show_error("LaTeX Installation Error", error_msg)
             return False
 
-        filename, _ = QFileDialog.getSaveFileName(
-            self.parent_widget, 
-            "Export LaTeX PDF", 
-            "", 
-            "PDF Files (*.pdf)"
-        )
-        if not filename:
-            return False
+        # Use the provided output path or ask the user for a location
+        if output_path is None:
+            filename, _ = QFileDialog.getSaveFileName(
+                self.parent_widget, 
+                "Export LaTeX PDF", 
+                "", 
+                "PDF Files (*.pdf)"
+            )
+            if not filename:
+                return False
+            file_path = Path(filename).with_suffix('')
+        else:
+            file_path = Path(output_path).with_suffix('')
 
-        file_path = Path(filename).with_suffix('')
         pdf_path = str(file_path) + ".pdf"
 
         try:
@@ -170,7 +175,7 @@ class LatexExporter:
                 image_files = self._generate_plots(freqs, s11_data, s21_data, tmpdirname)
                 self._create_latex_document(freqs, image_files, file_path, tmpdirname, file_path.name, measurement_name)
 
-            self._show_info("Success", f"LaTeX PDF exported successfully to:\\n{pdf_path}")
+            self._show_info("Success", f"LaTeX PDF exported successfully to:\n{pdf_path}")
             return True
 
         except Exception as e:

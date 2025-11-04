@@ -179,7 +179,7 @@ class LaTeXExportDialog(QDialog):
         
         self.export_button = QPushButton("Export PDF")
         self.export_button.setEnabled(False)
-        self.export_button.clicked.connect(self.accept)
+        self.export_button.clicked.connect(self.open_preview_dialog)
         self.export_button.setStyleSheet("""
             QPushButton:enabled {
                 background-color: #4CAF50;
@@ -359,3 +359,42 @@ class LaTeXExportDialog(QDialog):
             self.checker_thread.terminate()
             self.checker_thread.wait()
         event.accept()
+
+    def open_preview_dialog(self):
+        """
+        Open the Graph Preview Dialog and pass the selected output path and data.
+        """
+        if not self.output_path:
+            QMessageBox.warning(self, "Missing Path", "Please select an output path before proceeding.")
+            return
+
+        # Import the GraphPreviewExportDialog
+        from NanoVNA_UTN_Toolkit.ui.export.graph_preview_dialog import GraphPreviewExportDialog
+
+        # Obtener los datos del parent
+        parent = self.parent()
+        if parent is None:
+            QMessageBox.critical(self, "Error", "Parent widget not found. Cannot retrieve data.")
+            return
+
+        freqs = getattr(parent, "freqs", None)
+        s11_data = getattr(parent, "s11", None)
+        s21_data = getattr(parent, "s21", None)
+        measurement_name = self.default_filename  # Nombre del archivo para guardar
+
+        if freqs is None or s11_data is None or s21_data is None:
+            QMessageBox.critical(self, "Error", "Required data (freqs, s11, s21) not found in parent.")
+            return
+
+        # Create and show the preview dialog
+        preview_dialog = GraphPreviewExportDialog(
+            parent=self,
+            output_path=self.output_path,
+            freqs=freqs,
+            s11_data=s11_data,
+            s21_data=s21_data,
+            measurement_name=measurement_name
+        )
+        preview_dialog.exec()
+
+        self.close()
