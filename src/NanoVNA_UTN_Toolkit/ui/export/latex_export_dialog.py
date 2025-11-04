@@ -397,4 +397,4 @@ class LaTeXExportDialog(QDialog):
         )
         preview_dialog.exec()
 
-        self.close()
+        self.reject()
