@@ -511,12 +511,32 @@ class LatexExporter:
         # --- PAGES WITH IMAGES ---
         doc.append(NewPage())  # Start from the second page
         with doc.create(Section("Measurement Graphs")):
-            for key, path in image_files.items():
-                with doc.create(Subsection(key)):
-                    doc.append(NoEscape(r'\begin{center}'))
-                    doc.append(NoEscape(r'\includegraphics[width=0.8\linewidth]{' + path.replace("\\", "/") + '}'))
-                    doc.append(NoEscape(r'\end{center}'))
-                    doc.append(NewPage())  # Optional: each image on a new page
+            keys = list(image_files.keys())
+            paths = list(image_files.values())
+
+            # --- Smith chart alone on first page ---
+            with doc.create(Figure(position='h!')) as fig:
+                fig.add_image(paths[0].replace("\\", "/"), width=NoEscape(r'0.8\linewidth'))
+            doc.append(NewPage())
+
+            # --- Second and third images stacked vertically on one page ---
+            if len(paths) >= 3:
+                with doc.create(Figure(position='h!')) as fig:
+                    fig.add_image(paths[1].replace("\\", "/"), width=NoEscape(r'0.8\linewidth'))
+                doc.append(NoEscape(r'\vspace{1cm}'))  # spacing between the two images
+                with doc.create(Figure(position='h!')) as fig:
+                    fig.add_image(paths[2].replace("\\", "/"), width=NoEscape(r'0.8\linewidth'))
+                doc.append(NewPage())
+
+            # --- Fourth and fifth images stacked vertically on one page ---
+            if len(paths) >= 5:
+                with doc.create(Figure(position='h!')) as fig:
+                    fig.add_image(paths[3].replace("\\", "/"), width=NoEscape(r'0.8\linewidth'))
+                doc.append(NoEscape(r'\vspace{1cm}'))
+                with doc.create(Figure(position='h!')) as fig:
+                    fig.add_image(paths[4].replace("\\", "/"), width=NoEscape(r'0.8\linewidth'))
+                doc.append(NewPage())
+
 
         # --- GENERATE PDF USING SPECIFIC COMPILER ---
         compiler_name = os.path.basename(specific_compiler_path).replace('.exe', '')
