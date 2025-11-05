@@ -12,7 +12,9 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QPushButton, QMessageBox, QWidget,
     QCheckBox, QHBoxLayout, QLineEdit, QComboBox
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QLocale
+from PySide6.QtGui import QDoubleValidator
+
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 import numpy as np
@@ -105,35 +107,87 @@ class GraphPreviewExportDialog(QDialog):
         self.marker_freq_edits = {}  # key=graph_index, value=(edit1, combo1, edit2, combo2)
 
         for i in range(5):
-            # --- Checkboxes
+            # --- Marker checkboxes ---
             marker1 = QCheckBox("Marker 1")
-            marker1.setStyleSheet("color: red; font-weight: bold;")
+            marker1.setStyleSheet("color: green; font-weight: bold;")
             marker2 = QCheckBox("Marker 2")
-            marker2.setStyleSheet("color: blue; font-weight: bold;")
+            marker2.setStyleSheet("color: orange; font-weight: bold;")
             marker1.stateChanged.connect(lambda _, idx=i: self._update_markers(idx))
             marker2.stateChanged.connect(lambda _, idx=i: self._update_markers(idx))
             self.marker_checkboxes[i] = (marker1, marker2)
 
-            # --- Frequency inputs para cada marker (NO fusionados, estilo blanco)
+            # --- Frequency inputs (white style) ---
             edit1 = QLineEdit()
             edit1.setFixedWidth(80)
             edit1.setStyleSheet("background-color: white; color: black;")
             combo1 = QComboBox()
             combo1.addItems(["kHz", "MHz", "GHz"])
+            combo1.setCurrentText("kHz")
             combo1.setStyleSheet("background-color: white; color: black;")
+
             edit2 = QLineEdit()
             edit2.setFixedWidth(80)
             edit2.setStyleSheet("background-color: white; color: black;")
             combo2 = QComboBox()
             combo2.addItems(["kHz", "MHz", "GHz"])
+            combo2.setCurrentText("kHz")
             combo2.setStyleSheet("background-color: white; color: black;")
 
-            # --- Conectar señales para actualizar markers
-            edit1.editingFinished.connect(self._on_marker_input_changed)
+            # --- Inline validator function ---
+            def validate_input(edit, combo):
+                text = edit.text().strip()
+                if not text:
+                    return
+                try:
+                    val = float(text)
+                except ValueError:
+                    return
+
+                unit = combo.currentText()
+                min_f = self.freqs[0]
+                max_f = self.freqs[-1]
+
+                # Convert freq limits to selected unit
+                if unit == "kHz":
+                    min_u, max_u = min_f / 1e3, max_f / 1e3
+                elif unit == "MHz":
+                    min_u, max_u = min_f / 1e6, max_f / 1e6
+                else:  # GHz
+                    min_u, max_u = min_f / 1e9, max_f / 1e9
+
+                # --- Enforce numeric limits ---
+                if unit == "kHz":
+                    if val < 50:
+                        val = 50
+                    val = min(max(val, min_u), max_u)
+                    text = f"{val:.2f}"  # up to 3 digits + decimals
+                elif unit == "MHz":
+                    val = min(max(val, min_u), max_u)
+                    text = f"{val:.2f}" # up to 3 digits + decimals
+                elif unit == "GHz":
+                    if val > 1.5:
+                        val = 1.5
+                    val = min(max(val, min_u), max_u)
+                    text = f"{val:.2f}"  # 1 digit + decimals
+                else:
+                    text = f"{val:.2f}"
+
+                edit.setText(text)
+
+            # --- Connect editing events ---
+            edit1.editingFinished.connect(lambda e=edit1, c=combo1: (validate_input(e, c), self._on_marker_input_changed()))
             combo1.currentIndexChanged.connect(self._on_marker_input_changed)
-            edit2.editingFinished.connect(self._on_marker_input_changed)
+            edit2.editingFinished.connect(lambda e=edit2, c=combo2: (validate_input(e, c), self._on_marker_input_changed()))
             combo2.currentIndexChanged.connect(self._on_marker_input_changed)
-            # --- Guardar
+
+            # --- Store marker input references ---
+            self.marker_freq_edits[i] = (edit1, combo1, edit2, combo2)
+
+            edit1.editingFinished.connect(lambda: self.on_edit_finished(edit1, combo1))
+            combo1.currentIndexChanged.connect(self._on_marker_input_changed)
+            edit2.editingFinished.connect(lambda: self.on_edit_finished(edit2, combo2))
+            combo2.currentIndexChanged.connect(self._on_marker_input_changed)
+   
             self.marker_freq_edits[i] = (edit1, combo1, edit2, combo2)
 
         # --- Layout para markers y sus inputs
@@ -306,6 +360,58 @@ class GraphPreviewExportDialog(QDialog):
         self.canvas.draw()
         self._update_markers(index)
 
+    def on_edit_finished(self, edit, combo):
+        self.validate_frequency_input(edit, combo, self.freqs)
+        self.update_validator(edit, combo)
+        self._on_marker_input_changed()
+
+    def update_validator(self, edit, combo):
+        unit = combo.currentText()
+        edit.textChanged.connect(lambda t: edit.setText(block_comma(t)))
+        if unit == "kHz":
+            validator = QDoubleValidator(50, 999, 2)
+            validator.setLocale(QLocale.c())
+            edit.setValidator(validator)
+        elif unit == "MHz":
+            validator = QDoubleValidator(0, 999, 2)
+            validator.setLocale(QLocale.c())        
+            edit.setValidator(validator)
+        elif unit == "GHz":
+            validator = QDoubleValidator(0, 1.5, 2)
+            validator.setLocale(QLocale.c())
+            edit.setValidator(validator)
+
+    def block_comma(text):
+        return text.replace(",", ".")
+
+    def validate_frequency_input(self, edit, combo, freqs):
+        try:
+            val = float(edit.text())
+        except ValueError:
+            return
+
+        unit = combo.currentText()
+        min_freq = freqs[0] / 1e3 if unit == "kHz" else freqs[0] / 1e6 if unit == "MHz" else freqs[0] / 1e9
+        max_freq = freqs[-1] / 1e3 if unit == "kHz" else freqs[-1] / 1e6 if unit == "MHz" else freqs[-1] / 1e9
+
+        if unit == "kHz":
+            if val < 50:
+                val = 50
+            val = min(max(val, min_freq), max_freq)
+            text = f"{val:.2f}"
+        elif unit == "MHz":
+            val = min(max(val, min_freq), max_freq)
+            text = f"{val:.2f}"
+        elif unit == "GHz":
+            if val > 1.5:
+                val = 1.5
+            val = min(max(val, min_freq), max_freq)
+            text = f"{val:.2f}"  
+        else:
+            text = f"{val:.2f}"
+
+        edit.setText(text)
+
     # --- Navigation ---
     def _show_next_graph(self):
         fig_copy = copy.deepcopy(self.fig)
@@ -359,19 +465,28 @@ class GraphPreviewExportDialog(QDialog):
         edits = self.marker_freq_edits[graph_index]
 
         for i, active in enumerate(self.marker_active[graph_index]):
+            edit, combo = (edits[0], edits[1]) if i == 0 else (edits[2], edits[3])
             if active:
-                edit, unit = (edits[0], edits[1]) if i == 0 else (edits[2], edits[3])
+                edit.setEnabled(True)
+                combo.setEnabled(True)
+                edit.setStyleSheet("background-color: white; color: black;")
 
                 try:
                     freq_val = float(edit.text())
-                    unit_factor = {"kHz": 1e3, "MHz": 1e6, "GHz": 1e9}[unit.currentText()]
+                    unit_factor = {"kHz": 1e3, "MHz": 1e6, "GHz": 1e9}[combo.currentText()]
                     freq_val_hz = freq_val * unit_factor
                 except Exception:
                     freq_val_hz = freqs[len(freqs)//3 if i == 0 else 2*len(freqs)//3]
-                    freq_val = freq_val_hz / 1e6
-                    unit.setCurrentText("MHz")
+                    freq_val = freq_val_hz / 1e3
 
                 idx = (np.abs(freqs - freq_val_hz)).argmin()
+
+                nearest_freq_hz = freqs[idx]
+
+                # --- Update the text field with the exact closest frequency ---
+                unit_factor = {"kHz": 1e3, "MHz": 1e6, "GHz": 1e9}[combo.currentText()]
+                nearest_val = nearest_freq_hz / unit_factor
+                edit.setText(f"{nearest_val:.2f}")
 
                 if graph_index == 0:
                     x, y = np.real(s11[idx]), np.imag(s11[idx])
@@ -387,27 +502,33 @@ class GraphPreviewExportDialog(QDialog):
 
                 mk_line, = ax.plot(x, y, marker='o', color=colors[i], markersize=8)
 
-                # --- Mostrar frecuencia automáticamente en GHz si corresponde ---
-                if unit.currentText() == "MHz" and freq_val >= 1000:
+                if combo.currentText() == "MHz" and freq_val >= 1000:
                     freq_val /= 1000
                     unit_display = "GHz"
                 else:
-                    unit_display = unit.currentText()
+                    unit_display = combo.currentText()
 
                 freq_display = f"{freq_val:.2f} {unit_display}"
 
-                # --- Texto del marcador ---
                 if graph_index == 0:
                     text = (
                         f"Marker {i+1}\n"
-                        f"Freq: {freq_display}\n"
+                        f"Freq: {nearest_val:.2f} {combo.currentText()}\n"
                         f"Re: {np.real(s11[idx]):.3f}\n"
                         f"Im: {np.imag(s11[idx]):.3f}"
                     )
                 elif graph_index in [1, 3]:
-                    text = f"Marker {i+1}\nFreq: {freq_display}\n|S|: {y:.3f} dB"
+                    text = (
+                        f"Marker {i+1}\n"
+                        f"Freq: {nearest_val:.2f} {combo.currentText()}\n"
+                        f"|S|: {y:.3f} dB"
+                    )
                 else:
-                    text = f"Marker {i+1}\nFreq: {freq_display}\nPhase: {y:.3f}°"
+                    text = (
+                        f"Marker {i+1}\n"
+                        f"Freq: {nearest_val:.2f} {combo.currentText()}\n"
+                        f"Phase: {y:.3f}°"
+                    )
 
                 ann = ax.annotate(
                     text,
@@ -416,10 +537,19 @@ class GraphPreviewExportDialog(QDialog):
                     bbox=dict(facecolor='white', edgecolor=colors[i], alpha=0.7),
                     color=colors[i]
                 )
-
+                
                 self.markers.append(mk_line)
                 self.annotations.append(ann)
                 self.marker_positions[graph_index][i] = (x, y)
+
+            else:
+                edit.setEnabled(False)
+                combo.setEnabled(False)
+                edit.setStyleSheet("background-color: lightgray; color: darkgray;")
+                
+                unit_factor = {"kHz": 1e3, "MHz": 1e6, "GHz": 1e9}[combo.currentText()]
+                default_val = self.freqs[0] / unit_factor
+                edit.setText(f"{default_val:.2f}")
 
         self._enable_drag_annotations()
         self.canvas.draw()
