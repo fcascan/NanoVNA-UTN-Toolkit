@@ -22,6 +22,12 @@ import skrf as rf
 import logging
 import copy
 
+plt.rcParams['mathtext.fontset'] = 'cm'  
+plt.rcParams['text.usetex'] = False       
+plt.rcParams['axes.labelsize'] = 12
+plt.rcParams['font.family'] = 'serif'    
+plt.rcParams['mathtext.rm'] = 'serif' 
+
 logger = logging.getLogger(__name__)
 
 class GraphPreviewExportDialog(QDialog):
@@ -74,7 +80,7 @@ class GraphPreviewExportDialog(QDialog):
         # --- Previous / Next buttons ---
         self.prev_button = NoEnterButton("← Previous")
         self.next_button = NoEnterButton("Next →")
-        
+
         self.prev_button.setFocusPolicy(Qt.NoFocus)
         self.next_button.setFocusPolicy(Qt.NoFocus)
         btn_style = """
@@ -102,11 +108,12 @@ class GraphPreviewExportDialog(QDialog):
         self.marker_freq_edits = {}  # key=graph_index, value=(edit1, combo1, edit2, combo2)
 
         for i in range(5):
+
             # --- Marker checkboxes ---
             marker1 = QCheckBox("Marker 1")
-            marker1.setStyleSheet("color: green; font-weight: bold;")
+            marker1.setStyleSheet("color: green; font-weight: bold; font-size: 12pt;")
             marker2 = QCheckBox("Marker 2")
-            marker2.setStyleSheet("color: orange; font-weight: bold;")
+            marker2.setStyleSheet("color: orange; font-weight: bold; font-size: 12pt;")
             marker1.stateChanged.connect(lambda _, idx=i: self._update_markers(idx))
             marker2.stateChanged.connect(lambda _, idx=i: self._update_markers(idx))
             self.marker_checkboxes[i] = (marker1, marker2)
@@ -206,7 +213,7 @@ class GraphPreviewExportDialog(QDialog):
         self.overlay_widget = QWidget(self.canvas)
         self.overlay_widget.setAttribute(Qt.WA_TransparentForMouseEvents, False)
         self.overlay_widget.setStyleSheet("background: transparent;")
-        self.overlay_widget.setGeometry(0, self.canvas.height() - 40, self.canvas.width(), 40)
+        self.overlay_widget.setGeometry(0, self.canvas.height() - 62  , self.canvas.width(), 40)
 
         # Layout for navigation buttons inside overlay
         overlay_layout = QHBoxLayout(self.overlay_widget)
@@ -222,6 +229,8 @@ class GraphPreviewExportDialog(QDialog):
 
         # --- Marker container centered below canvas ---
         main_layout.addWidget(marker_container, alignment=Qt.AlignCenter)
+
+        main_layout.addSpacing(15)
 
         # --- Export button ---
         self.export_button = QPushButton("Generate PDF Report")
@@ -308,7 +317,7 @@ class GraphPreviewExportDialog(QDialog):
             self.fig.subplots_adjust(left=0.05, right=0.95, top=0.9, bottom=0.1)
 
             # Set title for the Smith chart
-            self.ax.set_title("Smith Chart - S11", fontsize=12, weight="bold", pad=20)
+            self.ax.set_title(r"Smith Diagram - $S_{11}$", fontsize=12, pad=20)
             
             # Create a temporary network just for plotting the Smith chart background with labels
             dummy_freq = rf.Frequency(1, 10, 10, unit='GHz')
@@ -343,28 +352,28 @@ class GraphPreviewExportDialog(QDialog):
 
         elif index == 1:
             self.ax.plot(freqs, 20 * np.log10(np.abs(s11)), color="red", linewidth=1.3)
-            self.ax.set_title("Magnitude |S11| (dB)", fontsize=12, weight="bold", pad=12)
-            self.ax.set_xlabel("Frequency (Hz)")
-            self.ax.set_ylabel("|S11| (dB)")
+            self.ax.set_title(r"Magnitude $|S_{11}|$ (dB)", fontsize=12, pad=12)
+            self.ax.set_xlabel(r"Frequency (Hz)", fontsize=12)
+            self.ax.set_ylabel(r"$|S_{11}|$ (dB)")
             self.ax.grid(True, linestyle="--", alpha=0.6)
         elif index == 2:
             self.ax.plot(freqs, np.angle(s11, deg=True), color="red", linewidth=1.3)
-            self.ax.set_title("Phase S11 (°)", fontsize=12, weight="bold", pad=12)
-            self.ax.set_xlabel("Frequency (Hz)")
-            self.ax.set_ylabel("Phase (°)")
+            self.ax.set_title(r"Phase $S_{11}$ (°)", fontsize=12, pad=12)
+            self.ax.set_xlabel(r"Frequency (Hz)", fontsize=12)
+            self.ax.set_ylabel(r"$ \phi_{S_{11}} $ (°)", fontsize=12)
             self.ax.grid(True, linestyle="--", alpha=0.6)
         elif index == 3:
             self.ax.plot(freqs, 20*np.log10(np.abs(s21)), color="blue", linewidth=1.3)
-            self.ax.set_title("Magnitude |S21| (dB)", fontsize=12, weight="bold", pad=12)
-            self.ax.set_xlabel("Frequency (Hz)")
-            self.ax.set_ylabel("|S21| (dB)")
+            self.ax.set_title(r"Magnitude $|S_{21}|$ (dB)", fontsize=12, weight="bold", pad=12)
+            self.ax.set_xlabel(r"Frequency (Hz)", fontsize=12)
+            self.ax.set_ylabel(r"$|S_{21}|$ (dB)")
             self.ax.grid(True, linestyle="--", alpha=0.6)
         elif index == 4:
             phase_s21 = np.angle(np.exp(1j * freqs / 1e7), deg=True)
             self.ax.plot(freqs, phase_s21, color="blue", linewidth=1.3)
-            self.ax.set_title("Phase S21 (°)", fontsize=12, weight="bold", pad=12)
-            self.ax.set_xlabel("Frequency (Hz)")
-            self.ax.set_ylabel("Phase (°)")
+            self.ax.set_title(r"Phase $S_{21}$ (°)", fontsize=12, pad=12)
+            self.ax.set_xlabel(r"Frequency (Hz)", fontsize=12)
+            self.ax.set_ylabel(r"$ \phi_{S_{21}} $ (°)", fontsize=12)
             self.ax.grid(True, linestyle="--", alpha=0.6)
 
         self.canvas.draw()
@@ -425,10 +434,14 @@ class GraphPreviewExportDialog(QDialog):
     # --- Navigation ---
     def _show_next_graph(self):
         fig_copy = copy.deepcopy(self.fig)
-        self.saved_figures.append(fig_copy)
+        if len(self.saved_figures) <= self.current_figure:
+            self.saved_figures.append(fig_copy)
+        else:
+            self.saved_figures[self.current_figure] = fig_copy
 
         if self.current_graph_index < self.total_graphs - 1:
             self.current_graph_index += 1
+            self.current_figure += 1  
             self._plot_graph(self.current_graph_index)
             self._update_nav_buttons()
             self._update_marker_checkboxes()
@@ -437,10 +450,14 @@ class GraphPreviewExportDialog(QDialog):
 
     def _show_previous_graph(self):
         fig_copy = copy.deepcopy(self.fig)
-        self.saved_figures.append(fig_copy)
+        if len(self.saved_figures) <= self.current_figure:
+            self.saved_figures.append(fig_copy)
+        else:
+            self.saved_figures[self.current_figure] = fig_copy
 
         if self.current_graph_index > 0:
             self.current_graph_index -= 1
+            self.current_figure -= 1 
             self._plot_graph(self.current_graph_index)
             self._update_nav_buttons()
             self._update_marker_checkboxes()
@@ -540,17 +557,21 @@ class GraphPreviewExportDialog(QDialog):
                         f"Phase: {y:.3f}°"
                     )
 
+                ann_x, ann_y = self.marker_positions[graph_index][i] if self.marker_positions[graph_index][i] else (x, y)
+
                 ann = ax.annotate(
                     text,
                     xy=(x, y),
                     xycoords='data',
+                    xytext=(ann_x, ann_y),
                     bbox=dict(facecolor='white', edgecolor=colors[i], alpha=0.7),
                     color=colors[i]
                 )
-                
+
                 self.markers.append(mk_line)
                 self.annotations.append(ann)
-                self.marker_positions[graph_index][i] = (x, y)
+                prev_pos = self.marker_positions[graph_index][i]
+                self.marker_positions[graph_index][i] = prev_pos if prev_pos is not None else (x, y)
 
             else:
                 edit.setEnabled(False)

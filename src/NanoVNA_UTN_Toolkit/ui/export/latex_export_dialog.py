@@ -79,7 +79,7 @@ class LaTeXExportDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("NanoVNA UTN Toolkit - LaTeX PDF Export Setup")
         self.setModal(True)
-        self.setMinimumSize(500, 400)
+        self.setMinimumSize(500, 360)
         
         self.latex_available = False
         self.output_path = ""
@@ -146,18 +146,21 @@ class LaTeXExportDialog(QDialog):
         """Set up the output path selection group."""
         group = QGroupBox("Output Location")
         layout = QVBoxLayout(group)
-        
+
         # Path selection
         path_layout = QHBoxLayout()
-        
+
+        layout.addSpacing(10)
+
         self.path_edit = QLineEdit()
         self.path_edit.setPlaceholderText("Select output file location...")
         self.path_edit.setReadOnly(True)
-        path_layout.addWidget(self.path_edit)
-        
+
+        path_layout.addWidget(self.path_edit, alignment=Qt.AlignVCenter)
+
         self.browse_button = QPushButton("Browse...")
         self.browse_button.clicked.connect(self._browse_output_path)
-        path_layout.addWidget(self.browse_button)
+        path_layout.addWidget(self.browse_button, alignment=Qt.AlignVCenter)
         
         layout.addLayout(path_layout)
         
@@ -169,6 +172,9 @@ class LaTeXExportDialog(QDialog):
         parent_layout.addWidget(group)
     
     def _setup_buttons(self, parent_layout):
+
+        parent_layout.addSpacing(15)
+
         """Set up the dialog buttons."""
         button_layout = QHBoxLayout()
         button_layout.addStretch()

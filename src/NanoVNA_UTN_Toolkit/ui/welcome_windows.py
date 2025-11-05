@@ -247,7 +247,7 @@ class NanoVNAWelcome(QMainWindow):
             logging.warning("[CalibrationWizard] THRUCalibrationManager not available")
 
         self.setWindowTitle("NanoVNA UTN Toolkit - Welcome Window")
-        self.setGeometry(100, 100, 1000, 700)
+        self.setGeometry(100, 100, 1000, 500)
 
         # === Central widget and main layout ===
         central_widget = QWidget()
@@ -290,7 +290,7 @@ class NanoVNAWelcome(QMainWindow):
         # Calibration wizard button
         self.calibration_wizard_button = QPushButton("Open Calibration Wizard")
         self.calibration_wizard_button.clicked.connect(self.open_calibration_wizard)
-        self.calibration_wizard_button.setFixedHeight(45)
+        self.calibration_wizard_button.setFixedHeight(50)
         self.calibration_wizard_button.setStyleSheet("font-size: 16px; margin: 10px;")
         calibration_layout.addWidget(self.calibration_wizard_button, alignment=Qt.AlignCenter)
 
@@ -483,14 +483,14 @@ class NanoVNAWelcome(QMainWindow):
         # Graphics button
         self.graphics_button = QPushButton("Open Graphics Window")
         self.graphics_button.clicked.connect(self.graphics_clicked)
-        self.graphics_button.setFixedHeight(45)
+        self.graphics_button.setFixedHeight(50)
         self.graphics_button.setStyleSheet("font-size: 16px; margin: 10px;")
         button_layout.addWidget(self.graphics_button)
 
         # Import calibration button
         self.import_button = QPushButton("Import Calibration")
         self.import_button.clicked.connect(self.import_calibration)
-        self.import_button.setFixedHeight(45)
+        self.import_button.setFixedHeight(50)
         self.import_button.setStyleSheet("font-size: 16px; margin: 10px;")
         button_layout.addWidget(self.import_button)
 

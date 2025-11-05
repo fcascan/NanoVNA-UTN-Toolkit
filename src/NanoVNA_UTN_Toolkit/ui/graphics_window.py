@@ -592,6 +592,7 @@ class NanoVNAGraphics(QMainWindow):
                     QWidget {
                         background-color: #7f7f7f;
                     }
+                    
                     QTabWidget::pane {
                         background-color: #6f6f6f; 
                     }
@@ -618,6 +619,9 @@ class NanoVNAGraphics(QMainWindow):
                     }
                     QLabel {
                         color: white;  
+                    }
+                    QTextEdit {
+                        color: white;
                     }
                     QLineEdit {
                         background-color: #6f6f6f;
@@ -824,6 +828,9 @@ class NanoVNAGraphics(QMainWindow):
                         color: black; 
                     }
                     QLabel {
+                        color: black;
+                    }
+                    QTextEdit {
                         color: black;
                     }
                     QLineEdit {
