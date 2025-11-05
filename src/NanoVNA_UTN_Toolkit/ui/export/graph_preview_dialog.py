@@ -233,22 +233,49 @@ class GraphPreviewExportDialog(QDialog):
         self.fig.clear()
         self.ax = self.fig.add_subplot(111)
         self.ax.set_facecolor("white")
-        self.fig.subplots_adjust(left=0.15, right=0.95, top=0.9, bottom=0.18)
+        self.fig.subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.18)
 
         freqs = self.freqs if self.freqs is not None else np.linspace(1e6, 1e8, 100)
         s11 = self.s11_data if self.s11_data is not None else np.exp(1j * np.linspace(0, 2*np.pi, 100))
         s21 = self.s21_data if self.s21_data is not None else 20 * np.log10(np.abs(np.sin(freqs / 1e8 * np.pi)))
 
         if index == 0:
+            self.fig.subplots_adjust(left=0.05, right=0.95, top=0.9, bottom=0.1)
+
+            # Set title for the Smith chart
             self.ax.set_title("Smith Chart - S11", fontsize=12, weight="bold", pad=20)
-            rf.plotting.smith(ax=self.ax, smithR=1)
+            
+            # Create a temporary network just for plotting the Smith chart background with labels
+            dummy_freq = rf.Frequency(1, 10, 10, unit='GHz')
+            dummy_s = np.zeros((10, 1, 1), dtype=complex)
+            dummy_ntw = rf.Network(frequency=dummy_freq, s=dummy_s)
+            
+            # Plot the Smith chart grid with labels in black, without adding legend entry
+            dummy_ntw.plot_s_smith(ax=self.ax, draw_labels=True, color='black', lw=0.5, label=None)
+            
+            # Plot actual S11 data on top
             gamma = s11
-            self.ax.plot(np.real(gamma), np.imag(gamma), color="red", linewidth=1.2)
+            line, = self.ax.plot(np.real(gamma), np.imag(gamma), color="red", linewidth=1.2, label="S11")
+            
+            # Adjust appearance
             self.ax.set_aspect("equal", adjustable="box")
             self.ax.set_xlim(-1.1, 1.1)
             self.ax.set_ylim(-1.1, 1.1)
-            self.ax.set_xticks([])
-            self.ax.set_yticks([])
+            self.ax.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+
+            # Custom legend showing only the S11 trace
+            legend = self.ax.legend(
+                handles=[line],
+                loc="upper left",
+                fontsize=9,
+                facecolor="white",
+                edgecolor="black",
+                framealpha=1,
+                title=None
+            )
+            legend.set_draggable(True)
+
+
         elif index == 1:
             self.ax.plot(freqs, 20 * np.log10(np.abs(s11)), color="red", linewidth=1.3)
             self.ax.set_title("Magnitude |S11| (dB)", fontsize=12, weight="bold", pad=12)
@@ -291,7 +318,6 @@ class GraphPreviewExportDialog(QDialog):
 
         self.export_button.setEnabled(self.current_graph_index == self.total_graphs - 1)
 
-
     def _show_previous_graph(self):
         fig_copy = copy.deepcopy(self.fig)
         self.saved_figures.append(fig_copy)
@@ -321,7 +347,6 @@ class GraphPreviewExportDialog(QDialog):
         marker1, marker2 = self.marker_checkboxes[graph_index]
         self.marker_active[graph_index] = [marker1.isChecked(), marker2.isChecked()]
 
-        # Limpiar markers antiguos
         for ann in getattr(self, "annotations", []):
             ann.set_visible(False)
         for mk in getattr(self, "markers", []):
