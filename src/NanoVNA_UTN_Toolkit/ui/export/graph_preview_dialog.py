@@ -354,7 +354,7 @@ class GraphPreviewExportDialog(QDialog):
         self.annotations = []
         self.markers = []
 
-        colors = ["red", "blue"]
+        colors = ["green", "orange"]
         edits = self.marker_freq_edits[graph_index]
 
         for i, active in enumerate(self.marker_active[graph_index]):
@@ -488,12 +488,14 @@ class GraphPreviewExportDialog(QDialog):
     def _save_current_graph(self):
         if not hasattr(self, "saved_figures"):
             self.saved_figures = []
-        self.saved_figures.append(self.current_figure)
-        self.current_figure = self.current_figure + 1
+        fig_copy = copy.deepcopy(self.fig)
+        self.saved_figures.append(fig_copy)
 
     # --- PDF Export ---
     def _generate_pdf(self):
         try:
+            self._save_current_graph()
+
             from NanoVNA_UTN_Toolkit.exporters.latex_exporter import LatexExporter
             exporter = LatexExporter(figures=self.saved_figures)
             if not self.output_path:
