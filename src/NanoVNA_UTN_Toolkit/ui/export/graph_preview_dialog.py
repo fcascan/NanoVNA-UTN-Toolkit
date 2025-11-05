@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class GraphPreviewExportDialog(QDialog):
     def __init__(self, parent=None, freqs=None, s11_data=None, s21_data=None,
-                 measurement_name=None, output_path=None):
+             measurement_name=None, output_path=None):
         super().__init__(parent)
         self.freqs = freqs
         self.s11_data = s11_data
@@ -64,24 +64,19 @@ class GraphPreviewExportDialog(QDialog):
         label.setAlignment(Qt.AlignCenter)
         main_layout.addWidget(label)
 
-        # --- Create figure and canvas
+        # --- Create figure and canvas ---
         self.fig, self.ax = plt.subplots(figsize=(6, 5))
         self.fig.patch.set_facecolor("white")
         self.ax.set_facecolor("white")
         self.fig.subplots_adjust(left=0.15, right=0.95, top=0.9, bottom=0.18)
         self.canvas = FigureCanvas(self.fig)
 
-        # --- Canvas container
-        self.canvas_container = QWidget()
-        self.canvas_container.setStyleSheet("background-color: white;")
-        layout = QVBoxLayout(self.canvas_container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.canvas)
-        main_layout.addWidget(self.canvas_container, alignment=Qt.AlignCenter)
-
-        # --- Previous / Next buttons
-        self.prev_button = QPushButton("← Previous")
-        self.next_button = QPushButton("Next →")
+        # --- Previous / Next buttons ---
+        self.prev_button = NoEnterButton("← Previous")
+        self.next_button = NoEnterButton("Next →")
+        
+        self.prev_button.setFocusPolicy(Qt.NoFocus)
+        self.next_button.setFocusPolicy(Qt.NoFocus)
         btn_style = """
             QPushButton {
                 background-color: rgba(245, 245, 245, 0.9);
@@ -102,7 +97,7 @@ class GraphPreviewExportDialog(QDialog):
         self.prev_button.setStyleSheet(btn_style)
         self.next_button.setStyleSheet(btn_style)
 
-        # --- Marker checkboxes y frecuencia inputs
+        # --- Marker checkboxes and frequency inputs
         self.marker_checkboxes = {}  # key=graph_index, value=(marker1, marker2)
         self.marker_freq_edits = {}  # key=graph_index, value=(edit1, combo1, edit2, combo2)
 
@@ -160,37 +155,32 @@ class GraphPreviewExportDialog(QDialog):
                     if val < 50:
                         val = 50
                     val = min(max(val, min_u), max_u)
-                    text = f"{val:.2f}"  # up to 3 digits + decimals
+                    text = f"{val:.2f}"
                 elif unit == "MHz":
                     val = min(max(val, min_u), max_u)
-                    text = f"{val:.2f}" # up to 3 digits + decimals
+                    text = f"{val:.2f}"
                 elif unit == "GHz":
                     if val > 1.5:
                         val = 1.5
                     val = min(max(val, min_u), max_u)
-                    text = f"{val:.2f}"  # 1 digit + decimals
+                    text = f"{val:.2f}"
                 else:
                     text = f"{val:.2f}"
 
                 edit.setText(text)
 
             # --- Connect editing events ---
-            edit1.editingFinished.connect(lambda e=edit1, c=combo1: (validate_input(e, c), self._on_marker_input_changed()))
+            edit1.editingFinished.connect(lambda e=edit1, c=combo1: validate_input(e, c) or self._on_marker_input_changed())
+            edit2.editingFinished.connect(lambda e=edit2, c=combo2: validate_input(e, c) or self._on_marker_input_changed())
+
             combo1.currentIndexChanged.connect(self._on_marker_input_changed)
-            edit2.editingFinished.connect(lambda e=edit2, c=combo2: (validate_input(e, c), self._on_marker_input_changed()))
             combo2.currentIndexChanged.connect(self._on_marker_input_changed)
 
             # --- Store marker input references ---
             self.marker_freq_edits[i] = (edit1, combo1, edit2, combo2)
 
-            edit1.editingFinished.connect(lambda: self.on_edit_finished(edit1, combo1))
-            combo1.currentIndexChanged.connect(self._on_marker_input_changed)
-            edit2.editingFinished.connect(lambda: self.on_edit_finished(edit2, combo2))
-            combo2.currentIndexChanged.connect(self._on_marker_input_changed)
-   
-            self.marker_freq_edits[i] = (edit1, combo1, edit2, combo2)
 
-        # --- Layout para markers y sus inputs
+        # --- Layout for markers and their inputs ---
         self.marker_layout = QHBoxLayout()
         self.marker_layout.setContentsMargins(0, 0, 0, 0)
         self.marker_layout.setSpacing(20)
@@ -203,19 +193,37 @@ class GraphPreviewExportDialog(QDialog):
         marker_container_layout.addLayout(self.marker_layout)
         marker_container_layout.addStretch()
 
-        # --- Navigation + marker layout
-        nav_marker_layout = QHBoxLayout()
-        nav_marker_layout.setContentsMargins(15, 5, 15, 5)
-        nav_marker_layout.setSpacing(10)
-        nav_marker_layout.addWidget(self.prev_button)
-        nav_marker_layout.addStretch()
-        nav_marker_layout.addWidget(marker_container)
-        nav_marker_layout.addStretch()
-        nav_marker_layout.addWidget(self.next_button)
+        # --- Canvas container with navigation buttons inside ---
+        self.canvas_container = QWidget()
+        canvas_layout = QVBoxLayout(self.canvas_container)
+        canvas_layout.setContentsMargins(0, 0, 0, 0)
+        canvas_layout.setSpacing(0)
 
-        main_layout.addLayout(nav_marker_layout)
+        # Add the Matplotlib canvas
+        canvas_layout.addWidget(self.canvas)
 
-        # --- Export button
+        # --- Create an overlay widget on top of canvas for buttons ---
+        self.overlay_widget = QWidget(self.canvas)
+        self.overlay_widget.setAttribute(Qt.WA_TransparentForMouseEvents, False)
+        self.overlay_widget.setStyleSheet("background: transparent;")
+        self.overlay_widget.setGeometry(0, self.canvas.height() - 40, self.canvas.width(), 40)
+
+        # Layout for navigation buttons inside overlay
+        overlay_layout = QHBoxLayout(self.overlay_widget)
+        overlay_layout.setContentsMargins(10, 5, 10, 5)
+        overlay_layout.addWidget(self.prev_button, alignment=Qt.AlignLeft)
+        overlay_layout.addStretch()
+        overlay_layout.addWidget(self.next_button, alignment=Qt.AlignRight)
+
+        main_layout.addWidget(self.canvas_container, alignment=Qt.AlignCenter)
+
+        # --- Add a small vertical spacing between canvas and markers ---
+        main_layout.addSpacing(10)  # small gap
+
+        # --- Marker container centered below canvas ---
+        main_layout.addWidget(marker_container, alignment=Qt.AlignCenter)
+
+        # --- Export button ---
         self.export_button = QPushButton("Generate PDF Report")
         self.export_button.setEnabled(False)
         self.export_button.setStyleSheet("""
@@ -232,17 +240,19 @@ class GraphPreviewExportDialog(QDialog):
         main_layout.addWidget(self.export_button, alignment=Qt.AlignCenter)
         main_layout.addStretch()
 
-        # --- Connect navigation
+        # --- Connect navigation ---
         self.prev_button.clicked.connect(self._show_previous_graph)
         self.next_button.clicked.connect(self._show_next_graph)
 
-        # --- Initial plot
+        # --- Initial plot ---
         self._plot_graph(self.current_graph_index)
         self._update_marker_checkboxes()
         self._update_markers()
         self._update_nav_buttons()
 
+
     def _on_marker_input_changed(self):
+        """Update markers for the current graph only, without changing graphs."""
         self._update_markers(self.current_graph_index)
         self.canvas.draw_idle()
 
@@ -671,3 +681,12 @@ class GraphPreviewExportDialog(QDialog):
             logger.exception("PDF export failed")
             QMessageBox.critical(self, "Export Failed",
                                  f"Error creating PDF:\n{str(e)}")
+
+class NoEnterButton(QPushButton):
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            # Ignora solo si el botón tiene foco
+            if self.hasFocus():
+                event.ignore()  # dejar que el QLineEdit reciba Enter si tiene foco
+        else:
+            super().keyPressEvent(event)
