@@ -359,13 +359,19 @@ class GraphPreviewExportDialog(QDialog):
 
         for i, active in enumerate(self.marker_active[graph_index]):
             if active:
-                edit, unit = (edits[0], edits[1]) if i==0 else (edits[2], edits[3])
-                try:
-                    freq_val = float(edit.text()) * {"kHz":1e3, "MHz":1e6, "GHz":1e9}[unit.currentText()]
-                except:
-                    freq_val = freqs[len(freqs)//3 if i==0 else 2*len(freqs)//3]
+                edit, unit = (edits[0], edits[1]) if i == 0 else (edits[2], edits[3])
 
-                idx = (np.abs(freqs - freq_val)).argmin()
+                try:
+                    freq_val = float(edit.text())
+                    unit_factor = {"kHz": 1e3, "MHz": 1e6, "GHz": 1e9}[unit.currentText()]
+                    freq_val_hz = freq_val * unit_factor
+                except Exception:
+                    freq_val_hz = freqs[len(freqs)//3 if i == 0 else 2*len(freqs)//3]
+                    freq_val = freq_val_hz / 1e6
+                    unit.setCurrentText("MHz")
+
+                idx = (np.abs(freqs - freq_val_hz)).argmin()
+
                 if graph_index == 0:
                     x, y = np.real(s11[idx]), np.imag(s11[idx])
                 elif graph_index == 1:
@@ -380,12 +386,27 @@ class GraphPreviewExportDialog(QDialog):
 
                 mk_line, = ax.plot(x, y, marker='o', color=colors[i], markersize=8)
 
-                if graph_index == 0:
-                    text = f"Marker {i+1}\nRe: {np.real(s11[idx]):.3f}\nIm: {np.imag(s11[idx]):.3f}"
-                elif graph_index in [1,3]:
-                    text = f"Marker {i+1}\nFreq: {x:.2f}\n|S|: {y:.3f} dB"
+                # --- Mostrar frecuencia automáticamente en GHz si corresponde ---
+                if unit.currentText() == "MHz" and freq_val >= 1000:
+                    freq_val /= 1000
+                    unit_display = "GHz"
                 else:
-                    text = f"Marker {i+1}\nFreq: {x:.2f}\nPhase: {y:.3f}°"
+                    unit_display = unit.currentText()
+
+                freq_display = f"{freq_val:.2f} {unit_display}"
+
+                # --- Texto del marcador ---
+                if graph_index == 0:
+                    text = (
+                        f"Marker {i+1}\n"
+                        f"Freq: {freq_display}\n"
+                        f"Re: {np.real(s11[idx]):.3f}\n"
+                        f"Im: {np.imag(s11[idx]):.3f}"
+                    )
+                elif graph_index in [1, 3]:
+                    text = f"Marker {i+1}\nFreq: {freq_display}\n|S|: {y:.3f} dB"
+                else:
+                    text = f"Marker {i+1}\nFreq: {freq_display}\nPhase: {y:.3f}°"
 
                 ann = ax.annotate(
                     text,
