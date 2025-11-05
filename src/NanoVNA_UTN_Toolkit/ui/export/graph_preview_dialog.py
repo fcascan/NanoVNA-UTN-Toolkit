@@ -189,7 +189,8 @@ class GraphPreviewExportDialog(QDialog):
         self._update_nav_buttons()
 
     def _on_marker_input_changed(self):
-        self._update_markers(self.current_graph_index+1)
+        self._update_markers(self.current_graph_index)
+        self.canvas.draw_idle()
 
     # --- Update marker checkboxes + frequency edits
     def _update_marker_checkboxes(self):
