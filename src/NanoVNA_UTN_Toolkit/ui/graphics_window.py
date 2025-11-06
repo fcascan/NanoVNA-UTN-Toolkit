@@ -4210,9 +4210,28 @@ class NanoVNAGraphics(QMainWindow):
             logging.info(f"[graphics_window.run_sweep] Frequency range: {self.start_freq_hz/1e6:.3f} MHz - {self.stop_freq_hz/1e6:.3f} MHz")
             logging.info(f"[graphics_window.run_sweep] Number of points: {self.segments}")
             
-            # Validate sweep parameters
-            if self.segments < 11 or self.segments > 101:
-                error_msg = f"Invalid number of sweep points: {self.segments}. Must be between 11 and 101."
+            # Validate sweep parameters - get device limits dynamically
+            default_min = 11
+            default_max = 1023
+            
+            # Get device-specific limits
+            if self.vna_device:
+                sweep_min = getattr(self.vna_device, 'sweep_points_min', default_min)
+                
+                # Check if device has valid_datapoints and use the maximum from there if available
+                if hasattr(self.vna_device, 'valid_datapoints') and self.vna_device.valid_datapoints:
+                    sweep_max = max(self.vna_device.valid_datapoints)
+                    logging.info(f"[graphics_window.run_sweep] Using max from valid_datapoints: {sweep_max}")
+                else:
+                    sweep_max = getattr(self.vna_device, 'sweep_points_max', default_max)
+                    logging.info(f"[graphics_window.run_sweep] Using sweep_points_max: {sweep_max}")
+            else:
+                sweep_min = default_min
+                sweep_max = default_max
+                logging.warning(f"[graphics_window.run_sweep] No VNA device, using default limits: {sweep_min}-{sweep_max}")
+            
+            if self.segments < sweep_min or self.segments > sweep_max:
+                error_msg = f"Invalid number of sweep points: {self.segments}. Must be between {sweep_min} and {sweep_max}."
                 QMessageBox.warning(self, "Invalid Parameters", error_msg)
                 logging.error(f"[graphics_window.run_sweep] {error_msg}")
                 self._reset_sweep_ui()
@@ -4231,21 +4250,212 @@ class NanoVNAGraphics(QMainWindow):
             
             # Configure VNA sweep parameters
             logging.info(f"[graphics_window.run_sweep] Setting datapoints to {self.segments}")
+            
+            # Ensure the datapoints value is in the valid range for this device
+            if hasattr(self.vna_device, 'valid_datapoints') and self.vna_device.valid_datapoints:
+                if self.segments not in self.vna_device.valid_datapoints:
+                    # Find the closest valid value
+                    valid_points = sorted(self.vna_device.valid_datapoints)
+                    closest = min(valid_points, key=lambda x: abs(x - self.segments))
+                    logging.warning(f"[graphics_window.run_sweep] Requested {self.segments} points not valid for device")
+                    logging.warning(f"[graphics_window.run_sweep] Using closest valid value: {closest}")
+                    self.segments = closest
+            
+            # DEBUG: Check device datapoints before we change it
+            old_datapoints = getattr(self.vna_device, 'datapoints', 'not_set')
+            logging.info(f"[graphics_window.run_sweep] Device datapoints BEFORE setting: {old_datapoints}")
+            
             self.vna_device.datapoints = self.segments
+            
+            # DEBUG: Verify it was set immediately
+            new_datapoints = getattr(self.vna_device, 'datapoints', 'not_set')
+            logging.info(f"[graphics_window.run_sweep] Device datapoints AFTER setting: {new_datapoints}")
+            
+            if new_datapoints != self.segments:
+                logging.error(f"[graphics_window.run_sweep] CRITICAL ERROR: Failed to set datapoints! Expected {self.segments}, got {new_datapoints}")
+            
             self.sweep_progress_bar.setValue(20)
             QApplication.processEvents()
             
-            # Set sweep range
-            logging.info(f"[graphics_window.run_sweep] Setting sweep range: {self.start_freq_hz} - {self.stop_freq_hz} Hz")
-            self.vna_device.setSweep(self.start_freq_hz, self.stop_freq_hz)
+            # Reset and set sweep range (more robust than just setSweep)
+            logging.info(f"[graphics_window.run_sweep] Resetting sweep range: {self.start_freq_hz} - {self.stop_freq_hz} Hz")
+            
+            # DEBUG: Check datapoints before resetSweep
+            before_reset = getattr(self.vna_device, 'datapoints', 'not_set')
+            logging.info(f"[graphics_window.run_sweep] Device datapoints BEFORE resetSweep: {before_reset}")
+            
+            # Calculate expected step for verification
+            expected_step = (self.stop_freq_hz - self.start_freq_hz) / (self.segments - 1)
+            logging.info(f"[graphics_window.run_sweep] Expected step size: {expected_step:.2f} Hz")
+            
+            self.vna_device.resetSweep(self.start_freq_hz, self.stop_freq_hz)
+            
+            # DEBUG: Check datapoints and sweep parameters after resetSweep
+            after_reset = getattr(self.vna_device, 'datapoints', 'not_set')
+            actual_start = getattr(self.vna_device, 'sweepStartHz', 'not_set')
+            actual_step = getattr(self.vna_device, 'sweepStepHz', 'not_set')
+            logging.info(f"[graphics_window.run_sweep] Device datapoints AFTER resetSweep: {after_reset}")
+            logging.info(f"[graphics_window.run_sweep] Device sweepStartHz AFTER resetSweep: {actual_start}")
+            logging.info(f"[graphics_window.run_sweep] Device sweepStepHz AFTER resetSweep: {actual_step}")
+            
+            if after_reset != before_reset:
+                logging.error(f"[graphics_window.run_sweep] WARNING: resetSweep changed datapoints from {before_reset} to {after_reset}")
+            
+            # Verify the step calculation
+            if isinstance(actual_step, (int, float)) and isinstance(expected_step, (int, float)):
+                step_diff = abs(actual_step - expected_step)
+                if step_diff > expected_step * 0.01:  # More than 1% difference
+                    logging.error(f"[graphics_window.run_sweep] STEP CALCULATION ERROR: Expected {expected_step:.2f}, got {actual_step:.2f}")
+                    logging.error(f"[graphics_window.run_sweep] This suggests datapoints was wrong during setSweep calculation")
+            
+            self.sweep_progress_bar.setValue(30)
+            QApplication.processEvents()
+            
+            # Add a small delay to allow device to process the configuration
+            import time
+            time.sleep(0.2)  # Increased delay for more reliable configuration
+            
+            # Verify datapoints configuration
+            actual_datapoints = getattr(self.vna_device, 'datapoints', 'unknown')
+            logging.info(f"[graphics_window.run_sweep] Verified datapoints configuration: {actual_datapoints}")
+            
+            # Double-check that the configuration matches our request
+            if actual_datapoints != self.segments:
+                logging.error(f"[graphics_window.run_sweep] Configuration mismatch! Expected {self.segments}, device has {actual_datapoints}")
+                # Try to fix it - FORCE the configuration
+                logging.info(f"[graphics_window.run_sweep] FORCING datapoints configuration to {self.segments}")
+                self.vna_device.datapoints = self.segments
+                
+                # Also force the configuration in any underlying device
+                if hasattr(self.vna_device, '_vna') and hasattr(self.vna_device._vna, 'datapoints'):
+                    self.vna_device._vna.datapoints = self.segments
+                    logging.info(f"[graphics_window.run_sweep] Also set _vna.datapoints to {self.segments}")
+                
+                time.sleep(0.1)
+                actual_datapoints = getattr(self.vna_device, 'datapoints', 'unknown')
+                logging.info(f"[graphics_window.run_sweep] After forced correction: {actual_datapoints}")
+                
+                # If it still doesn't match, there's a deeper issue
+                if actual_datapoints != self.segments:
+                    logging.error(f"[graphics_window.run_sweep] CRITICAL: Unable to set datapoints to {self.segments}, device stubbornly has {actual_datapoints}")
+            
+            # Check if the sweep parameters are consistent with our datapoints
+            current_start = getattr(self.vna_device, 'sweepStartHz', None)
+            current_step = getattr(self.vna_device, 'sweepStepHz', None)
+            
+            if current_start is not None and current_step is not None:
+                # Calculate what the step SHOULD be based on our configuration
+                expected_step = (self.stop_freq_hz - self.start_freq_hz) / (self.segments - 1)
+                step_diff = abs(current_step - expected_step) if isinstance(current_step, (int, float)) else float('inf')
+                
+                if step_diff > expected_step * 0.05:  # More than 5% difference
+                    logging.error(f"[graphics_window.run_sweep] SWEEP PARAMETER MISMATCH!")
+                    logging.error(f"[graphics_window.run_sweep] Current step: {current_step}, Expected step: {expected_step:.2f}")
+                    logging.error(f"[graphics_window.run_sweep] This indicates setSweep used wrong datapoints. Recalculating...")
+                    
+                    # FORCE the datapoints for setSweep by setting the _forced_datapoints attribute ON THE REAL DEVICE
+                    if hasattr(self.vna_device, '_vna'):
+                        self.vna_device._vna._forced_datapoints = self.segments
+                        logging.info(f"[graphics_window.run_sweep] Set _forced_datapoints to {self.segments} on REAL device (_vna)")
+                    else:
+                        self.vna_device._forced_datapoints = self.segments
+                        logging.info(f"[graphics_window.run_sweep] Set _forced_datapoints to {self.segments} on wrapper device")
+                    
+                    # Force recalculation by calling setSweep again with correct datapoints
+                    self.vna_device.datapoints = self.segments  # Ensure it's set
+                    time.sleep(0.05)
+                    self.vna_device.setSweep(self.start_freq_hz, self.stop_freq_hz)
+                    time.sleep(0.1)
+                    
+                    # Verify the fix
+                    new_start = getattr(self.vna_device, 'sweepStartHz', None)
+                    new_step = getattr(self.vna_device, 'sweepStepHz', None)
+                    logging.info(f"[graphics_window.run_sweep] After setSweep recalculation: start={new_start}, step={new_step}")
+            
             self.sweep_progress_bar.setValue(40)
             QApplication.processEvents()
             
             # Read frequency points
             logging.info("[graphics_window.run_sweep] Reading frequency points...")
+            
+            # CRITICAL: One final check of datapoints before reading frequencies
+            final_datapoints = getattr(self.vna_device, 'datapoints', 'not_found')
+            logging.info(f"[graphics_window.run_sweep] FINAL datapoints check before read_frequencies: {final_datapoints}")
+            
+            if final_datapoints != self.segments:
+                logging.error(f"[graphics_window.run_sweep] EMERGENCY: datapoints changed to {final_datapoints} just before read_frequencies!")
+                logging.error(f"[graphics_window.run_sweep] EMERGENCY: Expected {self.segments}, forcing one last time...")
+                self.vna_device.datapoints = self.segments
+                final_datapoints = getattr(self.vna_device, 'datapoints', 'not_found')
+                logging.info(f"[graphics_window.run_sweep] EMERGENCY correction result: {final_datapoints}")
+            
+            # NUCLEAR OPTION: Force complete reconfiguration if still wrong
+            if final_datapoints != self.segments:
+                logging.error(f"[graphics_window.run_sweep] NUCLEAR OPTION: Forcing complete device reconfiguration")
+                
+                # Force set datapoints multiple times with delays
+                for attempt in range(3):
+                    self.vna_device.datapoints = self.segments
+                    import time
+                    time.sleep(0.05)
+                    check_value = getattr(self.vna_device, 'datapoints', 'failed')
+                    logging.info(f"[graphics_window.run_sweep] Nuclear attempt {attempt + 1}: set to {self.segments}, device has {check_value}")
+                    if check_value == self.segments:
+                        break
+                
+                # Force call setSweep again to recalculate with correct datapoints
+                logging.error(f"[graphics_window.run_sweep] NUCLEAR: Forcing setSweep recalculation")
+                self.vna_device.setSweep(self.start_freq_hz, self.stop_freq_hz)
+                time.sleep(0.1)
+                
+                # Final verification
+                nuclear_datapoints = getattr(self.vna_device, 'datapoints', 'failed')
+                nuclear_start = getattr(self.vna_device, 'sweepStartHz', 'failed')
+                nuclear_step = getattr(self.vna_device, 'sweepStepHz', 'failed')
+                logging.info(f"[graphics_window.run_sweep] NUCLEAR RESULT: datapoints={nuclear_datapoints}, start={nuclear_start}, step={nuclear_step}")
+            
+            # Add detailed debugging before reading frequencies
+            device_datapoints = getattr(self.vna_device, 'datapoints', 'not_found')
+            logging.info(f"[graphics_window.run_sweep] Device datapoints before read_frequencies: {device_datapoints}")
+            logging.info(f"[graphics_window.run_sweep] Expected segments: {self.segments}")
+            
+            # Check if device has the expected attributes
+            if hasattr(self.vna_device, 'sweepStartHz'):
+                logging.info(f"[graphics_window.run_sweep] Device sweepStartHz: {self.vna_device.sweepStartHz}")
+            if hasattr(self.vna_device, 'sweepStepHz'):
+                logging.info(f"[graphics_window.run_sweep] Device sweepStepHz: {self.vna_device.sweepStepHz}")
+            
+            # FORCE the datapoints for read_frequencies
+            logging.info(f"[graphics_window.run_sweep] Set _forced_datapoints_read to {self.segments} for read_frequencies")
+            # Set forcing attribute ON THE REAL DEVICE
+            if hasattr(self.vna_device, '_vna'):
+                self.vna_device._vna._forced_datapoints_read = self.segments
+                logging.info(f"[graphics_window.run_sweep] Set _forced_datapoints_read to {self.segments} on REAL device (_vna)")
+            else:
+                self.vna_device._forced_datapoints_read = self.segments
+                logging.info(f"[graphics_window.run_sweep] Set _forced_datapoints_read to {self.segments} on wrapper device")
+            
             freqs_data = self.vna_device.read_frequencies()
             freqs = np.array(freqs_data)
             logging.info(f"[graphics_window.run_sweep] Got {len(freqs)} frequency points")
+            
+            # Verify that we got the expected number of points
+            if len(freqs) != self.segments:
+                logging.warning(f"[graphics_window.run_sweep] Expected {self.segments} frequency points, but got {len(freqs)}")
+                logging.warning(f"[graphics_window.run_sweep] This may indicate a device configuration issue")
+                
+                # Debug the mismatch
+                if hasattr(self.vna_device, 'datapoints'):
+                    actual_device_datapoints = self.vna_device.datapoints
+                    logging.error(f"[graphics_window.run_sweep] CRITICAL: Device datapoints is {actual_device_datapoints}, but segments is {self.segments}")
+                    if actual_device_datapoints != self.segments:
+                        logging.error(f"[graphics_window.run_sweep] FOUND THE BUG: Device datapoints ({actual_device_datapoints}) != segments ({self.segments})")
+                
+                # For now, continue with the data we got, but log the discrepancy
+                logging.info(f"[graphics_window.run_sweep] Continuing with {len(freqs)} points from device")
+            else:
+                logging.info(f"[graphics_window.run_sweep] ✓ Frequency points match expected count: {len(freqs)}")
+            
             self.sweep_progress_bar.setValue(60)
             QApplication.processEvents()
             
@@ -4255,6 +4465,11 @@ class NanoVNAGraphics(QMainWindow):
             s11_med = np.array(s11_data)
 
             logging.info(f"[graphics_window.run_sweep] Got {len(s11_med)} S11 data points")
+            if len(s11_med) != self.segments:
+                logging.warning(f"[graphics_window.run_sweep] Expected {self.segments} S11 points, but got {len(s11_med)}")
+            else:
+                logging.info(f"[graphics_window.run_sweep] ✓ S11 points match expected count: {len(s11_med)}")
+            
             self.sweep_progress_bar.setValue(80)
             QApplication.processEvents()
             
@@ -4264,6 +4479,11 @@ class NanoVNAGraphics(QMainWindow):
             s21_med = np.array(s21_data)
 
             logging.info(f"[graphics_window.run_sweep] Got {len(s21_med)} S21 data points")
+            if len(s21_med) != self.segments:
+                logging.warning(f"[graphics_window.run_sweep] Expected {self.segments} S21 points, but got {len(s21_med)}")
+            else:
+                logging.info(f"[graphics_window.run_sweep] ✓ S21 points match expected count: {len(s21_med)}")
+            
             self.sweep_progress_bar.setValue(90)
             QApplication.processEvents()
 

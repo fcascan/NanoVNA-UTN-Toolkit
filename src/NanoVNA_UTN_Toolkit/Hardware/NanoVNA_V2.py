@@ -121,10 +121,13 @@ class NanoVNA_V2(VNA):
         # TODO: more than one dp per freq
         self.features.add("Multi data points")
         self.board_revision = self.read_board_revision()
+        
+        # Set frequency limits for this device
+        self.sweep_min_freq_hz = 50000  # 50 kHz minimum
         if self.board_revision >= Version.parse("2.0.4"):
-            self.sweep_max_freq_hz = 4400e6
+            self.sweep_max_freq_hz = 4400e6  # 4.4 GHz for newer boards
         else:
-            self.sweep_max_freq_hz = 3000e6
+            self.sweep_max_freq_hz = 3000e6  # 3 GHz for older boards
         if self.version <= Version.parse("1.0.1"):
             logger.debug("Hack for s21 oddity in first sweeppoint")
             self.features.add("S21 hack")

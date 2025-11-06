@@ -12,7 +12,88 @@ from PySide6.QtWidgets import (
     QLineEdit, QSpinBox, QDoubleSpinBox, QFormLayout,
     QApplication, QMessageBox, QComboBox
 )
-from PySide6.QtGui import QIcon, QDoubleValidator, QFont
+from PySide6.QtGui import QIcon, QDoubleValidator, QFont, QValidator
+
+
+class SmartDatapointsSpinBox(QSpinBox):
+    """
+    Custom SpinBox that jumps between valid datapoints instead of incrementing by 1.
+    """
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.valid_datapoints = [11, 51, 101, 201, 301, 501, 1023]  # Default values
+        # Don't call setSingleStep here to avoid triggering validate before setup is complete
+        
+    def set_valid_datapoints(self, valid_points):
+        """Set the valid datapoints for this device."""
+        if valid_points and len(valid_points) > 0:
+            self.valid_datapoints = sorted(list(valid_points))
+            self.setMinimum(min(self.valid_datapoints))
+            self.setMaximum(max(self.valid_datapoints))
+            self.setSingleStep(1)  # Set after valid_datapoints is configured
+            logging.info(f"[SmartDatapointsSpinBox] Set valid datapoints: {self.valid_datapoints}")
+        
+    def stepBy(self, steps):
+        """Override stepBy to jump between valid datapoints."""
+        current_value = self.value()
+        
+        try:
+            # Find current position in valid_datapoints
+            if current_value in self.valid_datapoints:
+                current_index = self.valid_datapoints.index(current_value)
+            else:
+                # Find closest valid datapoint
+                current_index = 0
+                min_diff = float('inf')
+                for i, point in enumerate(self.valid_datapoints):
+                    diff = abs(point - current_value)
+                    if diff < min_diff:
+                        min_diff = diff
+                        current_index = i
+            
+            # Calculate new index
+            new_index = current_index + steps
+            
+            # Clamp to valid range
+            new_index = max(0, min(new_index, len(self.valid_datapoints) - 1))
+            
+            # Set new value
+            new_value = self.valid_datapoints[new_index]
+            logging.info(f"[SmartDatapointsSpinBox] Stepping from {current_value} to {new_value} (index {current_index} -> {new_index})")
+            self.setValue(new_value)
+            
+        except Exception as e:
+            logging.error(f"[SmartDatapointsSpinBox] Error in stepBy: {e}")
+            # Fallback to normal behavior
+            super().stepBy(steps)
+    
+    def textFromValue(self, value):
+        """Override to ensure we display valid values."""
+        if value in self.valid_datapoints:
+            return f"{value}"
+        else:
+            # Find closest valid value and use that for display
+            closest = min(self.valid_datapoints, key=lambda x: abs(x - value))
+            return f"{closest}"
+    
+    def valueFromText(self, text):
+        """Override to snap to valid values when user types."""
+        try:
+            typed_value = int(text.replace(" steps", "").strip())
+            # Find closest valid datapoint
+            closest = min(self.valid_datapoints, key=lambda x: abs(x - typed_value))
+            logging.info(f"[SmartDatapointsSpinBox] User typed {typed_value}, snapping to {closest}")
+            return closest
+        except ValueError:
+            return self.value()
+    
+    def validate(self, text, pos):
+        """Override validation to be more lenient during typing."""
+        # Allow partial numbers during typing
+        if text.replace(" steps", "").strip().isdigit() or text == "":
+            return (QValidator.State.Acceptable, text, pos)
+        return (QValidator.State.Invalid, text, pos)
 
 
 class SweepOptionsWindow(QMainWindow):
@@ -338,6 +419,9 @@ class SweepOptionsWindow(QMainWindow):
         # Get sweep points limits from VNA device
         self.sweep_points_min, self.sweep_points_max = self.get_sweep_points_limits()
         
+        # Get frequency limits from VNA device
+        self.freq_min_hz, self.freq_max_hz = self.get_frequency_limits()
+        
         # Store original values for cancel functionality
         self.original_values = {}
         
@@ -382,6 +466,14 @@ class SweepOptionsWindow(QMainWindow):
                     sweep_max = default_max
                     logging.warning(f"[sweep_options_window.get_sweep_points_limits] Device has no sweep_points_max, using default: {default_max}")
                 
+                # Check if device has valid_datapoints and use the maximum from there if available
+                if hasattr(self.vna_device, 'valid_datapoints') and self.vna_device.valid_datapoints:
+                    max_from_valid_datapoints = max(self.vna_device.valid_datapoints)
+                    # Use the higher value between sweep_points_max and max(valid_datapoints)
+                    if max_from_valid_datapoints > sweep_max:
+                        sweep_max = max_from_valid_datapoints
+                        logging.info(f"[sweep_options_window.get_sweep_points_limits] Using max from valid_datapoints: {sweep_max}")
+                
                 logging.info(f"[sweep_options_window.get_sweep_points_limits] Final device limits: {sweep_min} - {sweep_max}")
                 return int(sweep_min), int(sweep_max)
             except (AttributeError, ValueError, TypeError) as e:
@@ -393,46 +485,116 @@ class SweepOptionsWindow(QMainWindow):
         logging.info(f"[sweep_options_window.get_sweep_points_limits] Using default limits: {default_min} - {default_max}")
         return default_min, default_max
 
+    def get_frequency_limits(self):
+        """Get frequency limits from VNA device or use defaults."""
+        default_min_hz = 50000      # 50 kHz default minimum
+        default_max_hz = 1500000000 # 1.5 GHz default maximum
+        
+        logging.info("[sweep_options_window.get_frequency_limits] Getting frequency limits")
+        
+        if self.vna_device:
+            device_type = type(self.vna_device).__name__
+            logging.info(f"[sweep_options_window.get_frequency_limits] Checking device {device_type} for frequency limits")
+            
+            try:
+                # Check for device-specific frequency limits
+                min_freq_hz = getattr(self.vna_device, 'sweep_min_freq_hz', None)
+                max_freq_hz = getattr(self.vna_device, 'sweep_max_freq_hz', None)
+                
+                # Handle wrapped devices (like PatchedVNA)
+                if hasattr(self.vna_device, '_vna'):
+                    real_device = self.vna_device._vna
+                    min_freq_hz = min_freq_hz or getattr(real_device, 'sweep_min_freq_hz', None)
+                    max_freq_hz = max_freq_hz or getattr(real_device, 'sweep_max_freq_hz', None)
+                
+                if min_freq_hz is not None and max_freq_hz is not None:
+                    logging.info(f"[sweep_options_window.get_frequency_limits] Device frequency limits: {min_freq_hz/1e6:.3f} - {max_freq_hz/1e6:.3f} MHz")
+                    return int(min_freq_hz), int(max_freq_hz)
+                else:
+                    logging.warning(f"[sweep_options_window.get_frequency_limits] Device {device_type} has no frequency limit attributes")
+                    
+            except (AttributeError, ValueError, TypeError) as e:
+                logging.error(f"[sweep_options_window.get_frequency_limits] Error getting device frequency limits: {e}")
+        else:
+            logging.warning("[sweep_options_window.get_frequency_limits] No VNA device available")
+        
+        # Fallback to defaults if no device or device doesn't have limits
+        logging.info(f"[sweep_options_window.get_frequency_limits] Using default frequency limits: {default_min_hz/1e6:.3f} - {default_max_hz/1e6:.3f} MHz")
+        return default_min_hz, default_max_hz
+
     from PySide6.QtWidgets import QToolTip
 
     def on_frequency_changed_range(self):
         start_val_hz = self.start_freq_edit.value() * self.unit_multiplier(self.start_freq_unit.currentText())
         stop_val_hz = self.stop_freq_edit.value() * self.unit_multiplier(self.stop_freq_unit.currentText())
 
-        # Start Frequency check
-        if not (50_000 <= start_val_hz <= 1_500_000_000):
+        # Create dynamic frequency range strings for tooltips
+        device_min_str = f"{self.freq_min_hz/1e6:.3f} MHz" if self.freq_min_hz >= 1e6 else f"{self.freq_min_hz/1e3:.1f} kHz"
+        device_max_str = f"{self.freq_max_hz/1e9:.3f} GHz" if self.freq_max_hz >= 1e9 else f"{self.freq_max_hz/1e6:.1f} MHz"
+        
+        # Allow some flexibility beyond device limits but warn if way outside device range
+        extended_min = self.freq_min_hz * 0.5  # 50% below device minimum
+        extended_max = self.freq_max_hz * 1.5  # 50% above device maximum
+
+        # Start Frequency check with device-aware limits
+        if not (extended_min <= start_val_hz <= extended_max):
             self.start_freq_edit.blockSignals(True)
             self.start_freq_edit.setValue(self.last_start_value)
             self.start_freq_edit.blockSignals(False)
             QToolTip.showText(
                 self.start_freq_edit.mapToGlobal(self.start_freq_edit.rect().topRight()),
-                "Start frequency must be between 50 kHz and 1.5 GHz"
+                f"Start frequency should be within device range: {device_min_str} - {device_max_str}\n"
+                f"Extended range allows manual override but may not work optimally"
             )
         else:
             self.last_start_value = self.start_freq_edit.value()
+            
+            # Warn if outside optimal device range but within extended range
+            if not (self.freq_min_hz <= start_val_hz <= self.freq_max_hz):
+                current_freq_str = f"{start_val_hz/1e6:.3f} MHz" if start_val_hz >= 1e6 else f"{start_val_hz/1e3:.1f} kHz"
+                logging.warning(f"[sweep_options_window] Start frequency {current_freq_str} is outside optimal device range {device_min_str} - {device_max_str}")
 
-        # Stop Frequency check
-        if not (50_000 <= stop_val_hz <= 1_500_000_000):
+        # Stop Frequency check with device-aware limits
+        if not (extended_min <= stop_val_hz <= extended_max):
             self.stop_freq_edit.blockSignals(True)
             self.stop_freq_edit.setValue(self.last_stop_value)
             self.stop_freq_edit.blockSignals(False)
             QToolTip.showText(
                 self.stop_freq_edit.mapToGlobal(self.stop_freq_edit.rect().topRight()),
-                "Stop frequency must be between 50 kHz and 1.5 GHz"
+                f"Stop frequency should be within device range: {device_min_str} - {device_max_str}\n"
+                f"Extended range allows manual override but may not work optimally"
             )
         else:
             self.last_stop_value = self.stop_freq_edit.value()
+            
+            # Warn if outside optimal device range but within extended range  
+            if not (self.freq_min_hz <= stop_val_hz <= self.freq_max_hz):
+                current_freq_str = f"{stop_val_hz/1e6:.3f} MHz" if stop_val_hz >= 1e6 else f"{stop_val_hz/1e3:.1f} kHz"
+                logging.warning(f"[sweep_options_window] Stop frequency {current_freq_str} is outside optimal device range {device_min_str} - {device_max_str}")
 
     def update_spinbox_range(self, spinbox, unit):
-        """Actualiza el rango del spinbox según la unidad actual."""
-        if unit == "Hz":
-            spinbox.setRange(50_000, 1_500_000_000)
-        elif unit == "kHz":
-            spinbox.setRange(50, 1_500_000)
-        elif unit == "MHz":
-            spinbox.setRange(0.05, 1500)
-        elif unit == "GHz":
-            spinbox.setRange(0.00005, 1.5)
+        """Actualiza el rango del spinbox según la unidad actual y los límites del dispositivo."""
+        # Convert device limits to the current unit
+        min_freq_in_unit = self.freq_min_hz / self.unit_multiplier(unit)
+        max_freq_in_unit = self.freq_max_hz / self.unit_multiplier(unit)
+        
+        # Set a more generous range that allows manual override but starts with device limits
+        extended_min = min_freq_in_unit * 0.5  # Allow going 50% below device minimum
+        extended_max = max_freq_in_unit * 1.5   # Allow going 50% above device maximum
+        
+        # Set the range with extended limits for manual override capability
+        spinbox.setRange(extended_min, extended_max)
+        
+        # Log the configuration for debugging
+        logging.info(f"[sweep_options_window.update_spinbox_range] Unit: {unit}")
+        logging.info(f"[sweep_options_window.update_spinbox_range] Device limits: {min_freq_in_unit:.6f} - {max_freq_in_unit:.6f} {unit}")
+        logging.info(f"[sweep_options_window.update_spinbox_range] Extended range: {extended_min:.6f} - {extended_max:.6f} {unit}")
+        
+        # Update tooltip to show device-specific limits
+        device_min_str = f"{self.freq_min_hz/1e6:.3f} MHz" if self.freq_min_hz >= 1e6 else f"{self.freq_min_hz/1e3:.1f} kHz"
+        device_max_str = f"{self.freq_max_hz/1e9:.3f} GHz" if self.freq_max_hz >= 1e9 else f"{self.freq_max_hz/1e6:.1f} MHz"
+        tooltip_text = f"Device range: {device_min_str} - {device_max_str}\nExtended range allows manual override"
+        spinbox.setToolTip(tooltip_text)
 
     def unit_multiplier(self, unit):
         return {"Hz": 1, "kHz": 1e3, "MHz": 1e6, "GHz": 1e9}[unit]
@@ -515,10 +677,21 @@ class SweepOptionsWindow(QMainWindow):
         
         # Steps input with limits from device
         steps_input_layout = QHBoxLayout()
-        self.segments_spinbox = QSpinBox()
+        self.segments_spinbox = SmartDatapointsSpinBox()
         self.segments_spinbox.setRange(self.sweep_points_min, self.sweep_points_max)
         self.segments_spinbox.valueChanged.connect(self.on_segments_changed)
         self.segments_spinbox.setSuffix(" steps")
+        
+        # Configure the smart spinbox with device-specific valid datapoints
+        if self.vna_device and hasattr(self.vna_device, 'valid_datapoints'):
+            self.segments_spinbox.set_valid_datapoints(self.vna_device.valid_datapoints)
+            logging.info(f"[sweep_options_window] Configured smart spinbox with device datapoints: {self.vna_device.valid_datapoints}")
+        else:
+            # Use default datapoints if no device or no valid_datapoints
+            default_points = [11, 51, 101, 201, 301, 501, 1023]
+            self.segments_spinbox.set_valid_datapoints(default_points)
+            logging.info(f"[sweep_options_window] Configured smart spinbox with default datapoints: {default_points}")
+        
         steps_input_layout.addWidget(self.segments_spinbox)
         steps_layout.addLayout(steps_input_layout)
         
@@ -710,10 +883,36 @@ class SweepOptionsWindow(QMainWindow):
     def on_frequency_changed(self):
         """Handle frequency changes."""
         self.calculate_derived_values()
+        # Auto-save frequency changes so they are immediately available for sweep
+        try:
+            start_freq_hz = self.frequency_to_hz(self.start_freq_edit.value(), self.start_freq_unit.currentText())
+            stop_freq_hz = self.frequency_to_hz(self.stop_freq_edit.value(), self.stop_freq_unit.currentText())
+            
+            self.settings.setValue("Frequency/StartFreqHz", start_freq_hz)
+            self.settings.setValue("Frequency/StopFreqHz", stop_freq_hz)
+            self.settings.setValue("Frequency/StartUnit", self.start_freq_unit.currentText())
+            self.settings.setValue("Frequency/StopUnit", self.stop_freq_unit.currentText())
+            self.settings.sync()
+            
+            logging.info(f"[sweep_options_window.on_frequency_changed] Auto-saved frequencies: {start_freq_hz/1e6:.3f} - {stop_freq_hz/1e6:.3f} MHz")
+            
+            # Update main window configuration if available
+            if self.parent() and hasattr(self.parent(), 'load_sweep_configuration'):
+                self.parent().load_sweep_configuration()
+        except Exception as e:
+            logging.warning(f"[sweep_options_window.on_frequency_changed] Error auto-saving: {e}")
         
     def on_segments_changed(self):
         """Handle segments changes."""
         self.calculate_derived_values()
+        # Auto-save segments changes so they are immediately available for sweep
+        self.settings.setValue("Frequency/Segments", self.segments_spinbox.value())
+        self.settings.sync()
+        logging.info(f"[sweep_options_window.on_segments_changed] Auto-saved segments: {self.segments_spinbox.value()}")
+        
+        # Update main window configuration if available
+        if self.parent() and hasattr(self.parent(), 'load_sweep_configuration'):
+            self.parent().load_sweep_configuration()
         
     def apply_settings(self):
         """Apply and save current settings."""

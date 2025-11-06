@@ -42,15 +42,53 @@ class KitsCalibrator:
         source_match_file = os.path.join(error_dir, "source_match.s1p")
 
         # Read S1P files using skrf
-        directivity = rf.Network(directivity_file).s[:,0,0]
-        reflection_tracking = rf.Network(reflection_tracking_file).s[:,0,0]
-        source_match = rf.Network(source_match_file).s[:,0,0]
+        directivity_network = rf.Network(directivity_file)
+        reflection_tracking_network = rf.Network(reflection_tracking_file)
+        source_match_network = rf.Network(source_match_file)
+        
+        directivity = directivity_network.s[:,0,0]
+        reflection_tracking = reflection_tracking_network.s[:,0,0]
+        source_match = source_match_network.s[:,0,0]
+
+        # Check if calibration data matches sweep data size
+        cal_points = len(directivity)
+        sweep_points = len(s11_med)
+        original_s11_med = s11_med.copy()  # Preserve original data
+        
+        logging.info(f"[Calibrator] Kit calibration data points: {cal_points}")
+        logging.info(f"[Calibrator] Kit sweep data points: {sweep_points}")
+        
+        if cal_points != sweep_points:
+            logging.warning(f"[Calibrator] Kit size mismatch: calibration ({cal_points}) vs sweep ({sweep_points})")
+            logging.warning(f"[Calibrator] Please recalibrate kit '{selected_kit}' with {sweep_points} points for best accuracy")
+            
+            # Use only the calibration data we have
+            min_points = min(cal_points, sweep_points)
+            s11_med = s11_med[:min_points]
+            directivity = directivity[:min_points]
+            reflection_tracking = reflection_tracking[:min_points]
+            source_match = source_match[:min_points]
+            
+            logging.info(f"[Calibrator] Using first {min_points} points for kit calibration")
 
         # Compute delta_e (for 2-term calibration, source match is ignored)
         delta_e = reflection_tracking * directivity - source_match
 
         logging.info("[Calibrator] Calculating calibrated S11 using OSM formula...")
         s11_cal = (s11_med - directivity) / (s11_med * reflection_tracking - delta_e)
+        
+        # If we had to truncate, fill the remaining points with uncalibrated data
+        if len(s11_cal) < sweep_points:
+            import numpy as np
+            logging.warning(f"[Calibrator] Kit padding {sweep_points - len(s11_cal)} uncalibrated points")
+            # Create result array with full size
+            result = np.zeros(sweep_points, dtype=complex)
+            # Copy calibrated data
+            result[:len(s11_cal)] = s11_cal
+            # Fill remaining with uncalibrated data
+            result[len(s11_cal):] = original_s11_med[len(s11_cal):]
+            return result
+        
         return s11_cal
 
     def normalization_calibrate_s21(self, s21_med, selected_kit):
@@ -73,11 +111,49 @@ class KitsCalibrator:
         error_dir = os.path.join(self.calibration_dir, selected_kit)
         transmission_tracking_file = os.path.join(error_dir, "transmission_tracking.s2p")
 
+        logging.info("[Calibrator] Loading transmission tracking error from S2P file...")
+
+        # Path to normalization error file
+        error_dir = os.path.join(self.calibration_dir, selected_kit)
+        transmission_tracking_file = os.path.join(error_dir, "transmission_tracking.s2p")
+
         # Read S2P file using skrf and extract S21
-        transmission_tracking = rf.Network(transmission_tracking_file).s[:,1,0]
+        transmission_tracking_network = rf.Network(transmission_tracking_file)
+        transmission_tracking = transmission_tracking_network.s[:,1,0]
+        
+        # Check if calibration data matches sweep data size
+        cal_points = len(transmission_tracking)
+        sweep_points = len(s21_med)
+        original_s21_med = s21_med.copy()  # Preserve original data
+        
+        logging.info(f"[Calibrator] Kit S21 calibration data points: {cal_points}")
+        logging.info(f"[Calibrator] Kit S21 sweep data points: {sweep_points}")
+        
+        if cal_points != sweep_points:
+            logging.warning(f"[Calibrator] Kit S21 size mismatch: calibration ({cal_points}) vs sweep ({sweep_points})")
+            logging.warning(f"[Calibrator] Please recalibrate kit '{selected_kit}' with {sweep_points} points for best accuracy")
+            
+            # Use only the calibration data we have
+            min_points = min(cal_points, sweep_points)
+            s21_med = s21_med[:min_points]
+            transmission_tracking = transmission_tracking[:min_points]
+            
+            logging.info(f"[Calibrator] Using first {min_points} points for kit S21 calibration")
 
         # Calibrate S21 by dividing by the error term
         s21_cal = s21_med / transmission_tracking
+        
+        # If we had to truncate, fill the remaining points with uncalibrated data
+        if len(s21_cal) < sweep_points:
+            import numpy as np
+            logging.warning(f"[Calibrator] Kit S21 padding {sweep_points - len(s21_cal)} uncalibrated points")
+            # Create result array with full size
+            result = np.zeros(sweep_points, dtype=complex)
+            # Copy calibrated data
+            result[:len(s21_cal)] = s21_cal
+            # Fill remaining with uncalibrated data
+            result[len(s21_cal):] = original_s21_med[len(s21_cal):]
+            s21_cal = result
 
         logging.info("[Calibrator] Calculated calibrated S21 using normalization.")
         return s21_cal
