@@ -2,6 +2,7 @@ import numpy as np
 import skrf as rf
 import os
 import logging
+import gc
 import matplotlib
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox, QLabel, QSizePolicy, QLineEdit, QApplication
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -535,7 +536,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 
     info_panel_2.hide()
 
-    def update_cursor(index, from_slider=False, return_values=False):
+    def update_cursor(index, from_slider=False, new_slider=None, return_values=False):
         import os
         from PySide6.QtCore import QSettings
 
@@ -543,7 +544,6 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
         magnitude = abs(val_complex)
         phase_deg = np.angle(val_complex, deg=True)
 
-        # === Leer modo de unidad desde Graphic1 en el INI ===
         actual_dir = os.path.dirname(os.path.dirname(__file__))
         ruta_ini = os.path.join(actual_dir, "graphics_windows", "ini", "config.ini")
 
@@ -551,7 +551,6 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 
         unit_mode = settings.value("Graphic1/db_times", "dB")
 
-        # === Actualizar cursor según graph_type y unidad ===
         if graph_type == "Smith Diagram":
             cursor_graph.set_data([np.real(val_complex)], [np.imag(val_complex)])
 
@@ -597,7 +596,14 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
         fig.canvas.draw_idle()
 
         if not from_slider:
-            slider.set_val(index)
+            if new_slider is None or getattr(new_slider, "ax", None) is None or getattr(new_slider.ax, "get_figure", lambda: None)() is None:
+                logging.warning("Skipping cursor update: new slider or figure no longer exists")
+                return
+            try:
+                new_slider.set_val(index)
+            except Exception as e:
+                logging.warning(f"Failed to set slider value: {e}")
+                return
 
         edit_value.clearFocus()
 
@@ -611,7 +617,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
                 "val_complex": val_complex
             }
 
-    def update_cursor_2(index, from_slider=False, return_values=False):
+    def update_cursor_2(index, from_slider=False, new_slider_2=None, return_values=False):
         import os
         from PySide6.QtCore import QSettings
 
@@ -667,7 +673,14 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
         fig.canvas.draw_idle()
 
         if not from_slider:
-            slider_2.set_val(index)
+            if new_slider_2 is None or getattr(new_slider_2, "ax", None) is None or getattr(new_slider_2.ax, "get_figure", lambda: None)() is None:
+                logging.warning("Skipping cursor update: new slider or figure no longer exists")
+                return
+            try:
+                new_slider_2.set_val(index)
+            except Exception as e:
+                logging.warning(f"Failed to set slider value: {e}")
+                return
 
         edit_value_2.clearFocus()
         settings.setValue("Cursor_2_1/index", index)
@@ -756,23 +769,301 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
     canvas.mpl_connect("button_release_event", on_release)
     canvas.mpl_connect("motion_notify_event", on_motion)
 
-    # Function to update data references for new sweep data
-    def update_data_references(new_s_data, new_freqs):
+    def remove_slider(slider, fig, canvas):
+        """Safely remove a matplotlib Slider from the figure.
+        This releases widget locks, disconnects callbacks, removes the slider axis,
+        forces a canvas redraw and triggers garbage collection.
+        """
+        if slider is None:
+            return
+
+        try:
+            # 1) Try to release any widget lock that may be held by the figure.
+            #    widgetlock.locked() may return a widget or False; call release safely.
+            try:
+                locked = fig.canvas.widgetlock.locked()
+                # If locked is truthy and has 'release' semantics, release it.
+                if locked:
+                    # Try to release by passing the widget if possible
+                    try:
+                        fig.canvas.widgetlock.release(locked)
+                    except Exception:
+                        # fallback: try releasing with slider.ax (if applicable)
+                        try:
+                            fig.canvas.widgetlock.release(slider.ax)
+                        except Exception:
+                            pass
+            except Exception:
+                # Some backends may behave slightly differently; ignore fail here
+                pass
+
+            # 2) Disconnect slider internal callbacks to avoid lingering references
+            try:
+                if hasattr(slider, "_observers") and "changed" in slider._observers.callbacks:
+                    for cid in list(slider._observers.callbacks["changed"].keys()):
+                        slider._observers.disconnect(cid)
+            except Exception:
+                pass
+
+            # 3) Remove the slider axis from the figure (this makes it disappear)
+            try:
+                if slider.ax in fig.axes:
+                    fig.delaxes(slider.ax)
+            except Exception:
+                pass
+
+            # 4) Force a redraw to update the visual state
+            try:
+                if canvas is not None:
+                    canvas.draw_idle()
+            except Exception:
+                pass
+
+            # 5) Delete the python object and call garbage collector
+            try:
+                # remove attributes that may hold references
+                try:
+                    slider.ax = None
+                except Exception:
+                    pass
+                del slider
+                gc.collect()
+            except Exception:
+                pass
+
+        except Exception as e:
+            print("Warning in remove_slider:", e)
+
+    def fully_disable_slider(slider):
+        """Disconnect all event callbacks and disable slider logic without removing ax yet."""
+        if slider is None:
+            return
+
+        # Disconnect user callback registered through on_changed()
+        try:
+            for cid in list(slider._observers.callbacks.get("changed", {}).keys()):
+                slider._observers.disconnect(cid)
+        except Exception:
+            pass
+
+        # Disable slider internal mouse update behavior
+        try:
+            if hasattr(slider, "disconnect_events"):
+                slider.disconnect_events()
+        except Exception:
+            pass
+
+        # Disable axes interaction temporarily (prevents contains() call)
+        try:
+            if slider.ax is not None:
+                slider.ax.set_navigate(False)
+        except Exception:
+            pass
+
+    def update_data_references(new_s_data, new_freqs, old_slider=None, old_slider_2=None, 
+        canvas=None, fig=None, show_graphic1_marker1=False, show_graphic1_marker2=True, marker1=None, marker2=None,
+        info_panel=None, info_panel_2=None):
+
+        """Update S_data and freqs and recreate slider safely using remove_slider()."""
         nonlocal S_data, freqs
         S_data = new_s_data
         freqs = new_freqs
-        # Update freq_edited function to use new freqs
-        def freq_edited():
+
+        if old_slider is not None:
+            try:
+                old_slider.disconnect_events() 
+            except Exception:
+                pass
+
+            # Libera widgetlock si está ocupado
+            try:
+                locked = fig.canvas.widgetlock.locked()
+                if locked:
+                    fig.canvas.widgetlock.release(locked)
+            except Exception:
+                pass
+
+            remove_slider(old_slider, fig, canvas)
+            old_slider = None
+
+        if old_slider_2 is not None:
+            try:
+                old_slider_2.disconnect_events() 
+            except Exception:
+                pass
+
+            # Libera widgetlock si está ocupado
+            try:
+                locked = fig.canvas.widgetlock.locked()
+                if locked:
+                    fig.canvas.widgetlock.release(locked)
+            except Exception:
+                pass
+
+            remove_slider(old_slider_2, fig, canvas)
+            old_slider_2 = None
+
+        # Remove the old slider safely (if provided)
+        if old_slider is not None:
+            try:
+                remove_slider(old_slider, fig, canvas)
+            except Exception as e:
+                print("⚠️ Warning removing old slider:", e)
+
+        if old_slider_2 is not None:
+            try:
+                remove_slider(old_slider_2, fig, canvas)
+            except Exception as e:
+                print("⚠️ Warning removing old slider:", e)
+
+        if old_slider is not None:
+            fully_disable_slider(old_slider)  
+            if old_slider.ax in fig.axes:
+                fig.delaxes(old_slider.ax)
+            old_slider = None  
+            canvas.draw_idle()
+
+        if old_slider_2 is not None:
+            fully_disable_slider(old_slider_2) 
+            if old_slider_2.ax in fig.axes:
+                fig.delaxes(old_slider_2.ax)
+            old_slider_2 = None 
+            canvas.draw_idle()
+
+        # Optionally ensure the global widgetlock is free before creating a new slider
+        try:
+            locked = fig.canvas.widgetlock.locked()
+            if locked:
+                try:
+                    fig.canvas.widgetlock.release(locked)
+                except Exception:
+                    try:
+                        # fallback
+                        fig.canvas.widgetlock.release(None)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        if show_graphic1_marker1 and not show_graphic1_marker2:
+            new_slider_ax = fig.add_axes([0.25, 0.04, 0.5, 0.03], facecolor='lightgray')
+            new_slider_ax_2 = fig.add_axes([0.55,0.04,0.35,0.03], facecolor='lightgray')
+
+            # Create a new slider in the same figure
+
+            new_slider = Slider(new_slider_ax, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+            new_slider_2 = Slider(new_slider_ax_2, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+
+            new_slider_ax.set_visible(True)
+            new_slider_ax_2.set_visible(False)
+
+            info_panel_2.hide()
+            info_panel.show()
+
+            marker1.set_visible(True)
+            marker2.set_visible(False)
+
+        elif not show_graphic1_marker1 and show_graphic1_marker2:
+            new_slider_ax = fig.add_axes([0.15,0.04,0.35,0.03], facecolor='lightgray')
+            new_slider_ax_2 = fig.add_axes([0.25, 0.04, 0.5, 0.03], facecolor='lightgray')
+
+            # Create a new slider in the same figure
+
+            new_slider = Slider(new_slider_ax, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+            new_slider_2 = Slider(new_slider_ax_2, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+
+            new_slider_ax.set_visible(False)
+            new_slider_ax_2.set_visible(True)
+
+            info_panel_2.show()
+            info_panel.hide()
+
+            marker1.set_visible(False)
+            marker2.set_visible(True)
+
+            canvas.draw_idle()
+
+            marker1.figure.canvas.draw_idle()
+
+        elif show_graphic1_marker1 and show_graphic1_marker2:
+
+            new_slider_ax = fig.add_axes([0.1,0.04,0.35,0.03], facecolor='lightgray')
+            new_slider_ax_2 = fig.add_axes([0.55,0.04,0.35,0.03], facecolor='lightgray')
+
+            # Create a new slider in the same figure
+
+            new_slider = Slider(new_slider_ax, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+            new_slider_2 = Slider(new_slider_ax_2, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+
+            new_slider_ax.set_visible(True)
+            new_slider_ax_2.set_visible(True)
+
+            marker1.set_visible(True)
+            marker2.set_visible(True)  
+
+        elif not show_graphic1_marker1 and not show_graphic1_marker2:
+
+            new_slider_ax = fig.add_axes([0.25,0.04,0.35,0.03], facecolor='lightgray')
+            new_slider_ax_2 = fig.add_axes([0.55,0.04,0.35,0.03], facecolor='lightgray')
+
+            # Create a new slider in the same figure
+
+            new_slider = Slider(new_slider_ax, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+            new_slider_2 = Slider(new_slider_ax_2, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+
+            new_slider_ax.set_visible(False)
+            new_slider_ax_2.set_visible(False)  
+
+            marker1.set_visible(False)
+            marker2.set_visible(False)
+
+        canvas.draw_idle()
+  
+        # Hide unused slider UI elements
+        new_slider.vline.set_visible(False)
+        new_slider.label.set_visible(False)
+        new_slider.valtext.set_visible(False)
+
+        # Hide unused slider UI elements
+        new_slider_2.vline.set_visible(False)
+        new_slider_2.label.set_visible(False)
+        new_slider_2.valtext.set_visible(False)
+
+        # Reconnect edit_value callback so it uses updated freqs
+        def freq_edited_local():
             try:
                 freq_hz = parse_frequency_input(edit_value.text())
                 if freq_hz is not None:
-                    index = np.argmin(np.abs(freqs - freq_hz))
+                    index = np.argmin(np.abs(new_freqs - freq_hz))
                     update_cursor(index)
                 edit_value.clearFocus()
-            except:
-                pass
-        edit_value.editingFinished.disconnect()
-        edit_value.editingFinished.connect(freq_edited)
+            except Exception as e:
+                print("Edit freq error:", e)
+
+        try:
+            edit_value.editingFinished.disconnect()
+        except Exception:
+            pass
+        edit_value.editingFinished.connect(freq_edited_local)
+
+        # Final redraw
+        try:
+            if canvas is not None:
+                canvas.draw_idle()
+        except Exception:
+            pass
+
+        # Update marker visibility
+        if marker1 is not None:
+            marker1.set_visible(show_graphic1_marker1)
+        if marker2 is not None:
+            marker2.set_visible(show_graphic1_marker2)
+
+        # Redraw the canvas to reflect changes
+        if canvas is not None:
+            canvas.draw_idle()
+
+        return new_slider, new_slider_2
 
     def update_data_references_2(new_s_data, new_freqs):
         nonlocal S_data, freqs
@@ -791,7 +1082,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
         edit_value.editingFinished.disconnect()
         edit_value.editingFinished.connect(freq_edited)
 
-    return left_panel, info_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references
+    return left_panel, info_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references, update_data_references_2
 
 #############################################################################################
 # =================== RIGHT PANEL ========================================================= #
@@ -1250,7 +1541,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
 
     info_panel_2.hide()
 
-    def update_cursor(index, from_slider=False, return_values = False):
+    def update_cursor(index, from_slider=False, new_slider=None, return_values = False):
         val_complex = S_data[index]
         magnitude = abs(val_complex)
         phase_deg = np.angle(val_complex, deg=True)
@@ -1283,7 +1574,10 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
         fig.canvas.draw_idle()
 
         if not from_slider:
-            slider.set_val(index)
+            if new_slider is None or new_slider.ax is None or new_slider.ax.get_figure() is None:
+                logging.warning("Skipping cursor update right: slider or figure no longer exists")
+                return
+            new_slider.set_val(index)
 
         edit_value.clearFocus()
 
@@ -1302,7 +1596,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
                 "val_complex": val_complex
             }
 
-    def update_cursor_2(index, from_slider=False, return_values = False):
+    def update_cursor_2(index, from_slider=False, new_slider_2=None, return_values = False):
         import os
         from PySide6.QtCore import QSettings
 
@@ -1359,7 +1653,14 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
         fig.canvas.draw_idle()
 
         if not from_slider:
-            slider_2.set_val(index)
+            if new_slider_2 is None or getattr(new_slider_2, "ax", None) is None or getattr(new_slider_2.ax, "get_figure", lambda: None)() is None:
+                logging.warning("Skipping cursor update: new slider or figure no longer exists")
+                return
+            try:
+                new_slider_2.set_val(index)
+            except Exception as e:
+                logging.warning(f"Failed to set slider value: {e}")
+                return
 
         edit_value_2.clearFocus()
         settings.setValue("Cursor_2_2/index", index)
@@ -1451,10 +1752,298 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
     canvas.mpl_connect("button_release_event", on_release)
     canvas.mpl_connect("motion_notify_event", on_motion)
     
-    # Function to update data references for new sweep data
-    def update_data_references(new_s_data, new_freqs):
+    def remove_slider(slider, fig, canvas):
+        """Safely remove a matplotlib Slider from the figure.
+        This releases widget locks, disconnects callbacks, removes the slider axis,
+        forces a canvas redraw and triggers garbage collection.
+        """
+        if slider is None:
+            return
+
+        try:
+            # 1) Try to release any widget lock that may be held by the figure.
+            #    widgetlock.locked() may return a widget or False; call release safely.
+            try:
+                locked = fig.canvas.widgetlock.locked()
+                # If locked is truthy and has 'release' semantics, release it.
+                if locked:
+                    # Try to release by passing the widget if possible
+                    try:
+                        fig.canvas.widgetlock.release(locked)
+                    except Exception:
+                        # fallback: try releasing with slider.ax (if applicable)
+                        try:
+                            fig.canvas.widgetlock.release(slider.ax)
+                        except Exception:
+                            pass
+            except Exception:
+                # Some backends may behave slightly differently; ignore fail here
+                pass
+
+            # 2) Disconnect slider internal callbacks to avoid lingering references
+            try:
+                if hasattr(slider, "_observers") and "changed" in slider._observers.callbacks:
+                    for cid in list(slider._observers.callbacks["changed"].keys()):
+                        slider._observers.disconnect(cid)
+            except Exception:
+                pass
+
+            # 3) Remove the slider axis from the figure (this makes it disappear)
+            try:
+                if slider.ax in fig.axes:
+                    fig.delaxes(slider.ax)
+            except Exception:
+                pass
+
+            # 4) Force a redraw to update the visual state
+            try:
+                if canvas is not None:
+                    canvas.draw_idle()
+            except Exception:
+                pass
+
+            # 5) Delete the python object and call garbage collector
+            try:
+                # remove attributes that may hold references
+                try:
+                    slider.ax = None
+                except Exception:
+                    pass
+                del slider
+                gc.collect()
+            except Exception:
+                pass
+
+        except Exception as e:
+            print("Warning in remove_slider:", e)
+
+    def fully_disable_slider(slider):
+        """Disconnect all event callbacks and disable slider logic without removing ax yet."""
+        if slider is None:
+            return
+
+        # Disconnect user callback registered through on_changed()
+        try:
+            for cid in list(slider._observers.callbacks.get("changed", {}).keys()):
+                slider._observers.disconnect(cid)
+        except Exception:
+            pass
+
+        # Disable slider internal mouse update behavior
+        try:
+            if hasattr(slider, "disconnect_events"):
+                slider.disconnect_events()
+        except Exception:
+            pass
+
+        # Disable axes interaction temporarily (prevents contains() call)
+        try:
+            if slider.ax is not None:
+                slider.ax.set_navigate(False)
+        except Exception:
+            pass
+
+    def update_data_references(new_s_data, new_freqs, old_slider=None, old_slider_2=None, 
+        canvas=None, fig=None, show_graphic2_marker1=False, show_graphic2_marker2=True, marker1=None, marker2=None,
+        info_panel=None, info_panel_2=None):
+
+        """Update S_data and freqs and recreate slider safely using remove_slider()."""
         nonlocal S_data, freqs
         S_data = new_s_data
         freqs = new_freqs
+
+        if old_slider is not None:
+            try:
+                old_slider.disconnect_events() 
+            except Exception:
+                pass
+
+            try:
+                locked = fig.canvas.widgetlock.locked()
+                if locked:
+                    fig.canvas.widgetlock.release(locked)
+            except Exception:
+                pass
+
+            remove_slider(old_slider, fig, canvas)
+            old_slider = None
+
+        if old_slider_2 is not None:
+            try:
+                old_slider_2.disconnect_events() 
+            except Exception:
+                pass
+
+            # Libera widgetlock si está ocupado
+            try:
+                locked = fig.canvas.widgetlock.locked()
+                if locked:
+                    fig.canvas.widgetlock.release(locked)
+            except Exception:
+                pass
+
+            remove_slider(old_slider_2, fig, canvas)
+            old_slider_2 = None
+
+        # Remove the old slider safely (if provided)
+        if old_slider is not None:
+            try:
+                remove_slider(old_slider, fig, canvas)
+            except Exception as e:
+                logging.error("Warning removing old slider:", e)
+
+        if old_slider_2 is not None:
+            try:
+                remove_slider(old_slider_2, fig, canvas)
+            except Exception as e:
+                logging.error("Warning removing old slider:", e)
+
+        if old_slider is not None:
+            fully_disable_slider(old_slider)  
+            if old_slider.ax in fig.axes:
+                fig.delaxes(old_slider.ax)
+            old_slider = None  
+            canvas.draw_idle()
+
+        if old_slider_2 is not None:
+            fully_disable_slider(old_slider_2) 
+            if old_slider_2.ax in fig.axes:
+                fig.delaxes(old_slider_2.ax)
+            old_slider_2 = None 
+            canvas.draw_idle()
+
+        # Optionally ensure the global widgetlock is free before creating a new slider
+        try:
+            locked = fig.canvas.widgetlock.locked()
+            if locked:
+                try:
+                    fig.canvas.widgetlock.release(locked)
+                except Exception:
+                    try:
+                        # fallback
+                        fig.canvas.widgetlock.release(None)
+                    except Exception as e:
+                        logging.error("Failed to release widgetlock:", e)
+                        pass
+        except Exception as e:
+            logging.error("Widgetlock check error:", e)
+            pass
+
+        if show_graphic2_marker1 and not show_graphic2_marker2:
+            new_slider_ax = fig.add_axes([0.25, 0.04, 0.5, 0.03], facecolor='lightgray')
+            new_slider_ax_2 = fig.add_axes([0.55,0.04,0.35,0.03], facecolor='lightgray')
+
+            # Create a new slider in the same figure
+
+            new_slider = Slider(new_slider_ax, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+            new_slider_2 = Slider(new_slider_ax_2, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+
+            new_slider_ax.set_visible(True)
+            new_slider_ax_2.set_visible(False)
+
+            info_panel_2.hide()
+            info_panel.show()
+
+            marker1.set_visible(True)
+            marker2.set_visible(False)
+
+        elif not show_graphic2_marker1 and show_graphic2_marker2:
+            new_slider_ax = fig.add_axes([0.15,0.04,0.35,0.03], facecolor='lightgray')
+            new_slider_ax_2 = fig.add_axes([0.25, 0.04, 0.5, 0.03], facecolor='lightgray')
+
+            # Create a new slider in the same figure
+
+            new_slider = Slider(new_slider_ax, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+            new_slider_2 = Slider(new_slider_ax_2, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+
+            new_slider_ax.set_visible(False)
+            new_slider_ax_2.set_visible(True)
+
+            marker1.set_visible(False)
+            marker2.set_visible(True)
+
+            canvas.draw_idle()
+
+            marker1.figure.canvas.draw_idle()
+
+        elif show_graphic2_marker1 and show_graphic2_marker2:
+
+            new_slider_ax = fig.add_axes([0.1,0.04,0.35,0.03], facecolor='lightgray')
+            new_slider_ax_2 = fig.add_axes([0.55,0.04,0.35,0.03], facecolor='lightgray')
+
+            # Create a new slider in the same figure
+
+            new_slider = Slider(new_slider_ax, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+            new_slider_2 = Slider(new_slider_ax_2, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+
+            new_slider_ax.set_visible(True)
+            new_slider_ax_2.set_visible(True)
+
+            marker1.set_visible(True)
+            marker2.set_visible(True)  
+
+        elif not show_graphic2_marker1 and not show_graphic2_marker2:
+
+            new_slider_ax = fig.add_axes([0.25,0.04,0.35,0.03], facecolor='lightgray')
+            new_slider_ax_2 = fig.add_axes([0.55,0.04,0.35,0.03], facecolor='lightgray')
+
+            # Create a new slider in the same figure
+
+            new_slider = Slider(new_slider_ax, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+            new_slider_2 = Slider(new_slider_ax_2, '', 0, len(new_freqs) - 1, valinit=0, valstep=1)
+
+            new_slider_ax.set_visible(False)
+            new_slider_ax_2.set_visible(False)  
+
+            marker1.set_visible(False)
+            marker2.set_visible(False)
+
+        canvas.draw_idle()
+
+        # Hide unused slider UI elements
+        new_slider.vline.set_visible(False)
+        new_slider.label.set_visible(False)
+        new_slider.valtext.set_visible(False)
+
+        # Hide unused slider UI elements
+        new_slider_2.vline.set_visible(False)
+        new_slider_2.label.set_visible(False)
+        new_slider_2.valtext.set_visible(False)
+
+        # Reconnect edit_value callback so it uses updated freqs
+        def freq_edited_local():
+            try:
+                freq_hz = parse_frequency_input(edit_value.text())
+                if freq_hz is not None:
+                    index = np.argmin(np.abs(new_freqs - freq_hz))
+                    update_cursor(index)
+                edit_value.clearFocus()
+            except Exception as e:
+                logging.error("Edit freq error:", e)
+
+        try:
+            edit_value.editingFinished.disconnect()
+        except Exception:
+            pass
+        edit_value.editingFinished.connect(freq_edited_local)
+
+        # Final redraw
+        try:
+            if canvas is not None:
+                canvas.draw_idle()
+        except Exception:
+            pass
+
+        # Update marker visibility
+        if marker1 is not None:
+            marker1.set_visible(show_graphic2_marker1)
+        if marker2 is not None:
+            marker2.set_visible(show_graphic2_marker2)
+
+        # Redraw the canvas to reflect changes
+        if canvas is not None:
+            canvas.draw_idle()
+
+        return new_slider, new_slider_2
 
     return right_panel, info_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references

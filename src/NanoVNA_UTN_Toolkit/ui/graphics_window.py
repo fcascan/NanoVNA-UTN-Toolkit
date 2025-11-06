@@ -1100,7 +1100,7 @@ class NanoVNAGraphics(QMainWindow):
 
         # =================== LEFT PANEL (EMPTY) ===================
         self.left_panel, self.info_panel_left, self.info_panel_left_2, self.fig_left, self.ax_left, self.canvas_left, \
-        self.slider_left, self.slider_left_2, self.cursor_left, self.cursor_left_2, self.labels_left, self.labels_left_2, self.update_cursor, self.update_cursor_2, self.update_left_data = \
+        self.slider_left, self.slider_left_2, self.cursor_left, self.cursor_left_2, self.labels_left, self.labels_left_2, self.update_cursor, self.update_cursor_2, self.update_left_data, self.update_left_data_2 = \
             create_left_panel(
                 self,
                 S_data=None,  # Force empty 
@@ -1469,6 +1469,15 @@ class NanoVNAGraphics(QMainWindow):
     def _reset_markers_after_sweep(self):
         """Reset markers and all marker-dependent information after a sweep completes."""
         logging.info("[graphics_window._reset_markers_after_sweep] Resetting markers after sweep completion")
+
+        try:
+            if self.cursor_left and getattr(self.cursor_left, "ax", None):
+                fig = self.cursor_left.ax.get_figure()
+                # continue normal update
+            else:
+                return  # cursor already removed or destroyed
+        except Exception as e:
+            logging.warning("[graphics_window._reset_markers_after_sweep] Skipped invalid cursor: %s", e)
         
         try:
             # Reset slider positions to leftmost position (index 0) if they exist
@@ -1708,14 +1717,40 @@ class NanoVNAGraphics(QMainWindow):
                     self.markers[1]['cursor'] = self.cursor_right
                 if len(self.markers) >= 2 and self.markers[1]:
                     self.markers[1]['cursor_2'] = self.cursor_right_2
-            
+
             # Force marker visibility setup to create the wrapper functions again
             self._force_marker_visibility(marker_color_left=marker_color_left, marker_color_right=marker_color_right, 
                 marker1_size_left=marker1_size_left, marker1_size_right=marker1_size_right)
 
             self._force_marker_visibility_2(marker_color_left=marker2_color_left, marker_color_right=marker2_color_right,
                 marker_size_left=marker2_size_left, marker_size_right=marker2_size_right)
-            
+
+            if self.show_graphic1_marker1 and not self.show_graphic1_marker2:
+                self.cursor_left.set_visible(True)
+                self.cursor_left_2.set_visible(False)
+            elif self.show_graphic1_marker2 and not self.show_graphic1_marker1:
+                self.cursor_left.set_visible(False)
+                self.cursor_left_2.set_visible(True)
+            elif self.show_graphic1_marker1 and self.show_graphic1_marker2:
+                self.cursor_left.set_visible(True)
+                self.cursor_left_2.set_visible(True)
+            elif not self.show_graphic1_marker1 and not self.show_graphic1_marker2:
+                self.cursor_left.set_visible(False)
+                self.cursor_left_2.set_visible(False)
+
+            if self.show_graphic2_marker1 and not self.show_graphic2_marker2:
+                self.cursor_right.set_visible(True)
+                self.cursor_right_2.set_visible(False)
+            elif self.show_graphic2_marker2 and not self.show_graphic2_marker1:
+                self.cursor_right.set_visible(False)
+                self.cursor_right_2.set_visible(True)
+            elif self.show_graphic2_marker1 and self.show_graphic2_marker2:
+                self.cursor_right.set_visible(True)
+                self.cursor_right_2.set_visible(True)
+            elif not self.show_graphic2_marker1 and not self.show_graphic2_marker2:
+                self.cursor_right.set_visible(False)
+                self.cursor_right_2.set_visible(False)
+
             logging.info("[graphics_window._recreate_cursors_for_new_plots] Cursors recreated successfully")
             
         except Exception as e:
@@ -2272,7 +2307,7 @@ class NanoVNAGraphics(QMainWindow):
                             except:
                                 pass
                             self.slider_right_2.on_changed(self.right_slider_moved_2)
-                            self.right_slider_moved_2()
+                            self.right_slider_moved_2(int(val))
                         
                         # Reconnect the slider to use our wrapper
                         if hasattr(self, 'slider_right_2') and self.slider_right_2:
@@ -3505,6 +3540,10 @@ class NanoVNAGraphics(QMainWindow):
             if not self.show_graphic1_marker1 and self.show_graphic1_marker2:
                 self.info_panel_left.hide()
 
+            if self.show_graphic1_marker1 and not self.show_graphic1_marker2:
+                self.info_panel_left.show()
+                self.info_panel_left_2.hide()
+
         elif selected_action == marker1_graphic2_action:
             self.show_graphic2_marker1 = not self.show_graphic2_marker1
             self.toggle_marker_visibility(1, self.show_graphic2_marker1)
@@ -3513,6 +3552,9 @@ class NanoVNAGraphics(QMainWindow):
                 self.info_panel_right.show()
             if not self.show_graphic2_marker1 and self.show_graphic2_marker2:
                 self.info_panel_right.hide()
+            if self.show_graphic2_marker1 and not self.show_graphic2_marker2:
+                self.info_panel_right.show()
+                self.info_panel_right_2.hide()
 
         elif selected_action == marker2_graphic1_action:
             self.show_graphic1_marker2 = not self.show_graphic1_marker2
@@ -3523,6 +3565,9 @@ class NanoVNAGraphics(QMainWindow):
                 self.info_panel_left_2.show()
             if not self.show_graphic1_marker2 and self.show_graphic1_marker1:
                 self.info_panel_left_2.hide()
+            if self.show_graphic1_marker2 and not self.show_graphic1_marker1:
+                self.info_panel_left.hide()
+                self.info_panel_left_2.show()
 
         elif selected_action == marker2_graphic2_action:
             self.show_graphic2_marker2 = not self.show_graphic2_marker2
@@ -3533,6 +3578,9 @@ class NanoVNAGraphics(QMainWindow):
                 self.info_panel_right_2.show()
             if not self.show_graphic2_marker2 and self.show_graphic2_marker1:
                 self.info_panel_right_2.hide()
+            if not self.show_graphic2_marker1 and self.show_graphic2_marker2:
+                self.info_panel_right.hide()
+                self.info_panel_right_2.show()
 
         # --- Lock Markers ---
 
@@ -3693,6 +3741,16 @@ class NanoVNAGraphics(QMainWindow):
         from PySide6.QtWidgets import QDialog, QLabel, QHBoxLayout, QVBoxLayout
         from PySide6.QtCore import Qt, QSettings
 
+        # --- Función auxiliar para formatear frecuencia ---
+        def format_frequency_diff(freq_hz):
+            """Return a string with appropriate unit (KHz, MHz, GHz) for frequency difference."""
+            if 1e3 <= abs(freq_hz) < 1e6:
+                return f"{freq_hz / 1e3:.3f} KHz"
+            elif 1e6 <= abs(freq_hz) < 1e9:
+                return f"{freq_hz / 1e6:.3f} MHz"
+            else:
+                return f"{freq_hz / 1e9:.3f} GHz"
+
         # --- Path to config.ini ---
         actual_dir = os.path.dirname(os.path.dirname(__file__))  
         ruta_ini = os.path.join(actual_dir, "ui", "graphics_windows", "ini", "config.ini")
@@ -3705,29 +3763,18 @@ class NanoVNAGraphics(QMainWindow):
         cursor_2_2_index = int(settings.value("Cursor_2_2/index", 0))
 
         # --- LEFT PANEL VALUES ---
-        left_marker1_vals = self._update_cursor_orig(cursor_1_1_index, return_values=True)
-        left_marker2_vals = self._update_cursor_2_orig(cursor_2_1_index, return_values=True)
+        left_marker1_vals = self._update_cursor_orig(index=cursor_1_1_index, from_slider=True, return_values=True)
+        left_marker2_vals = self._update_cursor_2_orig(index=cursor_2_1_index, from_slider=True, return_values=True)
         left_diff = {key: left_marker2_vals[key] - left_marker1_vals[key] for key in ["freq", "mag", "phase"]}
 
         # --- RIGHT PANEL VALUES ---
-        right_marker1_vals = self._update_cursor_right_orig(cursor_1_2_index, return_values=True)
-        right_marker2_vals = self._update_cursor_2_right_orig(cursor_2_2_index, return_values=True)
+        right_marker1_vals = self._update_cursor_right_orig(index=cursor_1_2_index, from_slider=True, return_values=True)
+        right_marker2_vals = self._update_cursor_2_right_orig(index=cursor_2_2_index, from_slider=True, return_values=True)
         right_diff = {key: right_marker2_vals[key] - right_marker1_vals[key] for key in ["freq", "mag", "phase"]}
 
         # --- Determine which panels to show ---
-        show_left = False
-        show_right = False
-
-        # All true → both panels
-        if (self.show_graphic1_marker1 and self.show_graphic1_marker2) and (self.show_graphic2_marker1 and self.show_graphic2_marker2):
-            show_left = True
-            show_right = True
-        # Only left
-        elif (self.show_graphic1_marker1 and self.show_graphic1_marker2):
-            show_left = True
-        # Only right
-        elif (self.show_graphic2_marker1 and self.show_graphic2_marker2):
-            show_right = True
+        show_left = (self.show_graphic1_marker1 and self.show_graphic1_marker2)
+        show_right = (self.show_graphic2_marker1 and self.show_graphic2_marker2)
 
         # --- CREATE DIALOG ---
         dialog = QDialog(self)
@@ -3751,7 +3798,11 @@ class NanoVNAGraphics(QMainWindow):
             for key in ["freq", "mag", "phase"]:
                 row = QHBoxLayout()
                 row.addWidget(QLabel(f"{key.capitalize()} Diff:"))
-                row.addWidget(QLabel(f"{left_diff[key]:.3f}"))
+                if key == "freq":
+                    text = format_frequency_diff(left_diff[key])
+                else:
+                    text = f"{left_diff[key]:.3f}"
+                row.addWidget(QLabel(text))
                 left_layout.addLayout(row)
             layout.addLayout(left_layout)
 
@@ -3764,13 +3815,18 @@ class NanoVNAGraphics(QMainWindow):
             for key in ["freq", "mag", "phase"]:
                 row = QHBoxLayout()
                 row.addWidget(QLabel(f"{key.capitalize()} Diff:"))
-                row.addWidget(QLabel(f"{right_diff[key]:.3f}"))
+                if key == "freq":
+                    text = format_frequency_diff(right_diff[key])
+                else:
+                    text = f"{right_diff[key]:.3f}"
+                row.addWidget(QLabel(text))
                 right_layout.addLayout(row)
             layout.addLayout(right_layout)
 
         # --- Set layout and show ---
         dialog.setLayout(layout)
         dialog.exec()
+
 
 
     def toggle_db_times(self, event, new_mode):
@@ -4587,6 +4643,12 @@ class NanoVNAGraphics(QMainWindow):
             # Additional reset specifically for Run Sweep to ensure cursor info is updated
             def final_run_sweep_cursor_reset():
                 try:
+                    if self.cursor_left and getattr(self.cursor_left, "ax", None):
+                        self.update_cursor_info(self.cursor_left)
+                except Exception as e:
+                    logging.warning("[graphics_window.run_sweep] Cursor left invalid: %s", e)
+
+                try:
                     logging.info("[graphics_window.run_sweep] FINAL: Ensuring cursor information is displayed after run sweep")
                     
                     # Force sliders to leftmost position
@@ -4807,23 +4869,24 @@ class NanoVNAGraphics(QMainWindow):
         """Update both plots with new sweep data."""
         try:
             logging.info("[graphics_window.update_plots_with_new_data] Updating plots with new sweep data")
-            
+
+            # --- Check if data exists ---
             if self.freqs is None or self.s11 is None or self.s21 is None:
                 logging.warning("[graphics_window.update_plots_with_new_data] No data available for plotting")
                 return
-                
+
             logging.info(f"[graphics_window.update_plots_with_new_data] New data: {len(self.freqs)} frequency points")
-            
-            # Get current graph settings
-            actual_dir = os.path.dirname(os.path.dirname(__file__))  
-            ruta_ini = os.path.join(actual_dir, "ui","graphics_windows", "ini", "config.ini")
+
+            # --- Load graph settings from ini file ---
+            actual_dir = os.path.dirname(os.path.dirname(__file__))
+            ruta_ini = os.path.join(actual_dir, "ui", "graphics_windows", "ini", "config.ini")
             settings = QSettings(ruta_ini, QSettings.Format.IniFormat)
 
             graph_type_tab1 = settings.value("Tab1/GraphType1", "Smith Diagram")
-            s_param_tab1    = settings.value("Tab1/SParameter", "S11")
+            s_param_tab1 = settings.value("Tab1/SParameter", "S11")
             graph_type_tab2 = settings.value("Tab2/GraphType2", "Magnitude")
-            s_param_tab2    = settings.value("Tab2/SParameter", "S11")
-            
+            s_param_tab2 = settings.value("Tab2/SParameter", "S11")
+
             trace_color1 = settings.value("Graphic1/TraceColor", "blue")
             marker_color1 = settings.value("Graphic1/MarkerColor1", "blue")
             marker2_color1 = settings.value("Graphic1/MarkerColor2", "blue")
@@ -4844,18 +4907,39 @@ class NanoVNAGraphics(QMainWindow):
             marker_size2 = int(settings.value("Graphic2/MarkerWidth1", 6))
             marker2_size2 = int(settings.value("Graphic2/MarkerWidth2", 6))
 
-            # Determine which data to plot for each panel
+            # --- Determine which data to plot ---
             s_data_left = self.s11 if s_param_tab1 == "S11" else self.s21
             s_data_right = self.s11 if s_param_tab2 == "S11" else self.s21
-            
-            # Clear existing plots
+
+            # --- Clear existing plots ---
             self.ax_left.clear()
             self.ax_right.clear()
 
-            # Recreate left panel plot
+            # --- Recreate left panel plot ---
             logging.info(f"[graphics_window.update_plots_with_new_data] Recreating left plot: {graph_type_tab1} - {s_param_tab1}")
-
             unit_left = self.get_graph_unit(1)
+    
+            # --- Clean up old slider event connections before redrawing 
+            if hasattr(self, "slider_left") and self.slider_left is not None:
+                try:
+                    self.slider_left.disconnect_events()
+                except Exception as e:
+                    logging.debug(f"Failed to disconnect slider_left events: {e}")
+            if hasattr(self, "slider_right") and self.slider_right is not None:
+                try:
+                    self.slider_right.disconnect_events()
+                except Exception as e:
+                    logging.debug(f"Failed to disconnect slider_right events: {e}")
+            """if hasattr(self, "slider_left_2") and self.slider_left_2 is not None:
+                try:
+                    self.slider_left_2.disconnect_events()
+                except Exception as e:
+                    logging.debug(f"Failed to disconnect slider_left_2 events: {e}")
+            if hasattr(self, "slider_right_2") and self.slider_right_2 is not None:
+                try:
+                    self.slider_right_2.disconnect_events()
+                except Exception as e:
+                    logging.debug(f"Failed to disconnect slider_right_2 events: {e}")"""
 
             self._recreate_single_plot(
                 ax=self.ax_left,
@@ -4871,15 +4955,14 @@ class NanoVNAGraphics(QMainWindow):
                 axis_color=axis_color1,
                 linewidth=trace_size1,
                 markersize=marker_size1,
-                unit= unit_left,
+                unit=unit_left,
                 cursor_graph=self.cursor_left,
                 cursor_graph_2=self.cursor_left_2
             )
 
-            unit_right = self.get_graph_unit(2)
-            
-            # Recreate right panel plot
+            # --- Recreate right panel plot ---
             logging.info(f"[graphics_window.update_plots_with_new_data] Recreating right plot: {graph_type_tab2} - {s_param_tab2}")
+            unit_right = self.get_graph_unit(2)
             self._recreate_single_plot(
                 ax=self.ax_right,
                 fig=self.fig_right,
@@ -4898,36 +4981,73 @@ class NanoVNAGraphics(QMainWindow):
                 cursor_graph=self.cursor_right,
                 cursor_graph_2=self.cursor_right_2
             )
-            
-            # Update data references in cursor functions
+
+            # --- Update slider data references ---
             logging.info("[graphics_window.update_plots_with_new_data] Updating cursor data references")
             if hasattr(self, 'update_left_data') and self.update_left_data:
-                self.update_left_data(s_data_left, self.freqs)
-            if hasattr(self, 'update_right_data') and self.update_right_data:
-                self.update_right_data(s_data_right, self.freqs)
-            
-            # Recreate cursors for the new graph types
-            logging.info("[graphics_window.update_plots_with_new_data] Recreating cursors for new graph types")
-            self._recreate_cursors_for_new_plots(marker_color_left=marker_color1, marker_color_right=marker_color2, marker2_color_left=marker2_color1,
-                marker2_color_right=marker2_color2, marker1_size_left=marker_size1, marker1_size_right=marker_size2, marker2_size_left=marker2_size1, marker2_size_right=marker2_size2)
+                self.slider_left, self.slider_left_2 = self.update_left_data(
+                    s_data_left,
+                    self.freqs,
+                    self.slider_left,
+                    self.slider_left_2,
+                    self.canvas_left,
+                    self.fig_left,
+                    self.show_graphic1_marker1,
+                    self.show_graphic1_marker2,
+                    self.cursor_left,
+                    self.cursor_left_2,
+                    self.info_panel_left,
+                    self.info_panel_left_2
+                )
+                self.toggle_marker_visibility(0, self.show_graphic1_marker1)
+                self.toggle_marker2_visibility(0, self.show_graphic1_marker2)
 
-            # Reset sliders and markers to leftmost position (index 0) for graph type changes
-            # Skip this reset if we're doing a sweep (will be handled by _reset_markers_after_sweep)
+            if hasattr(self, 'update_right_data') and self.update_right_data:
+                self.slider_right, self.slider_right_2 = self.update_right_data(
+                    s_data_right,
+                    self.freqs,
+                    self.slider_right,
+                    self.slider_right_2,
+                    self.canvas_right,
+                    self.fig_right,
+                    self.show_graphic2_marker1,
+                    self.show_graphic2_marker2,
+                    self.cursor_right,
+                    self.cursor_right_2,
+                    self.info_panel_right,
+                    self.info_panel_right_2
+                )
+            
+            # --- Recreate cursors for new graph types ---
+            logging.info("[graphics_window.update_plots_with_new_data] Recreating cursors for new graph types")
+
+            self._recreate_cursors_for_new_plots(
+                marker_color_left=marker_color1,
+                marker_color_right=marker_color2,
+                marker2_color_left=marker2_color1,
+                marker2_color_right=marker2_color2,
+                marker1_size_left=marker_size1,
+                marker1_size_right=marker_size2,
+                marker2_size_left=marker2_size1,
+                marker2_size_right=marker2_size2
+            )
+
+            # --- Reset sliders and markers if not skipping ---
             if not skip_reset:
                 logging.info("[graphics_window.update_plots_with_new_data] Resetting sliders and markers to initial position")
                 self._reset_sliders_and_markers_for_graph_change()
             else:
                 logging.info("[graphics_window.update_plots_with_new_data] Skipping reset - will be handled by sweep reset")
-            
-            # Force redraw
+
+            # --- Force redraw ---
             self.canvas_left.draw()
             self.canvas_right.draw()
-            
+
             logging.info("[graphics_window.update_plots_with_new_data] Plots updated successfully")
-            
+
         except Exception as e:
             logging.error(f"[graphics_window.update_plots_with_new_data] Error updating plots: {e}")
-    
+
     def _recreate_single_plot(self, ax, fig, s_data, freqs, graph_type, s_param, 
                             tracecolor, markercolor, brackground_color_graphics, text_color, axis_color, linewidth, markersize,
                             unit="dB", cursor_graph=None, cursor_graph_2 = None):
@@ -4965,6 +5085,8 @@ class NanoVNAGraphics(QMainWindow):
                 # Create network and draw Smith chart
                 network = builder.create_network_from_data(freqs, s_data)
                 builder.draw_base_smith_chart(network, draw_labels=True, show_legend=False)
+
+                
                 
                 # Add legend
                 builder.add_legend([s_param], colors=[tracecolor])
