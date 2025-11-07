@@ -5086,8 +5086,6 @@ class NanoVNAGraphics(QMainWindow):
                 network = builder.create_network_from_data(freqs, s_data)
                 builder.draw_base_smith_chart(network, draw_labels=True, show_legend=False)
 
-                
-                
                 # Add legend
                 builder.add_legend([s_param], colors=[tracecolor])
                 

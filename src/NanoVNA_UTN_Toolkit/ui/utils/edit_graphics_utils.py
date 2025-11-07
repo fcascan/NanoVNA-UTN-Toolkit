@@ -68,7 +68,8 @@ def create_edit_tab1(self, tabs, nano_window):
     graph_type1 = settings.value("Tab1/GraphType1", "Smith Diagram")
     s_param1 = settings.value("Tab1/SParameter", "S11")
 
-    index = int(settings.value("Cursor1/index", 0))
+    cursor_1_1 = int(settings.value("Cursor_1_1/index", 0))
+    cursor_2_1 = int(settings.value("Cursor_2_1/index", 0))
 
 ####################################################################################################
 #--------- Tab1 -----------------------------------------------------------------------------------#
@@ -175,7 +176,7 @@ def create_edit_tab1(self, tabs, nano_window):
 
     # --- Marker size ---
     marker1_size_layout = QHBoxLayout()
-    lbl_marker1_size = QLabel("Marker size (all):")
+    lbl_marker1_size = QLabel("Marker 1 size (all):")
     lbl_marker1_size.setStyleSheet("font-size: 11pt;")
     spin_marker1_tab1 = QSpinBox()
     spin_marker1_tab1.setRange(1, 20)
@@ -189,7 +190,7 @@ def create_edit_tab1(self, tabs, nano_window):
     left_layout.addLayout(marker1_size_layout)
 
     marker2_size_layout = QHBoxLayout()
-    lbl_marker2_size = QLabel("Marker size (all):")
+    lbl_marker2_size = QLabel("Marker 2 size (all):")
     lbl_marker2_size.setStyleSheet("font-size: 11pt;")
     spin_marker2_tab1 = QSpinBox()
     spin_marker2_tab1.setRange(1, 20)
@@ -324,8 +325,11 @@ def create_edit_tab1(self, tabs, nano_window):
                     break
 
             # Cursor como secuencia
-            cursor_graph, = ax.plot([np.real(S_data[index])], [np.imag(S_data[index])], 'o',
+            cursor_graph, = ax.plot([np.real(S_data[cursor_1_1])], [np.imag(S_data[cursor_1_1])], 'o',
                                     markersize=get_marker1_size(), color=get_marker1_color(), visible=True)
+
+            cursor_graph_2_1, = ax.plot([np.real(S_data[cursor_2_1])], [np.imag(S_data[cursor_2_1])], 'o',
+                                    markersize=get_marker2_size(), color=get_marker2_color(), visible=True)
 
         elif graph_type1 == "Magnitude":  
             if np.any(S_data):
@@ -355,8 +359,11 @@ def create_edit_tab1(self, tabs, nano_window):
                     line.set_linewidth(get_trace_width())
                     break
 
-            cursor_graph, = ax.plot([freqs[index]/1e-6], [20 * np.log10(np.abs(S_data[index]))], 'o',
+            cursor_graph, = ax.plot([freqs[cursor_1_1]/1e-6], [20 * np.log10(np.abs(S_data[cursor_1_1]))], 'o',
                                     markersize=get_marker1_size(), color=get_marker1_color(), visible=True)
+
+            cursor_graph_2, = ax.plot([freqs[cursor_2_1]/1e-6], [20 * np.log10(np.abs(S_data[cursor_2_1]))], 'o',
+                                    markersize=get_marker2_size(), color=get_marker2_color(), visible=True)
 
         elif graph_type1 == "Phase":  
             if np.any(S_data):
@@ -386,8 +393,11 @@ def create_edit_tab1(self, tabs, nano_window):
                     line.set_linewidth(get_trace_width())
                     break
 
-            cursor_graph, = ax.plot([freqs[index]/1e-6], [np.angle(S_data[index])*180/np.pi], 'o',
+            cursor_graph, = ax.plot([freqs[cursor_1_1]/1e-6], [np.angle(S_data[cursor_1_1])*180/np.pi], 'o',
                                     markersize=get_marker1_size(), color=get_marker1_color(), visible=True)
+
+            cursor_graph_2, = ax.plot([freqs[cursor_2_1]/1e-6], [np.angle(S_data[cursor_2_1])*180/np.pi], 'o',
+                                    markersize=get_marker2_size(), color=get_marker2_color(), visible=True)
 
         canvas.draw()
 
@@ -516,7 +526,8 @@ def create_edit_tab2(self, tabs, nano_window):
     graph_type2 = settings.value("Tab2/GraphType2", "Smith Diagram")
     s_param2 = settings.value("Tab2/SParameter", "S11")
 
-    index = int(settings.value("Cursor2/index", 0))
+    cursor_1_2 = int(settings.value("Cursor_1_2/index", 0))
+    cursor_2_2 = int(settings.value("Cursor_2_2/index", 0))
 
 ####################################################################################################
 #--------- Tab2 -----------------------------------------------------------------------------------#
@@ -600,7 +611,7 @@ def create_edit_tab2(self, tabs, nano_window):
 
     # Marker color
     marker1_layout = QHBoxLayout()
-    lbl_marker1 = QLabel("Marker color:")
+    lbl_marker1 = QLabel("Marker 1 color:")
     lbl_marker1.setStyleSheet("font-size: 11pt;")
     btn_marker1 = QFrame()
     btn_marker1.setFixedSize(26, 26)
@@ -610,7 +621,7 @@ def create_edit_tab2(self, tabs, nano_window):
     left_layout.addLayout(marker1_layout)
 
     marker2_layout = QHBoxLayout()
-    lbl_marker2 = QLabel("Marker color:")
+    lbl_marker2 = QLabel("Marker 2 color:")
     lbl_marker2.setStyleSheet("font-size: 11pt;")
     btn_marker2 = QFrame()
     btn_marker2.setFixedSize(26, 26)
@@ -621,7 +632,7 @@ def create_edit_tab2(self, tabs, nano_window):
 
     # Marker size
     marker1_size_layout = QHBoxLayout()
-    lbl_marker1_size = QLabel("Marker size (all):")
+    lbl_marker1_size = QLabel("Marker 1 size (all):")
     lbl_marker1_size.setStyleSheet("font-size: 11pt;")
     spin_marker1_tab2 = QSpinBox()
     spin_marker1_tab2.setRange(1, 20)
@@ -636,7 +647,7 @@ def create_edit_tab2(self, tabs, nano_window):
 
     # Marker size
     marker2_size_layout = QHBoxLayout()
-    lbl_marker2_size = QLabel("Marker size (all):")
+    lbl_marker2_size = QLabel("Marker 2 size (all):")
     lbl_marker2_size.setStyleSheet("font-size: 11pt;")
     spin_marker2_tab2 = QSpinBox()
     spin_marker2_tab2.setRange(1, 20)
@@ -762,8 +773,11 @@ def create_edit_tab2(self, tabs, nano_window):
                     line.set_linewidth(get_trace_width2())
                     break
 
-            # Cursor como secuencia
-            cursor_graph2, = ax.plot([np.real(S_data[index])], [np.imag(S_data[index])], 'o',
+            # Cursor 
+            cursor_graph2, = ax.plot([np.real(S_data[cursor_1_2])], [np.imag(S_data[cursor_1_2])], 'o',
+                                    markersize=get_marker_size2(), color=get_marker_color2(), visible=True)
+
+            cursor_graph2, = ax.plot([np.real(S_data[cursor_2_2])], [np.imag(S_data[cursor_2_2])], 'o',
                                     markersize=get_marker_size2(), color=get_marker_color2(), visible=True)
 
         elif graph_type2 == "Magnitude":  
@@ -792,9 +806,12 @@ def create_edit_tab2(self, tabs, nano_window):
                     line.set_linewidth(get_trace_width2())
                     break
 
-            # Cursor como secuencia
-            cursor_graph2, = ax.plot([freqs[index]/1e-6], [20 * np.log10(np.abs(S_data[index]))], 'o',
+            # Cursor 
+            cursor_graph2, = ax.plot([freqs[cursor_1_2]/1e-6], [20 * np.log10(np.abs(S_data[cursor_1_2]))], 'o',
                                     markersize=get_marker1_size2(), color=get_marker1_color2(), visible=True)
+
+            cursor_graph2, = ax.plot([freqs[cursor_2_2]/1e-6], [20 * np.log10(np.abs(S_data[cursor_2_2]))], 'o',
+                                    markersize=get_marker2_size2(), color=get_marker2_color2(), visible=True)
 
         elif graph_type2 == "Phase":  
             if np.any(S_data):
@@ -822,9 +839,12 @@ def create_edit_tab2(self, tabs, nano_window):
                     line.set_linewidth(get_trace_width2())
                     break
 
-            # Cursor como secuencia
-            cursor_graph2, = ax.plot([freqs[index]/1e-6], [np.angle(S_data[index]) * 180 / np.pi], 'o',
+            # Cursor 
+            cursor_graph2, = ax.plot([freqs[cursor_1_2]/1e-6], [np.angle(S_data[cursor_1_2]) * 180 / np.pi], 'o',
                                     markersize=get_marker1_size2(), color=get_marker1_color2(), visible=True)
+
+            cursor_graph2, = ax.plot([freqs[cursor_2_2]/1e-6], [np.angle(S_data[cursor_2_2]) * 180 / np.pi], 'o',
+                                    markersize=get_marker2_size2(), color=get_marker2_color2(), visible=True)
 
         canvas.draw()
 
