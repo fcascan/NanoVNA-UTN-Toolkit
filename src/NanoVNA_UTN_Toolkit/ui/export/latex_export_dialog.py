@@ -391,7 +391,7 @@ class LaTeXExportDialog(QDialog):
         if freqs is None or s11_data is None or s21_data is None:
             QMessageBox.critical(self, "Error", "Required data (freqs, s11, s21) not found in parent.")
             return
-
+            
         # Create and show the preview dialog
         preview_dialog = GraphPreviewExportDialog(
             parent=self,
