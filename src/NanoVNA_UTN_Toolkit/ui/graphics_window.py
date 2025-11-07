@@ -1640,7 +1640,7 @@ class NanoVNAGraphics(QMainWindow):
             logging.error(f"[graphics_window._reset_markers_after_sweep] Error resetting markers: {e}")
 
 
-    def _recreate_cursors_for_new_plots(self, marker_color_left, marker_color_right, 
+    def _recreate_cursors_for_new_plots(self, graph_type_1, graph_type_2, s_param1, s_param2, db_times_1, db_times_2, marker_color_left, marker_color_right, 
         marker2_color_left, marker2_color_right, marker1_size_left, marker1_size_right, marker2_size_left, marker2_size_right):
         """Recreate cursors when the plot type changes."""
         try:
@@ -1691,21 +1691,112 @@ class NanoVNAGraphics(QMainWindow):
             
             # Create new cursors at position (0,0) - they will be positioned correctly later
             # Make them invisible initially to avoid the "fixed cursor" problem
-            if hasattr(self, 'ax_left') and self.ax_left:
-                self.cursor_left = self.ax_left.plot(0, 0, 'o', color=marker_color_left, markersize=marker1_size_left, 
-                                                    markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
 
-            if hasattr(self, 'ax_left') and self.ax_left:
-                self.cursor_left_2 = self.ax_left.plot(0, 0, 'o', color=marker_color_left, markersize=5, 
-                                                    markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-            
-            if hasattr(self, 'ax_right') and self.ax_right:
-                self.cursor_right = self.ax_right.plot(0, 0, 'o', color=marker_color_right, markersize=marker1_size_right, 
-                                                      markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+            if graph_type_1 == "Smith Diagram":
+                if hasattr(self, 'ax_left') and self.ax_left:
+                    self.cursor_left = self.ax_left.plot(self.s11.real[0], self.s11.imag[0], 'o', color=marker_color_left, markersize=marker1_size_left, 
+                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
 
-            if hasattr(self, 'ax_right') and self.ax_right:
-                self.cursor_right_2 = self.ax_right.plot(0, 0, 'o', color=marker_color_right, markersize=5, 
-                                                      markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+                    self.cursor_left_2 = self.ax_left.plot(self.s11.real[0], self.s11.imag[0], 'o', color=marker2_color_left, markersize=marker2_size_left, 
+                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+            elif graph_type_1 == "Magnitude":
+                if hasattr(self, 'ax_left') and self.ax_left:
+
+                    if s_param1 == "S11":
+                        self.cursor_left = self.ax_left.plot(self.freqs[0], 20 * np.log10(np.abs(self.s11[0])), 'o', color=marker_color_left, markersize=marker1_size_left, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+                        self.cursor_left_2 = self.ax_left.plot(self.freqs[0], 20 * np.log10(np.abs(self.s11[0])), 'o', color=marker2_color_left, markersize=marker2_size_left, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+                    elif s_param1 == "S21" and db_times_1 == "dB":
+                        self.cursor_left = self.ax_left.plot(self.freqs[0], 20 * np.log10(np.abs(self.s21[0])), 'o', color=marker_color_left, markersize=marker1_size_left, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+                        self.cursor_left_2 = self.ax_left.plot(self.freqs[0], 20 * np.log10(np.abs(self.s21[0])), 'o', color=marker2_color_left, markersize=marker2_size_left, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+                    elif s_param1 == "S21" and db_times_1 == "Voltage ratio":
+                        self.cursor_left = self.ax_left.plot(self.freqs[0], np.abs(self.s21[0]), 'o', color=marker_color_left, markersize=marker1_size_left, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+                        self.cursor_left_2 = self.ax_left.plot(self.freqs[0], np.abs(self.s21[0]), 'o', color=marker2_color_left, markersize=marker2_size_left, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+                    elif s_param1 == "S21" and db_times_1 == "Power ratio":
+                        self.cursor_left = self.ax_left.plot(self.freqs[0], np.abs(self.s21[0])**2, 'o', color=marker_color_left, markersize=marker1_size_left, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+                        self.cursor_left_2 = self.ax_left.plot(self.freqs[0], np.abs(self.s21[0])**2, 'o', color=marker2_color_left, markersize=marker2_size_left, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+            elif graph_type_1 == "Phase":
+                if hasattr(self, 'ax_left') and self.ax_left:
+
+                    if s_param1 == "S11":
+                        self.cursor_left = self.ax_left.plot(self.freqs[0], np.angle(self.s11[0]), 'o', color=marker_color_left, markersize=marker1_size_left, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+                        self.cursor_left_2 = self.ax_left.plot(self.freqs[0], np.angle(self.s11[0]), 'o', color=marker2_color_left, markersize=marker2_size_left, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+                    elif s_param1 == "S21":
+                        self.cursor_left = self.ax_left.plot(self.freqs[0], np.angle(self.s21[0]), 'o', color=marker_color_left, markersize=marker1_size_left, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+                        self.cursor_left_2 = self.ax_left.plot(self.freqs[0], np.angle(self.s21[0]), 'o', color=marker2_color_left, markersize=marker2_size_left, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+            if graph_type_2 == "Smith Diagram":
+                if hasattr(self, 'ax_right') and self.ax_right:
+                    self.cursor_right = self.ax_right.plot(self.s11.real[0], self.s11.imag[0], 'o', color=marker_color_right, markersize=marker1_size_right, 
+                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+                    self.cursor_right_2 = self.ax_right.plot(self.s11.real[0], self.s11.imag[0], 'o', color=marker2_color_right, markersize=marker2_size_right, 
+                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+            elif graph_type_2 == "Magnitude":
+                if hasattr(self, 'ax_right') and self.ax_right:
+
+                    if s_param2 == "S11":
+                        self.cursor_right = self.ax_right.plot(self.freqs[0], np.abs(self.s11[0]), 'o', color=marker_color_right, markersize=marker1_size_right, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+                        self.cursor_right_2 = self.ax_right.plot(self.freqs[0], np.abs(self.s11[0]), 'o', color=marker2_color_right, markersize=marker2_size_right, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+                    elif s_param1 == "S21" and db_times_1 == "dB":
+                        self.cursor_right = self.ax_right.plot(self.freqs[0], 20 * np.log10(np.abs(self.s21[0])), 'o', color=marker_color_right, markersize=marker1_size_right, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+                        self.cursor_right_2 = self.ax_right.plot(self.freqs[0], 20 * np.log10(np.abs(self.s21[0])), 'o', color=marker2_color_right, markersize=marker2_size_right, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+                    elif s_param1 == "S21" and db_times_1 == "Voltage ratio":
+                        self.cursor_right = self.ax_right.plot(self.freqs[0], np.abs(self.s21[0]), 'o', color=marker_color_right, markersize=marker1_size_right, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+                        self.cursor_right_2 = self.ax_right.plot(self.freqs[0], np.abs(self.s21[0]), 'o', color=marker2_color_right, markersize=marker2_size_right, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+                    elif s_param1 == "S21" and db_times_1 == "Power ratio":
+                        self.cursor_right = self.ax_right.plot(self.freqs[0], np.abs(self.s21[0])**2, 'o', color=marker_color_right, markersize=marker1_size_right, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+                        self.cursor_right_2 = self.ax_right.plot(self.freqs[0], np.abs(self.s21[0])**2, 'o', color=marker2_color_right, markersize=marker2_size_right, 
+                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+            elif graph_type_2 == "Phase":
+                if hasattr(self, 'ax_right') and self.ax_right:
+
+                    if s_param2 == "S11":
+                        self.cursor_right = self.ax_right.plot(self.freqs[0], np.angle(self.s11[0]), 'o', color=marker_color_right, markersize=marker1_size_right, 
+                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+                        self.cursor_right_2 = self.ax_right.plot(self.freqs[0], np.angle(self.s11[0]), 'o', color=marker2_color_right, markersize=marker2_size_right, 
+                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+                    elif s_param2 == "S21":
+                        self.cursor_right = self.ax_right.plot(self.freqs[0], np.angle(self.s21[0]), 'o', color=marker_color_right, markersize=marker1_size_right, 
+                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+
+                    self.cursor_right_2 = self.ax_right.plot(self.freqs[0], np.angle(self.s21[0]), 'o', color=marker2_color_right, markersize=marker2_size_right, 
+                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
             
             # Update markers list with new cursor references
             if hasattr(self, 'markers') and self.markers:
@@ -4520,6 +4611,8 @@ class NanoVNAGraphics(QMainWindow):
             s11_data = self.vna_device.readValues("data 0")
             s11_med = np.array(s11_data)
 
+            s11_med[0] = s11_med[1]  # Fix first point if needed
+
             logging.info(f"[graphics_window.run_sweep] Got {len(s11_med)} S11 data points")
             if len(s11_med) != self.segments:
                 logging.warning(f"[graphics_window.run_sweep] Expected {self.segments} S11 points, but got {len(s11_med)}")
@@ -4896,6 +4989,7 @@ class NanoVNAGraphics(QMainWindow):
             trace_size1 = int(settings.value("Graphic1/TraceWidth", 2))
             marker_size1 = int(settings.value("Graphic1/MarkerWidth1", 6))
             marker2_size1 = int(settings.value("Graphic1/MarkerWidth2", 6))
+            db_times_1 = settings.value("Graphic1/db_times", "dB")
 
             trace_color2 = settings.value("Graphic2/TraceColor", "blue")
             marker_color2 = settings.value("Graphic2/MarkerColor1", "blue")
@@ -4906,6 +5000,7 @@ class NanoVNAGraphics(QMainWindow):
             trace_size2 = int(settings.value("Graphic2/TraceWidth", 2))
             marker_size2 = int(settings.value("Graphic2/MarkerWidth1", 6))
             marker2_size2 = int(settings.value("Graphic2/MarkerWidth2", 6))
+            db_times_2 = settings.value("Graphic2/db_times", "dB")
 
             # --- Determine which data to plot ---
             s_data_left = self.s11 if s_param_tab1 == "S11" else self.s21
@@ -5022,6 +5117,12 @@ class NanoVNAGraphics(QMainWindow):
             logging.info("[graphics_window.update_plots_with_new_data] Recreating cursors for new graph types")
 
             self._recreate_cursors_for_new_plots(
+                graph_type_1=graph_type_tab1,
+                graph_type_2=graph_type_tab2,
+                s_param1=s_param_tab1,
+                s_param2=s_param_tab2,
+                db_times_1=db_times_1,
+                db_times_2=db_times_2,
                 marker_color_left=marker_color1,
                 marker_color_right=marker_color2,
                 marker2_color_left=marker2_color1,
