@@ -5080,6 +5080,32 @@ class NanoVNAGraphics(QMainWindow):
             else:
                 logging.info("[graphics_window.update_plots_with_new_data] Skipping reset - will be handled by sweep reset")
 
+            if self.show_graphic1_marker1 and not self.show_graphic1_marker2:
+                self.cursor_left.set_visible(True)
+                self.cursor_left_2.set_visible(False)
+            elif self.show_graphic1_marker2 and not self.show_graphic1_marker1:
+                self.cursor_left.set_visible(False)
+                self.cursor_left_2.set_visible(True)
+            elif self.show_graphic1_marker1 and self.show_graphic1_marker2:
+                self.cursor_left.set_visible(True)
+                self.cursor_left_2.set_visible(True)
+            elif not self.show_graphic1_marker1 and not self.show_graphic1_marker2:
+                self.cursor_left.set_visible(False)
+                self.cursor_left_2.set_visible(False)
+
+            if self.show_graphic2_marker1 and not self.show_graphic2_marker2:
+                self.cursor_right.set_visible(True)
+                self.cursor_right_2.set_visible(False)
+            elif self.show_graphic2_marker2 and not self.show_graphic2_marker1:
+                self.cursor_right.set_visible(False)
+                self.cursor_right_2.set_visible(True)
+            elif self.show_graphic2_marker1 and self.show_graphic2_marker2:
+                self.cursor_right.set_visible(True)
+                self.cursor_right_2.set_visible(True)
+            elif not self.show_graphic2_marker1 and not self.show_graphic2_marker2:
+                self.cursor_right.set_visible(False)
+                self.cursor_right_2.set_visible(False)
+
             # --- Force redraw ---
             self.canvas_left.draw()
             self.canvas_right.draw()
