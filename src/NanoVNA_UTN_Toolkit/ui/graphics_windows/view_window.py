@@ -247,30 +247,36 @@ class View(QMainWindow):
 
         settings = QSettings(ruta_ini, QSettings.IniFormat)
 
+        print(f"ini: {ruta_ini}")
+
         graph_type_tab1 = settings.value("Tab1/GraphType1", "Smith Diagram")
         s_param_tab1    = settings.value("Tab1/SParameter", "S11")
         graph_type_tab2 = settings.value("Tab2/GraphType2", "Magnitude")
         s_param_tab2    = settings.value("Tab2/SParameter", "S11")
         
-        trace_color1 = settings.value("Graphic1/TraceColor", "blue")
-        marker_color1 = settings.value("Graphic1/MarkerColor", "blue")
-        marker2_color1 = settings.value("Graphic1/MarkerColor2", "blue")
-        background_color1 = settings.value("Graphic1/BackgroundColor", "blue")
-        text_color1 = settings.value("Graphic1/TextColor", "blue")
-        axis_color1 = settings.value("Graphic1/AxisColor", "blue")
+        trace_color1 = settings.value("Graphic1/TraceColor", "red")
+        marker_color1 = settings.value("Graphic1/MarkerColor1", "red")
+        marker2_color1 = settings.value("Graphic1/MarkerColor2", "red")
+        background_color1 = settings.value("Graphic1/BackgroundColor", "red")
+        text_color1 = settings.value("Graphic1/TextColor", "red")
+        axis_color1 = settings.value("Graphic1/AxisColor", "red")
         trace_size1 = int(settings.value("Graphic1/TraceWidth", 2))
         marker_size1 = int(settings.value("Graphic1/MarkerWidth", 6))
         marker2_size1 = int(settings.value("Graphic1/MarkerWidth", 6))
+        db_times_1 = settings.value("Graphic1/db_times", "dB")
+        db_times_S11 = settings.value("Graphic1/db_times_S11", "dB")
         
-        trace_color2 = settings.value("Graphic2/TraceColor", "blue")
-        marker_color2 = settings.value("Graphic2/MarkerColor", "blue")
-        marker2_color2 = settings.value("Graphic2/MarkerColor2", "blue")
-        background_color2 = settings.value("Graphic2/BackgroundColor", "blue")
-        text_color2 = settings.value("Graphic2/TextColor", "blue")
-        axis_color2 = settings.value("Graphic2/AxisColor", "blue")
+        trace_color2 = settings.value("Graphic2/TraceColor", "red")
+        marker_color2 = settings.value("Graphic2/MarkerColor1", "red")
+        marker2_color2 = settings.value("Graphic2/MarkerColor2", "red")
+        background_color2 = settings.value("Graphic2/BackgroundColor", "red")
+        text_color2 = settings.value("Graphic2/TextColor", "red")
+        axis_color2 = settings.value("Graphic2/AxisColor", "red")
         trace_size2 = int(settings.value("Graphic2/TraceWidth", 2))
         marker_size2 = int(settings.value("Graphic2/MarkerWidth", 6))
         marker2_size2 = int(settings.value("Graphic2/MarkerWidth2", 6))
+        db_times_2 = settings.value("Graphic2/db_times", "dB")
+        db_times_S11_2 = settings.value("Graphic2/db_times_S11", "dB")
 
         self.s11 = self.nano_window.s11
         self.s21 = self.nano_window.s21
@@ -370,7 +376,6 @@ class View(QMainWindow):
                 marker1_size_left=marker_size1, marker1_size_right=marker_size2)
             self.nano_window._force_marker_visibility_2(marker_color_left=marker2_color1, marker_color_right=marker2_color2, 
                 marker_size_left=marker2_size1, marker_size_right=marker2_size2)
-
 
             self.nano_window.fig_left.canvas.draw_idle()
             self.nano_window.fig_right.canvas.draw_idle()

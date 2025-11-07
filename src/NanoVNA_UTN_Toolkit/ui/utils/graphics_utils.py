@@ -630,7 +630,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
                 "val_complex": val_complex
             }
 
-    def update_cursor_2(index, from_slider=False, new_slider_2=None, return_values=False):
+    def update_cursor_2(index = 0, from_slider=False, new_slider_2=None, return_values=False):
         import os
         from PySide6.QtCore import QSettings
 
@@ -1569,15 +1569,45 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
 
     info_panel_2.hide()
 
-    def update_cursor(index, from_slider=False, new_slider=None, return_values = False):
+    def update_cursor(index = 0, from_slider=False, new_slider=None, return_values = False):
         val_complex = S_data[index]
         magnitude = abs(val_complex)
         phase_deg = np.angle(val_complex, deg=True)
 
+        actual_dir = os.path.dirname(os.path.dirname(__file__))
+        ruta_ini = os.path.join(actual_dir, "graphics_windows", "ini", "config.ini")
+
+        settings = QSettings(ruta_ini, QSettings.IniFormat)
+
+        s_param = settings.value("Tab1/SParameter", "S11")
+
+        unit_mode = settings.value("Graphic1/db_times", "dB")
+
+        unit_mode_S11 = settings.value("Graphic1/db_times_S11", "dB")
+
         if graph_type == "Smith Diagram":
             cursor_graph.set_data([np.real(val_complex)], [np.imag(val_complex)])
         elif graph_type == "Magnitude":
-            cursor_graph.set_data([freqs[index]*1e-6], [magnitude])
+            if s_param == "S21":
+                if unit_mode == "dB":
+                    mag_value = 20 * np.log10(magnitude)
+                elif unit_mode == "Power ratio":
+                    mag_value = magnitude ** 2
+                elif unit_mode == "Voltage ratio":
+                    mag_value = magnitude
+                else:
+                    mag_value = magnitude
+
+            elif s_param == "S11":
+                if unit_mode_S11 == "dB":
+                    mag_value = 20 * np.log10(magnitude)
+                elif unit_mode_S11 == "S11 (reflection coefficient)":
+                    mag_value = magnitude 
+                else:
+                    mag_value = magnitude
+
+            cursor_graph.set_xdata([freqs[index] * 1e-6])
+            cursor_graph.set_ydata([mag_value])
         elif graph_type == "Phase":
             cursor_graph.set_data([freqs[index]*1e-6], [phase_deg])
 
@@ -1624,7 +1654,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
                 "val_complex": val_complex
             }
 
-    def update_cursor_2(index, from_slider=False, new_slider_2=None, return_values = False):
+    def update_cursor_2(index = 0, from_slider=False, new_slider_2=None, return_values = False):
         import os
         from PySide6.QtCore import QSettings
 
@@ -1634,24 +1664,43 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
 
         actual_dir = os.path.dirname(os.path.dirname(__file__))
         ruta_ini = os.path.join(actual_dir, "graphics_windows", "ini", "config.ini")
+
         settings = QSettings(ruta_ini, QSettings.IniFormat)
 
+        s_param = settings.value("Tab1/SParameter", "S11")
+
         unit_mode = settings.value("Graphic1/db_times", "dB")
+
+        unit_mode_S11 = settings.value("Graphic1/db_times_S11", "dB")
 
         # === Actualizar cursor según graph_type y unidad ===
         if graph_type == "Smith Diagram":
             cursor_graph_2.set_data([np.real(val_complex)], [np.imag(val_complex)])
         elif graph_type == "Magnitude":
-            if unit_mode == "dB":
-                mag_value = 20 * np.log10(magnitude)
-            elif unit_mode == "Power ratio":
-                mag_value = magnitude ** 2
-            elif unit_mode == "Voltage ratio":
-                mag_value = magnitude
-            else:
-                mag_value = magnitude
+            if s_param == "S21":
+                if unit_mode == "dB":
+                    mag_value = 20 * np.log10(magnitude)
+                elif unit_mode == "Power ratio":
+                    mag_value = magnitude ** 2
+                elif unit_mode == "Voltage ratio":
+                    mag_value = magnitude
+                else:
+                    mag_value = magnitude
+
+            elif s_param == "S11":
+                if unit_mode_S11 == "dB":
+                    mag_value = 20 * np.log10(magnitude)
+                elif unit_mode_S11 == "S11 (reflection coefficient)":
+                    mag_value = magnitude 
+                else:
+                    mag_value = magnitude
+
+            print(f"cursor_right despuéx -> x: {cursor_graph_2.get_xdata()}, y: {cursor_graph_2.get_ydata()}, id: {id(cursor_graph_2)}")
+            print("=== update_right_cursor end ===")
+
             cursor_graph_2.set_xdata([freqs[index] * 1e-6])
             cursor_graph_2.set_ydata([mag_value])
+
         elif graph_type == "Phase":
             cursor_graph_2.set_data([freqs[index] * 1e-6], [phase_deg])
 

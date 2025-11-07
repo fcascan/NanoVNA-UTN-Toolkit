@@ -1640,7 +1640,7 @@ class NanoVNAGraphics(QMainWindow):
             logging.error(f"[graphics_window._reset_markers_after_sweep] Error resetting markers: {e}")
 
 
-    def _recreate_cursors_for_new_plots(self, graph_type_1, graph_type_2, s_param1, s_param2, db_times_1, db_times_2, db_times_S11, db_times_S11_2, marker_color_left, marker_color_right, 
+    def _recreate_cursors_for_new_plots(self, graph_type_1, graph_type_2, marker_color_left, marker_color_right, 
         marker2_color_left, marker2_color_right, marker1_size_left, marker1_size_right, marker2_size_left, marker2_size_right):
         """Recreate cursors when the plot type changes."""
         try:
@@ -1700,62 +1700,21 @@ class NanoVNAGraphics(QMainWindow):
                     self.cursor_left_2 = self.ax_left.plot(self.s11.real[0], self.s11.imag[0], 'o', color=marker2_color_left, markersize=marker2_size_left, 
                                                         markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
 
-            if graph_type_1 == "Magnitude":
+            elif graph_type_1 == "Magnitude":
                 if hasattr(self, 'ax_left') and self.ax_left:
+                    self.cursor_left = self.ax_left.plot(self.freqs[0], np.abs(self.s11[0]), 'o', color=marker_color_left, markersize=marker1_size_left, 
+                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
 
-                    if s_param1 == "S11" and db_times_S11 == "dB":
-                        self.cursor_left = self.ax_left.plot(self.freqs[0], 20 * np.log10(np.abs(self.s11[0])), 'o', color=marker_color_left, markersize=marker1_size_left, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                        self.cursor_left_2 = self.ax_left.plot(self.freqs[0], 20 * np.log10(np.abs(self.s11[0])), 'o', color=marker2_color_left, markersize=marker2_size_left, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                    elif s_param1 == "S11" and db_times_S11 == "S11 (reflection coefficient)":
-                        print("entre carajps")
-                        self.cursor_left = self.ax_left.plot(self.freqs[0], np.abs(self.s11[0]), 'o', color=marker_color_left, markersize=marker1_size_left, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                        self.cursor_left_2 = self.ax_left.plot(self.freqs[0], np.abs(self.s11[0]), 'o', color=marker2_color_left, markersize=marker2_size_left, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                    elif s_param1 == "S21" and db_times_1 == "dB":
-                        self.cursor_left = self.ax_left.plot(self.freqs[0], 20 * np.log10(np.abs(self.s21[0])), 'o', color=marker_color_left, markersize=marker1_size_left, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                        self.cursor_left_2 = self.ax_left.plot(self.freqs[0], 20 * np.log10(np.abs(self.s21[0])), 'o', color=marker2_color_left, markersize=marker2_size_left, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-                    elif s_param1 == "S21" and db_times_1 == "Voltage ratio":
-                        self.cursor_left = self.ax_left.plot(self.freqs[0], np.abs(self.s21[0]), 'o', color=marker_color_left, markersize=marker1_size_left, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                        self.cursor_left_2 = self.ax_left.plot(self.freqs[0], np.abs(self.s21[0]), 'o', color=marker2_color_left, markersize=marker2_size_left, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                    elif s_param1 == "S21" and db_times_1 == "Power ratio":
-                        self.cursor_left = self.ax_left.plot(self.freqs[0], np.abs(self.s21[0])**2, 'o', color=marker_color_left, markersize=marker1_size_left, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                        self.cursor_left_2 = self.ax_left.plot(self.freqs[0], np.abs(self.s21[0])**2, 'o', color=marker2_color_left, markersize=marker2_size_left, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                    self.cursor_left.set_visible(self.show_graphic1_marker1)
-                    self.cursor_left_2.set_visible(self.show_graphic1_marker2)
+                    self.cursor_left_2 = self.ax_left.plot(self.freqs[0], np.abs(self.s11[0]), 'o', color=marker2_color_left, markersize=marker2_size_left, 
+                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
 
             elif graph_type_1 == "Phase":
                 if hasattr(self, 'ax_left') and self.ax_left:
+                    self.cursor_left = self.ax_left.plot(self.freqs[0], np.angle(self.s11[0]), 'o', color=marker_color_left, markersize=marker1_size_left, 
+                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
 
-                    if s_param1 == "S11":
-                        self.cursor_left = self.ax_left.plot(self.freqs[0], np.angle(self.s11[0]), 'o', color=marker_color_left, markersize=marker1_size_left, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                        self.cursor_left_2 = self.ax_left.plot(self.freqs[0], np.angle(self.s11[0]), 'o', color=marker2_color_left, markersize=marker2_size_left, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-                    elif s_param1 == "S21":
-                        self.cursor_left = self.ax_left.plot(self.freqs[0], np.angle(self.s21[0]), 'o', color=marker_color_left, markersize=marker1_size_left, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                        self.cursor_left_2 = self.ax_left.plot(self.freqs[0], np.angle(self.s21[0]), 'o', color=marker2_color_left, markersize=marker2_size_left, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
+                    self.cursor_left_2 = self.ax_left.plot(self.freqs[0], np.angle(self.s11[0]), 'o', color=marker2_color_left, markersize=marker2_size_left, 
+                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
 
             if graph_type_2 == "Smith Diagram":
                 if hasattr(self, 'ax_right') and self.ax_right:
@@ -1767,60 +1726,18 @@ class NanoVNAGraphics(QMainWindow):
 
             elif graph_type_2 == "Magnitude":
                 if hasattr(self, 'ax_right') and self.ax_right:
+                    self.cursor_right = self.ax_right.plot(self.freqs[0], np.abs(self.s11[0]), 'o', color=marker_color_right, markersize=marker1_size_right, 
+                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
 
-                    print(f"s_param2 = {s_param2} and db_times_S11_2 = {db_times_S11_2}")
-
-                    if s_param2 == "S11" and db_times_S11_2 == "dB":
-                        self.cursor_right = self.ax_right.plot(self.freqs[0], 20 * np.log10(np.abs(self.s11[0])), 'o', color=marker_color_right, markersize=marker1_size_right, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                        self.cursor_right_2 = self.ax_right.plot(self.freqs[0], 20 * np.log10(np.abs(self.s11[0])), 'o', color=marker2_color_right, markersize=marker2_size_right, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                    elif s_param2 == "S11" and db_times_S11_2 == "S11 (reflection coefficient)":
-                        self.cursor_right = self.ax_right.plot(self.freqs[0], np.abs(self.s11[0]), 'o', color=marker_color_right, markersize=marker1_size_right, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                        self.cursor_right_2 = self.ax_right.plot(self.freqs[0], np.abs(self.s11[0]), 'o', color=marker2_color_right, markersize=marker2_size_right, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                    elif s_param2 == "S21" and db_times_2 == "dB":
-                        self.cursor_right = self.ax_right.plot(self.freqs[0], 20 * np.log10(np.abs(self.s21[0])), 'o', color=marker_color_right, markersize=marker1_size_right, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                        self.cursor_right_2 = self.ax_right.plot(self.freqs[0], 20 * np.log10(np.abs(self.s21[0])), 'o', color=marker2_color_right, markersize=marker2_size_right, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-                    elif s_param2 == "S21" and db_times_2 == "Voltage ratio":
-                        self.cursor_right = self.ax_right.plot(self.freqs[0], np.abs(self.s21[0]), 'o', color=marker_color_right, markersize=marker1_size_right, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                        self.cursor_right_2 = self.ax_right.plot(self.freqs[0], np.abs(self.s21[0]), 'o', color=marker2_color_right, markersize=marker2_size_right, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                    elif s_param2 == "S21" and db_times_2 == "Power ratio":
-                        self.cursor_right = self.ax_right.plot(self.freqs[0], np.abs(self.s21[0])**2, 'o', color=marker_color_right, markersize=marker1_size_right, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                        self.cursor_right_2 = self.ax_right.plot(self.freqs[0], np.abs(self.s21[0])**2, 'o', color=marker2_color_right, markersize=marker2_size_right, 
-                                                            markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-                                    
-                    self.cursor_right.set_visible(self.show_graphic2_marker1)
-                    self.cursor_right_2.set_visible(self.show_graphic2_marker2)
+                    self.cursor_right_2 = self.ax_right.plot(self.freqs[0], np.abs(self.s11[0]), 'o', color=marker2_color_right, markersize=marker2_size_right, 
+                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
 
             elif graph_type_2 == "Phase":
                 if hasattr(self, 'ax_right') and self.ax_right:
-
-                    if s_param2 == "S11":
-                        self.cursor_right = self.ax_right.plot(self.freqs[0], np.angle(self.s11[0]), 'o', color=marker_color_right, markersize=marker1_size_right, 
+                    self.cursor_right = self.ax_right.plot(self.freqs[0], np.angle(self.s11[0]), 'o', color=marker_color_right, markersize=marker1_size_right, 
                                                         markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
 
-                        self.cursor_right_2 = self.ax_right.plot(self.freqs[0], np.angle(self.s11[0]), 'o', color=marker2_color_right, markersize=marker2_size_right, 
-                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-                    elif s_param2 == "S21":
-                        self.cursor_right = self.ax_right.plot(self.freqs[0], np.angle(self.s21[0]), 'o', color=marker_color_right, markersize=marker1_size_right, 
-                                                        markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
-
-                    self.cursor_right_2 = self.ax_right.plot(self.freqs[0], np.angle(self.s21[0]), 'o', color=marker2_color_right, markersize=marker2_size_right, 
+                    self.cursor_right_2 = self.ax_right.plot(self.freqs[0], np.angle(self.s11[0]), 'o', color=marker2_color_right, markersize=marker2_size_right, 
                                                         markeredgecolor='darkred', markeredgewidth=2, visible=False)[0]
             
             # Update markers list with new cursor references
@@ -1840,8 +1757,6 @@ class NanoVNAGraphics(QMainWindow):
 
             self._force_marker_visibility_2(marker_color_left=marker2_color_left, marker_color_right=marker2_color_right,
                 marker_size_left=marker2_size_left, marker_size_right=marker2_size_right)
-
-            print(f"SHOW GRAPHIC 1 MARKER 1: {self.show_graphic1_marker1} and MARKER 2: {self.show_graphic1_marker2}")
 
             if self.show_graphic1_marker1 and not self.show_graphic1_marker2:
                 self.cursor_left.set_visible(True)
@@ -2177,14 +2092,8 @@ class NanoVNAGraphics(QMainWindow):
 
         settings = QSettings(ruta_ini, QSettings.Format.IniFormat)
 
-        s_parameter_left = settings.value("Tab1/SParameter", "S11") 
-        s_parameter_right = settings.value("Tab2/SParameter", "S21")
-
         unit_mode_left = settings.value("Graphic1/db_times", "dB") 
         unit_mode_right  = settings.value("Graphic2/db_times", "dB")
-
-        unit_mode_left_S11 = settings.value("Graphic1/db_times_S11", "dB") 
-        unit_mode_right_S11 = settings.value("Graphic2/db_times_S11", "dB")
 
         logging.info(f"[graphics_window] Left panel unit mode: {unit_mode_left}")
         logging.info(f"[graphics_window] Right panel unit mode: {unit_mode_right}")
@@ -2266,27 +2175,14 @@ class NanoVNAGraphics(QMainWindow):
                                             self.cursor_left_2.set_data([real_part], [imag_part])
                                         elif graph_type_left == "Magnitude":
                                             freq_mhz = float(self.freqs[index] / 1e6)
-
-                                            if s_param_left == "S21":
-                                                if unit_mode_left == "dB":
-                                                    mag_val = float(20 * np.log10(np.abs(val_complex)))
-                                                elif unit_mode_left == "Power ratio":
-                                                    mag_val = float(np.abs(val_complex)**2)
-                                                elif unit_mode_left == "Voltage ratio":
-                                                    mag_val = float(np.abs(val_complex))
-                                                else:
-                                                    mag_val = float(np.abs(val_complex))
-
-                                            elif s_param_left == "S11":
-                                                if unit_mode_left_S11 == "dB":
-                                                    mag_val = float(20 * np.log10(np.abs(val_complex)))
-                                                elif unit_mode_left_S11 == "Power ratio":
-                                                    mag_val = float(np.abs(val_complex)**2)
-                                                elif unit_mode_left_S11 == "Voltage ratio":
-                                                    mag_val = float(np.abs(val_complex))
-                                                else:
-                                                    mag_val = float(np.abs(val_complex))
-
+                                            if unit_mode_left == "dB":
+                                                mag_val = float(20 * np.log10(np.abs(val_complex)))
+                                            elif unit_mode_left == "Power ratio":
+                                                mag_val = float(np.abs(val_complex)**2)
+                                            elif unit_mode_left == "Voltage ratio":
+                                                mag_val = float(np.abs(val_complex))
+                                            else:
+                                                mag_val = float(np.abs(val_complex))
                                             self.cursor_left_2.set_data([freq_mhz], [mag_val])
                                         elif graph_type_left == "Phase":
                                             # Phase plot coordinates (freq in MHz, phase in degrees)
@@ -2468,14 +2364,8 @@ class NanoVNAGraphics(QMainWindow):
 
         settings = QSettings(ruta_ini, QSettings.Format.IniFormat)
 
-        s_parameter_left = settings.value("Tab1/SParameter", "S11") 
-        s_parameter_right = settings.value("Tab2/SParameter", "S21")
-
         unit_mode_left = settings.value("Graphic1/db_times", "dB") 
         unit_mode_right  = settings.value("Graphic2/db_times", "dB")
-
-        unit_mode_left_S11 = settings.value("Graphic1/db_times_S11", "dB") 
-        unit_mode_right_S11 = settings.value("Graphic2/db_times_S11", "dB")
 
         logging.info(f"[graphics_window] Left panel unit mode: {unit_mode_left}")
         logging.info(f"[graphics_window] Right panel unit mode: {unit_mode_right}")
@@ -2553,27 +2443,14 @@ class NanoVNAGraphics(QMainWindow):
                                             self.cursor_left.set_data([real_part], [imag_part])
                                         elif graph_type_left == "Magnitude":
                                             freq_mhz = float(self.freqs[index] / 1e6)
-
-                                            if s_param_left == "S21":
-                                                if unit_mode_left == "dB":
-                                                    mag_val = float(20 * np.log10(np.abs(val_complex)))
-                                                elif unit_mode_left == "Power ratio":
-                                                    mag_val = float(np.abs(val_complex)**2)
-                                                elif unit_mode_left == "Voltage ratio":
-                                                    mag_val = float(np.abs(val_complex))
-                                                else:
-                                                    mag_val = float(np.abs(val_complex))
-
-                                            elif s_param_left == "S11":
-                                                if unit_mode_left_S11 == "dB":
-                                                    mag_val = float(20 * np.log10(np.abs(val_complex)))
-                                                elif unit_mode_left_S11 == "Power ratio":
-                                                    mag_val = float(np.abs(val_complex)**2)
-                                                elif unit_mode_left_S11 == "Voltage ratio":
-                                                    mag_val = float(np.abs(val_complex))
-                                                else:
-                                                    mag_val = float(np.abs(val_complex))
-
+                                            if unit_mode_left == "dB":
+                                                mag_val = float(20 * np.log10(np.abs(val_complex)))
+                                            elif unit_mode_left == "Power ratio":
+                                                mag_val = float(np.abs(val_complex)**2)
+                                            elif unit_mode_left == "Voltage ratio":
+                                                mag_val = float(np.abs(val_complex))
+                                            else:
+                                                mag_val = float(np.abs(val_complex))
                                             self.cursor_left.set_data([freq_mhz], [mag_val])
                                         elif graph_type_left == "Phase":
                                             # Phase plot coordinates (freq in MHz, phase in degrees)
@@ -3618,26 +3495,19 @@ class NanoVNAGraphics(QMainWindow):
 
         settings.beginGroup(ini_section)
         current_unit = settings.value("db_times", "dB")
-        current_unit_S11 = settings.value("db_times_S11", "dB")
         settings.endGroup()
 
         settings.beginGroup(tab_section)
-        current_param = settings.value("SParameter", "S11")
+        s_param = settings.value("SParameter", "S11")
         settings.endGroup()
 
         # --- Unit submenu ---
         menu.addSeparator()
-        unit_menu = QMenu(f"Unit (dB/Times)", self)
-        if current_unit == "dB" and current_param == "S21":
-            power_action = unit_menu.addAction("Power ratio (times)")
-            voltage_action = unit_menu.addAction("Voltage ratio (times)")
-
-        elif current_unit_S11 == "dB" and current_param == "S11":
-            reflection_action = unit_menu.addAction("S11 (reflection coefficient)")
-
-        elif current_param == "S21" or current_param == "S11":
-            db_action = unit_menu.addAction("dB")
-
+        unit_menu = QMenu(f"Unit", self)
+        if current_unit == "dB":
+            voltage_action = unit_menu.addAction(f"Times ({s_param})")
+        else:
+            db_action = unit_menu.addAction(f"dB({s_param})")
         menu.addMenu(unit_menu)
 
         # ---- grid ----
@@ -3829,23 +3699,11 @@ class NanoVNAGraphics(QMainWindow):
 
         # --- Handle unit change ---
         elif current_unit == "dB":
-            if current_param == "S21":
-                if selected_action == power_action:
-                    self.toggle_db_times(event, current_param, "Power ratio")
-                elif selected_action == voltage_action:
-                    self.toggle_db_times(event, current_param, "Voltage ratio")
+            if selected_action == voltage_action:
+                self.toggle_db_times(event, "Voltage ratio")
         elif current_unit in ("Power ratio", "Voltage ratio"):
             if selected_action == db_action:
-                self.toggle_db_times(event, current_param, new_mode = "dB")
-
-        if current_unit_S11 == "dB":
-            if current_param == "S11":
-                if selected_action == reflection_action:
-                    self.toggle_db_times(event, current_param, new_mode_S11 = "S11 (reflection coefficient)")
-        elif current_unit_S11 == "S11 (reflection coefficient)":
-            if selected_action == db_action:
-                self.toggle_db_times(event, current_param, new_mode_S11 = "dB")
-
+                self.toggle_db_times(event, "dB")
 
         if self.show_graphic1_marker1 and self.show_graphic1_marker2 or self.show_graphic2_marker1 and self.show_graphic2_marker2:
             self.markers_button.show()
@@ -4006,7 +3864,9 @@ class NanoVNAGraphics(QMainWindow):
         dialog.setLayout(layout)
         dialog.exec()
 
-    def toggle_db_times(self, event, current_param, new_mode = "dB", new_mode_S11 = "dB"):
+
+
+    def toggle_db_times(self, event, new_mode):
         """
         Toggle between dB and times for the clicked graph.
         Saves independently for Left (Graphic1) and Right (Graphic2) graph in the INI.
@@ -4038,25 +3898,19 @@ class NanoVNAGraphics(QMainWindow):
             ui_dir = os.path.dirname(os.path.dirname(__file__))  
             ruta_ini = os.path.join(ui_dir, "ui", "graphics_windows", "ini", "config.ini")
             settings = QSettings(ruta_ini, QSettings.Format.IniFormat)
-            
-            #current_param = settings.value("Tab1/SParameter", "S11")
 
             settings.beginGroup(ini_section)
 
-            if current_param == "S21":
+            # Guardar la unidad seleccionada
+            settings.setValue("db_times", new_mode)
 
-                settings.setValue("db_times", new_mode)
-
-            elif current_param == "S11":
-                
-                settings.setValue("db_times_S11", new_mode_S11)
-
+            # Guardar número de gráfico
             settings.setValue("graph_number", graph_number)
 
             settings.endGroup()
             settings.sync()
 
-            logging.info(f"Unit s11 {new_mode_S11} saved for {current_param}")
+            logging.info(f"Unit {new_mode} saved for {ini_section}")
 
             self.update_plots_with_new_data(skip_reset=False)
 
@@ -5081,8 +4935,6 @@ class NanoVNAGraphics(QMainWindow):
             trace_size1 = int(settings.value("Graphic1/TraceWidth", 2))
             marker_size1 = int(settings.value("Graphic1/MarkerWidth1", 6))
             marker2_size1 = int(settings.value("Graphic1/MarkerWidth2", 6))
-            db_times_1 = settings.value("Graphic1/db_times", "dB")
-            db_times_S11 = settings.value("Graphic1/db_times_S11", "dB")
 
             trace_color2 = settings.value("Graphic2/TraceColor", "blue")
             marker_color2 = settings.value("Graphic2/MarkerColor1", "blue")
@@ -5093,10 +4945,6 @@ class NanoVNAGraphics(QMainWindow):
             trace_size2 = int(settings.value("Graphic2/TraceWidth", 2))
             marker_size2 = int(settings.value("Graphic2/MarkerWidth1", 6))
             marker2_size2 = int(settings.value("Graphic2/MarkerWidth2", 6))
-            db_times_2 = settings.value("Graphic2/db_times", "dB")
-            db_times_S11_2 = settings.value("Graphic2/db_times_S11", "dB")
-
-            print("db_times_2:", db_times_S11_2)
 
             # --- Determine which data to plot ---
             s_data_left = self.s11 if s_param_tab1 == "S11" else self.s21
@@ -5147,7 +4995,6 @@ class NanoVNAGraphics(QMainWindow):
                 linewidth=trace_size1,
                 markersize=marker_size1,
                 unit=unit_left,
-                unit_S11=db_times_S11,
                 cursor_graph=self.cursor_left,
                 cursor_graph_2=self.cursor_left_2
             )
@@ -5170,7 +5017,6 @@ class NanoVNAGraphics(QMainWindow):
                 linewidth=trace_size2,
                 markersize=marker_size2,
                 unit=unit_right,
-                unit_S11=db_times_S11_2,
                 cursor_graph=self.cursor_right,
                 cursor_graph_2=self.cursor_right_2
             )
@@ -5217,12 +5063,6 @@ class NanoVNAGraphics(QMainWindow):
             self._recreate_cursors_for_new_plots(
                 graph_type_1=graph_type_tab1,
                 graph_type_2=graph_type_tab2,
-                s_param1=s_param_tab1,
-                s_param2=s_param_tab2,
-                db_times_1=db_times_1,
-                db_times_2=db_times_2,
-                db_times_S11=db_times_S11,
-                db_times_S11_2=db_times_S11_2,
                 marker_color_left=marker_color1,
                 marker_color_right=marker_color2,
                 marker2_color_left=marker2_color1,
@@ -5240,32 +5080,6 @@ class NanoVNAGraphics(QMainWindow):
             else:
                 logging.info("[graphics_window.update_plots_with_new_data] Skipping reset - will be handled by sweep reset")
 
-            if self.show_graphic1_marker1 and not self.show_graphic1_marker2:
-                self.cursor_left.set_visible(True)
-                self.cursor_left_2.set_visible(False)
-            elif self.show_graphic1_marker2 and not self.show_graphic1_marker1:
-                self.cursor_left.set_visible(False)
-                self.cursor_left_2.set_visible(True)
-            elif self.show_graphic1_marker1 and self.show_graphic1_marker2:
-                self.cursor_left.set_visible(True)
-                self.cursor_left_2.set_visible(True)
-            elif not self.show_graphic1_marker1 and not self.show_graphic1_marker2:
-                self.cursor_left.set_visible(False)
-                self.cursor_left_2.set_visible(False)
-
-            if self.show_graphic2_marker1 and not self.show_graphic2_marker2:
-                self.cursor_right.set_visible(True)
-                self.cursor_right_2.set_visible(False)
-            elif self.show_graphic2_marker2 and not self.show_graphic2_marker1:
-                self.cursor_right.set_visible(False)
-                self.cursor_right_2.set_visible(True)
-            elif self.show_graphic2_marker1 and self.show_graphic2_marker2:
-                self.cursor_right.set_visible(True)
-                self.cursor_right_2.set_visible(True)
-            elif not self.show_graphic2_marker1 and not self.show_graphic2_marker2:
-                self.cursor_right.set_visible(False)
-                self.cursor_right_2.set_visible(False)
-
             # --- Force redraw ---
             self.canvas_left.draw()
             self.canvas_right.draw()
@@ -5277,7 +5091,7 @@ class NanoVNAGraphics(QMainWindow):
 
     def _recreate_single_plot(self, ax, fig, s_data, freqs, graph_type, s_param, 
                             tracecolor, markercolor, brackground_color_graphics, text_color, axis_color, linewidth, markersize,
-                            unit="dB", unit_S11="dB", cursor_graph=None, cursor_graph_2 = None):
+                            unit="dB", cursor_graph=None, cursor_graph_2 = None):
         """Recreate a single plot with new data."""
         try:
             from matplotlib.lines import Line2D
@@ -5321,36 +5135,33 @@ class NanoVNAGraphics(QMainWindow):
                         
             elif graph_type == "Magnitude":
                 # Plot magnitude
-                if s_param == "S21":
-                    if unit == "dB":
-                        magnitude_db = 20 * np.log10(np.abs(s_data))
-                    elif unit == "Power ratio":
-                        magnitude_db = np.abs(s_data)**2
-                    elif unit == "Voltage ratio":
-                        magnitude_db = np.abs(s_data)
 
-                elif s_param == "S11":
-                    if unit_S11 == "dB":
-                        magnitude_db = 20 * np.log10(np.abs(s_data))
-                    elif unit_S11 == "S11 (reflection coefficient)":
-                        magnitude_db = np.abs(s_data)
+                if unit == "dB":
+                    magnitude_db = 20 * np.log10(np.abs(s_data))
+                elif unit == "Power ratio":
+                    magnitude_db = np.abs(s_data)**2
+                elif unit == "Voltage ratio":
+                    magnitude_db = np.abs(s_data)
 
-                #cursor_graph.set_xdata([freqs[0] * 1e-6])
-                #cursor_graph.set_ydata([magnitude_db[0]])
+                cursor_graph.set_xdata([freqs[0] * 1e-6])
+                cursor_graph.set_ydata([magnitude_db[0]])
 
                 fig.canvas.draw_idle()
+
+                cursor_x = cursor_graph.get_xdata()[0]
+                cursor_y = cursor_graph.get_ydata()[0]
+
+                logging.info(f"[Cursor] Frequency: {cursor_x:.6f} MHz, Magnitude: {cursor_y:.3f} {unit}")
 
                 ax.plot(freqs / 1e6, magnitude_db, color=tracecolor, linewidth=linewidth)
 
                 ax.set_xlabel(r"$\mathrm{Frequency\ [MHz]}$", color=f"{text_color}")
-
-                if unit == "dB" or unit_S11 == "dB":
+                if unit == "dB":
                     ax.set_ylabel(r"$%s\ \mathrm{[dB]}$" % s_param, color=text_color)
                     ax.set_title(r"$%s\ \mathrm{Magnitude\ [dB]}$" % s_param, color=text_color)
-                elif unit == "Power ratio" or unit_S11 == "S11 (reflection coefficient)" or unit == "Voltage ratio":
+                else:
                     ax.set_ylabel(r"$|%s|$" % s_param, color=f"{text_color}")
                     ax.set_title(r"$%s\ \mathrm{Magnitude}$" % s_param, color=text_color)
-
                 # Set X-axis limits with margins to match actual frequency range of the sweep
                 freq_start = freqs[0] / 1e6
                 freq_end = freqs[-1] / 1e6
@@ -5416,13 +5227,11 @@ class NanoVNAGraphics(QMainWindow):
             # Set axis properties
             ax.tick_params(axis='both', which='major', labelsize=8)
 
-            if cursor_graph is not None:
-                cursor_graph.set_zorder(10)
-                ax.add_line(cursor_graph)
+            cursor_graph.set_zorder(10)
+            ax.add_line(cursor_graph)
 
-            if cursor_graph_2 is not None:
-                cursor_graph_2.set_zorder(10)
-                ax.add_line(cursor_graph_2)
+            cursor_graph_2.set_zorder(10)
+            ax.add_line(cursor_graph_2)
             
         except Exception as e:
             logging.error(f"[graphics_window._recreate_single_plot] Error recreating plot: {e}")
