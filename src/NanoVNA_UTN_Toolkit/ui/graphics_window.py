@@ -4177,17 +4177,41 @@ class NanoVNAGraphics(QMainWindow):
         """Load sweep configuration from sweep options config file."""
         
         try:
-            # Get path to sweep options config
+            # Get path to sweep options config file
             actual_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             sweep_config_path = os.path.join(actual_dir, "ui", "sweep_window", "config", "config.ini")
             sweep_config_path = os.path.normpath(sweep_config_path)
+            
+            # Debug: log the config path to verify it matches sweep_options_window.py
+            logging.info(f"[graphics_window.load_sweep_configuration] Config path: {sweep_config_path}")
 
             if os.path.exists(sweep_config_path):
                 settings = QSettings(sweep_config_path, QSettings.Format.IniFormat)
+                logging.info(f"[graphics_window.load_sweep_configuration] Config file found and opened successfully")
 
-                self.start_freq_hz = int(float(str(settings.value("Frequency/StartFreqHz", 50000))))
-                self.stop_freq_hz = int(float(str(settings.value("Frequency/StopFreqHz", 1.5e9))))
-                self.segments = int(str(settings.value("Frequency/Segments", 101)))
+                # Use consistent defaults with sweep_options_window.py
+                default_start_hz = 50e3   # 50 kHz
+                default_stop_hz = 1.5e9   # 1.5 GHz 
+                default_segments = 101    # Default segments
+                
+                # Read values with proper defaults
+                start_freq_val = settings.value("Frequency/StartFreqHz", default_start_hz)
+                stop_freq_val = settings.value("Frequency/StopFreqHz", default_stop_hz)
+                segments_val = settings.value("Frequency/Segments", default_segments)
+                
+                # Debug: log what we read from file
+                logging.info(f"[graphics_window.load_sweep_configuration] Raw values from config: "
+                            f"StartFreqHz={start_freq_val}, StopFreqHz={stop_freq_val}, Segments={segments_val}")
+
+                try:
+                    self.start_freq_hz = int(float(str(start_freq_val)))
+                    self.stop_freq_hz = int(float(str(stop_freq_val)))
+                    self.segments = int(str(segments_val))
+                except (ValueError, TypeError) as e:
+                    logging.error(f"[graphics_window.load_sweep_configuration] Error parsing values: {e}")
+                    self.start_freq_hz = int(default_start_hz)
+                    self.stop_freq_hz = int(default_stop_hz)
+                    self.segments = default_segments
 
                 logging.info(f"[graphics_window.load_sweep_configuration] Loaded sweep config: "
                             f"{self.start_freq_hz/1e6:.3f} MHz - {self.stop_freq_hz/1e6:.3f} MHz, "
@@ -4531,6 +4555,55 @@ class NanoVNAGraphics(QMainWindow):
             freqs_data = self.vna_device.read_frequencies()
             freqs = np.array(freqs_data)
             logging.info(f"[graphics_window.run_sweep] Got {len(freqs)} frequency points")
+            
+            # Verify frequency range matches configuration
+            if len(freqs) > 0:
+                actual_start_freq = freqs[0]
+                actual_stop_freq = freqs[-1]
+                expected_start_freq = self.start_freq_hz
+                expected_stop_freq = self.stop_freq_hz
+                
+                # Check if frequencies are within a reasonable tolerance (±5%)
+                start_tolerance = abs(actual_start_freq - expected_start_freq) / expected_start_freq
+                stop_tolerance = abs(actual_stop_freq - expected_stop_freq) / expected_stop_freq
+                
+                if start_tolerance > 0.05 or stop_tolerance > 0.05:
+                    logging.warning(f"[graphics_window.run_sweep] FREQUENCY RANGE MISMATCH DETECTED!")
+                    logging.warning(f"[graphics_window.run_sweep] Expected: {expected_start_freq/1e6:.3f} - {expected_stop_freq/1e6:.3f} MHz")
+                    logging.warning(f"[graphics_window.run_sweep] Actual:   {actual_start_freq/1e6:.3f} - {actual_stop_freq/1e6:.3f} MHz")
+                    logging.warning(f"[graphics_window.run_sweep] Start tolerance: {start_tolerance*100:.1f}%, Stop tolerance: {stop_tolerance*100:.1f}%")
+                    
+                    # Try to reconfigure the device
+                    logging.info(f"[graphics_window.run_sweep] Attempting to reconfigure device with correct range...")
+                    try:
+                        # Force device reconfiguration
+                        self.vna_device.datapoints = self.segments
+                        self.vna_device.setSweep(self.start_freq_hz, self.stop_freq_hz)
+                        import time
+                        time.sleep(0.2)  # Give device time to reconfigure
+                        
+                        # Read frequencies again
+                        freqs_data_retry = self.vna_device.read_frequencies()
+                        freqs_retry = np.array(freqs_data_retry)
+                        
+                        if len(freqs_retry) > 0:
+                            retry_start_freq = freqs_retry[0]
+                            retry_stop_freq = freqs_retry[-1]
+                            
+                            # Check if the retry improved the situation
+                            retry_start_tolerance = abs(retry_start_freq - expected_start_freq) / expected_start_freq
+                            retry_stop_tolerance = abs(retry_stop_freq - expected_stop_freq) / expected_stop_freq
+                            
+                            if retry_start_tolerance < start_tolerance and retry_stop_tolerance < stop_tolerance:
+                                logging.info(f"[graphics_window.run_sweep] Device reconfiguration improved frequency range")
+                                logging.info(f"[graphics_window.run_sweep] New range: {retry_start_freq/1e6:.3f} - {retry_stop_freq/1e6:.3f} MHz")
+                                freqs = freqs_retry
+                            else:
+                                logging.warning(f"[graphics_window.run_sweep] Device reconfiguration did not improve frequency range")
+                    except Exception as e:
+                        logging.error(f"[graphics_window.run_sweep] Error during device reconfiguration: {e}")
+                else:
+                    logging.info(f"[graphics_window.run_sweep] ✅ Frequency range matches configuration: {actual_start_freq/1e6:.3f} - {actual_stop_freq/1e6:.3f} MHz")
             
             # Verify that we got the expected number of points
             if len(freqs) != self.segments:

@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QLabel, QMainWindow, QVBoxLayout, QWidget,
     QPushButton, QHBoxLayout, QGroupBox, QGridLayout,
     QLineEdit, QSpinBox, QDoubleSpinBox, QFormLayout,
-    QApplication, QMessageBox, QComboBox
+    QApplication, QMessageBox, QComboBox, QToolTip
 )
 from PySide6.QtGui import QIcon, QDoubleValidator, QFont, QValidator
 
@@ -410,6 +410,7 @@ class SweepOptionsWindow(QMainWindow):
         self.config_dir = os.path.join(actual_dir, "sweep_window", "config")
         os.makedirs(self.config_dir, exist_ok=True)
         self.config_path = os.path.join(self.config_dir, "config.ini")
+        self.config_path = os.path.normpath(self.config_path)
         
         self.settings = QSettings(self.config_path, QSettings.Format.IniFormat)
         
@@ -425,8 +426,15 @@ class SweepOptionsWindow(QMainWindow):
         # Store original values for cancel functionality
         self.original_values = {}
         
+        # Flag to prevent auto-saving during initialization
+        self._loading_settings = True
+        
         self.init_ui()
         self.load_settings()
+        
+        # Enable auto-saving after initialization is complete
+        self._loading_settings = False
+        
         self.store_original_values()  # Store values after loading
         self.calculate_derived_values()
         
@@ -522,8 +530,6 @@ class SweepOptionsWindow(QMainWindow):
         logging.info(f"[sweep_options_window.get_frequency_limits] Using default frequency limits: {default_min_hz/1e6:.3f} - {default_max_hz/1e6:.3f} MHz")
         return default_min_hz, default_max_hz
 
-    from PySide6.QtWidgets import QToolTip
-
     def on_frequency_changed_range(self):
         start_val_hz = self.start_freq_edit.value() * self.unit_multiplier(self.start_freq_unit.currentText())
         stop_val_hz = self.stop_freq_edit.value() * self.unit_multiplier(self.stop_freq_unit.currentText())
@@ -578,9 +584,9 @@ class SweepOptionsWindow(QMainWindow):
         min_freq_in_unit = self.freq_min_hz / self.unit_multiplier(unit)
         max_freq_in_unit = self.freq_max_hz / self.unit_multiplier(unit)
         
-        # Set a more generous range that allows manual override but starts with device limits
+        # Set a more conservative range that allows some manual override
         extended_min = min_freq_in_unit * 0.5  # Allow going 50% below device minimum
-        extended_max = max_freq_in_unit * 1.5   # Allow going 50% above device maximum
+        extended_max = max_freq_in_unit * 1.5  # Allow going 50% above device maximum
         
         # Set the range with extended limits for manual override capability
         spinbox.setRange(extended_min, extended_max)
@@ -785,11 +791,18 @@ class SweepOptionsWindow(QMainWindow):
         start_unit = self.settings.value("Frequency/StartUnit", "kHz")
         stop_unit = self.settings.value("Frequency/StopUnit", "GHz")
         
+        logging.info(f"[sweep_options_window.load_settings] Config file exists: {os.path.exists(self.config_path)}")
+        logging.info(f"[sweep_options_window.load_settings] Raw values from config: "
+                    f"StartFreqHz={start_freq_val}, StopFreqHz={stop_freq_val}, Segments={segments_val}")
+        logging.info(f"[sweep_options_window.load_settings] Raw units from config: "
+                    f"StartUnit={start_unit}, StopUnit={stop_unit}")
+        
         try:
             start_freq_hz = float(str(start_freq_val)) if start_freq_val is not None else default_start_hz
             stop_freq_hz = float(str(stop_freq_val)) if stop_freq_val is not None else default_stop_hz
             segments = int(str(segments_val)) if segments_val is not None else default_segments
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as e:
+            logging.error(f"[sweep_options_window.load_settings] Error parsing values: {e}")
             start_freq_hz = default_start_hz
             stop_freq_hz = default_stop_hz
             segments = default_segments
@@ -806,6 +819,11 @@ class SweepOptionsWindow(QMainWindow):
         self.stop_freq_edit.setValue(stop_freq_display)
         self.segments_spinbox.setValue(segments)
         
+        logging.info(f"[sweep_options_window.load_settings] Final values set in UI: "
+                    f"StartFreq={start_freq_display} {start_unit}, "
+                    f"StopFreq={stop_freq_display} {stop_unit}, "
+                    f"Segments={segments}")
+        
     def save_settings(self):
         """Save current settings to config.ini file."""
         logging.info("[sweep_options_window.save_settings] Saving settings to config.ini")
@@ -813,6 +831,11 @@ class SweepOptionsWindow(QMainWindow):
         # Convert to Hz for storage
         start_freq_hz = self.frequency_to_hz(self.start_freq_edit.value(), self.start_freq_unit.currentText())
         stop_freq_hz = self.frequency_to_hz(self.stop_freq_edit.value(), self.stop_freq_unit.currentText())
+        
+        logging.info(f"[sweep_options_window.save_settings] Values to save: "
+                    f"StartFreqHz={start_freq_hz} ({start_freq_hz/1e6:.3f} MHz), "
+                    f"StopFreqHz={stop_freq_hz} ({stop_freq_hz/1e6:.3f} MHz), "
+                    f"Segments={self.segments_spinbox.value()}")
         
         # Save frequencies in Hz and units separately
         self.settings.setValue("Frequency/StartFreqHz", start_freq_hz)
@@ -828,6 +851,11 @@ class SweepOptionsWindow(QMainWindow):
         
     def calculate_derived_values(self):
         """Calculate and update center frequency, span, and Hz/step."""
+        # Safety check: ensure segments_spinbox exists
+        if not hasattr(self, 'segments_spinbox') or self.segments_spinbox is None:
+            logging.warning("[sweep_options_window.calculate_derived_values] segments_spinbox not yet initialized, skipping calculation")
+            return
+            
         # Get frequencies in Hz
         start_freq_hz = self.frequency_to_hz(self.start_freq_edit.value(), self.start_freq_unit.currentText())
         stop_freq_hz = self.frequency_to_hz(self.stop_freq_edit.value(), self.stop_freq_unit.currentText())
@@ -883,6 +911,11 @@ class SweepOptionsWindow(QMainWindow):
     def on_frequency_changed(self):
         """Handle frequency changes."""
         self.calculate_derived_values()
+        
+        # Skip auto-saving during initialization
+        if getattr(self, '_loading_settings', False):
+            return
+            
         # Auto-save frequency changes so they are immediately available for sweep
         try:
             start_freq_hz = self.frequency_to_hz(self.start_freq_edit.value(), self.start_freq_unit.currentText())
@@ -898,13 +931,21 @@ class SweepOptionsWindow(QMainWindow):
             
             # Update main window configuration if available
             if self.parent() and hasattr(self.parent(), 'load_sweep_configuration'):
+                logging.info("[sweep_options_window.on_frequency_changed] Updating parent graphics_window configuration")
                 self.parent().load_sweep_configuration()
+            else:
+                logging.warning("[sweep_options_window.on_frequency_changed] Parent graphics_window not available for config update")
         except Exception as e:
             logging.warning(f"[sweep_options_window.on_frequency_changed] Error auto-saving: {e}")
         
     def on_segments_changed(self):
         """Handle segments changes."""
         self.calculate_derived_values()
+        
+        # Skip auto-saving during initialization
+        if getattr(self, '_loading_settings', False):
+            return
+            
         # Auto-save segments changes so they are immediately available for sweep
         self.settings.setValue("Frequency/Segments", self.segments_spinbox.value())
         self.settings.sync()
@@ -912,7 +953,10 @@ class SweepOptionsWindow(QMainWindow):
         
         # Update main window configuration if available
         if self.parent() and hasattr(self.parent(), 'load_sweep_configuration'):
+            logging.info("[sweep_options_window.on_segments_changed] Updating parent graphics_window configuration")
             self.parent().load_sweep_configuration()
+        else:
+            logging.warning("[sweep_options_window.on_segments_changed] Parent graphics_window not available for config update")
         
     def apply_settings(self):
         """Apply and save current settings."""
@@ -1013,6 +1057,16 @@ class SweepOptionsWindow(QMainWindow):
         
         # Close window without saving
         self.close()
+
+    def closeEvent(self, event):
+        """Handle window closing event to ensure parent is updated."""
+        # Ensure parent graphics_window is updated with final configuration
+        if self.parent() and hasattr(self.parent(), 'load_sweep_configuration'):
+            logging.info("[sweep_options_window.closeEvent] Final update to parent graphics_window configuration")
+            self.parent().load_sweep_configuration()
+        
+        # Call parent closeEvent
+        super().closeEvent(event)
 
 
 if __name__ == "__main__":
