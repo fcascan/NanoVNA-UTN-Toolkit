@@ -34,12 +34,30 @@ class PatchedVNA(_original_VNA):
         # Initialize our custom attributes
         self._patched_connected = False
         self._original_version = None
+        self._vna = None  # Reference to real device
         
         # Ensure the serial connection is properly initialized
         if hasattr(self, 'serial') and self.serial is not None:
             self.serial.timeout = 0.5  # Set a reasonable timeout
         
         logger.debug(f"Initialized PatchedVNA with interface: {iface}")
+    
+    @property
+    def datapoints(self):
+        """Delegate datapoints access to the real device if available."""
+        if hasattr(self, '_vna') and self._vna is not None:
+            return self._vna.datapoints
+        # Fallback to parent class behavior
+        return getattr(self, '_datapoints', 101)
+    
+    @datapoints.setter
+    def datapoints(self, value):
+        """Delegate datapoints setting to the real device if available."""
+        if hasattr(self, '_vna') and self._vna is not None:
+            self._vna.datapoints = value
+        else:
+            # Fallback to setting on ourselves
+            self._datapoints = value
     
     def connect(self) -> bool:
         """Ensure the VNA is properly connected."""
@@ -90,6 +108,23 @@ class PatchedVNA(_original_VNA):
                 self._original_version = UTNVersion.parse("0.0.0")
         
         return self._original_version
+    
+    def setSweep(self, start_freq, stop_freq):
+        """Override setSweep to ensure proper configuration."""
+        logger.debug(f"PatchedVNA.setSweep: {start_freq} - {stop_freq} Hz")
+        try:
+            # Call parent setSweep
+            result = super().setSweep(start_freq, stop_freq)
+            
+            # Also set on the real device if available
+            if hasattr(self, '_vna') and self._vna is not None:
+                self._vna.setSweep(start_freq, stop_freq)
+                logger.debug(f"PatchedVNA: Also set sweep on real device")
+            
+            return result
+        except Exception as e:
+            logger.error(f"Error in PatchedVNA.setSweep: {e}")
+            raise
 
 # Patch the get_VNA function
 def patched_get_VNA(iface) -> OriginalVNA.VNA:
@@ -110,13 +145,21 @@ def patched_get_VNA(iface) -> OriginalVNA.VNA:
     if not isinstance(vna, PatchedVNA):
         # Create a new instance of our patched class with the same attributes
         patched_vna = PatchedVNA(iface)
+        # Store reference to the real VNA device for forcing mechanism
+        patched_vna._vna = vna
         # Copy all attributes from the original VNA to our patched version
+        # EXCEPT datapoints - we need to preserve forcing mechanism
         for attr in dir(vna):
-            if not attr.startswith('__'):
+            if not attr.startswith('__') and attr != 'datapoints':
                 try:
                     setattr(patched_vna, attr, getattr(vna, attr))
                 except AttributeError:
                     pass
+        
+        # Instead of copying datapoints, make it delegate to the real device
+        # This ensures that our forcing mechanism works correctly
+        logger.debug(f"PatchedVNA wrapping real device with datapoints delegation")
+        
         vna = patched_vna
     
     return vna

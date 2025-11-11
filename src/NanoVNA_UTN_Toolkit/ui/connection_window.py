@@ -10,7 +10,7 @@ from PySide6.QtCore import QTimer, QThread, Qt, QSettings
 from PySide6.QtWidgets import (
     QLabel, QMainWindow, QVBoxLayout, QWidget, QTextEdit, QPushButton,
     QHBoxLayout, QProgressBar, QFrame, QGridLayout, QGroupBox, QComboBox,
-    QGraphicsScene, QGraphicsView, QSizePolicy, QSlider, QLabel
+    QGraphicsScene, QGraphicsView, QSizePolicy, QSlider, QLabel, QScrollArea
 )
 from PySide6.QtGui import QIcon, QTextCursor, QFont, QPen
 
@@ -292,7 +292,23 @@ class NanoVNAStatusApp(QMainWindow):
         
         # Features section
         self.features_label = QLabel("Features:")
-        self.features_value = QLabel("Not available")
+        
+        # Create scrollable features area
+        self.features_scroll_area = QScrollArea()
+        self.features_scroll_area.setWidgetResizable(True)
+        self.features_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.features_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.features_scroll_area.setMinimumHeight(80)
+        self.features_scroll_area.setMaximumHeight(150)  # Limit max height
+        
+        # Create features content widget
+        self.features_content = QLabel("Not available")
+        self.features_content.setWordWrap(True)
+        self.features_content.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.features_content.setStyleSheet("padding: 5px; background-color: transparent; color: palette(text);")
+        
+        # Set the content widget for the scroll area
+        self.features_scroll_area.setWidget(self.features_content)
         
         # Style the labels
         label_style = "font-weight: bold;"
@@ -305,8 +321,29 @@ class NanoVNAStatusApp(QMainWindow):
         
         for value in [self.board_value, self.version_value, self.build_time_value,
                      self.arch_value, self.platform_value, self.serial_value,
-                     self.device_type_value, self.params_value, self.features_value]:
+                     self.device_type_value, self.params_value]:
             value.setStyleSheet(value_style)
+        
+        # Style features scroll area
+        self.features_scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: 1px solid palette(mid);
+                border-radius: 5px;
+                background-color: palette(base);
+            }
+            QScrollBar:vertical {
+                background: palette(button);
+                width: 12px;
+                border-radius: 6px;
+            }
+            QScrollBar::handle:vertical {
+                background: palette(mid);
+                border-radius: 6px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: palette(dark);
+            }
+        """)
         
         # Add to grid layout
         device_layout.addWidget(self.board_label, 0, 0)
@@ -326,7 +363,7 @@ class NanoVNAStatusApp(QMainWindow):
         device_layout.addWidget(self.params_label, 7, 0)
         device_layout.addWidget(self.params_value, 7, 1)
         device_layout.addWidget(self.features_label, 8, 0)
-        device_layout.addWidget(self.features_value, 8, 1)
+        device_layout.addWidget(self.features_scroll_area, 8, 1)
         
         layout.addWidget(self.device_group)
         
@@ -403,7 +440,7 @@ class NanoVNAStatusApp(QMainWindow):
         """Update operation status label."""
         self.operation_label.setText(status)
     
-    def update_device_info(self, device_info):
+    def update_device_info(self, device_info, vna=None):
         """Update device information display."""
         self.board_value.setText(device_info.get('board', 'Unknown'))
         self.version_value.setText(device_info.get('version', 'Unknown'))
@@ -413,7 +450,7 @@ class NanoVNAStatusApp(QMainWindow):
         
         # Extended device information
         self.serial_value.setText(device_info.get('serial_number', 'Not available'))
-        self.device_type_value.setText(device_info.get('device_type', 'Unknown'))
+        self.device_type_value.setText(type(vna).__name__ if vna else device_info.get('device_type', 'Unknown'))
         
         # Handle parameters
         params = device_info.get('parameters', {})
@@ -433,24 +470,53 @@ class NanoVNAStatusApp(QMainWindow):
         else:
             self.params_value.setText("Not available")
         
-        # Handle features
+        # Handle features - enhanced with VNA device capabilities
         features = device_info.get('features', [])
+        
+        # Add device-specific capabilities if VNA object available
+        if vna:
+            # Add valid datapoints information
+            if hasattr(vna, 'valid_datapoints') and vna.valid_datapoints:
+                datapoints_str = ', '.join(map(str, vna.valid_datapoints))
+                features.append(f"Valid data points: {datapoints_str}")
+            
+            # Add sweep range information  
+            if hasattr(vna, 'sweep_points_min') and hasattr(vna, 'sweep_points_max'):
+                features.append(f"Sweep range: {vna.sweep_points_min} - {vna.sweep_points_max}")
+            
+            # Add frequency range if available
+            if hasattr(vna, 'sweep_max_freq_hz'):
+                max_freq_ghz = vna.sweep_max_freq_hz / 1e9
+                features.append(f"Max frequency: {max_freq_ghz:.1f} GHz")
+            
+            # Get device features if method exists
+            if hasattr(vna, 'get_features') and callable(getattr(vna, 'get_features')):
+                try:
+                    device_features = vna.get_features()
+                    if device_features:
+                        features.extend(device_features)
+                except Exception as e:
+                    logging.debug(f"Could not get device features: {e}")
+        
         if features:
-            # Show only the most relevant features for the UI
+            # Show all relevant features (no more truncation - scrollable area will handle overflow)
             important_features = []
             for feature in features:
-                if any(keyword in feature.lower() for keyword in ['customizable', 'screenshot', 'sn', 'bandwidth', 'average', 'power']):
+                if any(keyword in feature.lower() for keyword in ['customizable', 'screenshot', 'sn', 'bandwidth', 'average', 'power', 'data points', 'sweep', 'frequency']):
+                    important_features.append(feature)
+            
+            # Also include any other features that might be relevant
+            for feature in features:
+                if feature not in important_features:
                     important_features.append(feature)
             
             if important_features:
-                features_text = "• " + "\n• ".join(important_features[:5])  # Limit to 5 most important
-                if len(features) > 5:
-                    features_text += f"\n• ... and {len(features) - 5} more"
-                self.features_value.setText(features_text)
+                features_text = "• " + "\n• ".join(important_features)  # Show ALL features
+                self.features_content.setText(features_text)
             else:
-                self.features_value.setText(f"{len(features)} features available")
+                self.features_content.setText(f"{len(features)} features available")
         else:
-            self.features_value.setText("Not available")
+            self.features_content.setText("Not available")
     
     def clear_device_info(self):
         """Clear the device information display."""
@@ -462,7 +528,7 @@ class NanoVNAStatusApp(QMainWindow):
         self.serial_value.setText("Not available")
         self.device_type_value.setText("Unknown")
         self.params_value.setText("Not available")
-        self.features_value.setText("Not available")
+        self.features_content.setText("Not available")
     
     def log_message(self, message):
         """Add a message to the console output."""
@@ -579,8 +645,8 @@ class NanoVNAStatusApp(QMainWindow):
         self.status_label.setText("Status: Connected")
         self.status_label.setStyleSheet("color: green; font-size: 16px; font-weight: bold; padding: 10px;")
         
-        # Update device information display
-        self.update_device_info(device_info)
+        # Update device information display - pass VNA object for enhanced info
+        self.update_device_info(device_info, vna)
         
         # Enable disconnect button
         self.disconnect_btn.setEnabled(True)

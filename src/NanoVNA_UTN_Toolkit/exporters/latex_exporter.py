@@ -171,7 +171,7 @@ class LatexExporter:
             with tempfile.TemporaryDirectory() as tmpdirname:
                 image_files = self._generate_plots_from_figures(self.figures, tmpdirname)
                 self._create_latex_document_with_compiler(
-                    freqs=None,
+                    freqs=freqs,
                     image_files=image_files,
                     file_path=file_path,
                     tmpdirname=tmpdirname,
@@ -414,7 +414,7 @@ class LatexExporter:
         )
 
         # Cover page
-        self._create_cover_page(doc, freqs=None, current_datetime=current_datetime,
+        self._create_cover_page(doc, freqs=freqs, current_datetime=current_datetime,
                                 measurement_name=measurement_name,
                                 measurement_number=measurement_number, 
                                 calibration_method=calibration_method,
@@ -501,7 +501,7 @@ class LatexExporter:
         calibration_method, calibrated_parameter, measurement_number = self._get_calibration_info(measurement_name)
 
         # --- COVER PAGE ---
-        self._create_cover_page(doc, freqs=None, current_datetime=current_datetime,
+        self._create_cover_page(doc, freqs=freqs, current_datetime=current_datetime,
                                 measurement_name=measurement_name,
                                 measurement_number=measurement_number,
                                 calibration_method=calibration_method,
@@ -572,14 +572,10 @@ class LatexExporter:
         
         settings_sweep = QSettings(self.config_path, QSettings.Format.IniFormat)
 
-        start_unit = settings_calibration.value("Frequency/StartUnit", "kHz")
-        stop_unit = settings_calibration.value("Frequency/StopUnit", "GHz")
-
-        start_unit = "MHz"  # o lo que quieras mostrar por defecto
-        stop_unit = "MHz"
+        start_unit = settings_sweep.value("Frequency/StartUnit", "MHz")
+        stop_unit = settings_sweep.value("Frequency/StopUnit", "MHz")
 
         if freqs is not None:
-            # Solo si hay freqs reales
             start_freq = freqs[0]
             stop_freq = freqs[-1]
             if start_unit == "kHz":

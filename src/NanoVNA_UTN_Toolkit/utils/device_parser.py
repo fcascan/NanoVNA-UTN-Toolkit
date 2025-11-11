@@ -61,18 +61,18 @@ def parse_device_info(info_text):
         elif 'Copyright' in line:
             info['copyright'] = line
             
-        # NEW: Handle NanoVNA-V2/SAA-2N format (HW:/FW: format)
+        # Handle NanoVNA-V2/SAA-2N format (HW:/FW: format) - just parse, don't override
         elif line.startswith('HW:'):
             hardware_version = line.replace('HW:', '').strip()
         elif line.startswith('FW:'):
             firmware_version = line.replace('FW:', '').strip()
     
-    # Only apply V2/SAA-2N specific logic if we have HW:/FW: format AND no standard fields were found
+    # If we have HW/FW format and no other format was detected, populate the basic info
+    # but let the extended device info provide the proper device type identification
     if hardware_version and firmware_version and info['board'] == 'Unknown' and info['version'] == 'Unknown':
-        # This is likely a NanoVNA-V2 or SAA-2N device
-        info['board'] = f"NanoVNA SAA-2N (HW: {hardware_version})"
-        info['version'] = f"FW: {firmware_version}"
-        info['platform'] = "NanoVNA-V2 Compatible"
+        info['board'] = f"Hardware: {hardware_version}"
+        info['version'] = f"Firmware: {firmware_version}"
+        info['platform'] = "NanoVNA Compatible"
     
     return info
 

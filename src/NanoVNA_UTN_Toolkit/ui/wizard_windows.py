@@ -15,6 +15,9 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                                QSizePolicy, QProgressBar, QMessageBox, QInputDialog,
                                QGroupBox, QFormLayout, QDoubleSpinBox, QSpinBox, QToolTip)
 
+# Import SmartDatapointsSpinBox for intelligent datapoints navigation
+from .sweep_window.sweep_options_window import SmartDatapointsSpinBox
+
 # Import NanoVNAGraphics for the final step
 try:
     from NanoVNA_UTN_Toolkit.ui.graphics_window import NanoVNAGraphics
@@ -415,43 +418,103 @@ class CalibrationWizard(QMainWindow):
         start_val_hz = self.start_freq_input.value() * self.unit_multiplier(self.start_freq_unit.currentText())
         stop_val_hz  = self.stop_freq_input.value()  * self.unit_multiplier(self.stop_freq_unit.currentText())
 
-        # Start Frequency check
-        if not (50_000 <= start_val_hz <= 1_500_000_000):
-            self.start_freq_input.blockSignals(True)
-            self.start_freq_input.setValue(self.last_start_value)
-            self.start_freq_input.blockSignals(False)
-            QToolTip.showText(
-                self.start_freq_input.mapToGlobal(self.start_freq_input.rect().topRight()),
-                "Start frequency must be between 50 kHz and 1.5 GHz"
-            )
-        else:
-            # Aquí se guarda el último valor válido
-            self.last_start_value = self.start_freq_input.value()
+        # Use device limits if available, otherwise fallback to defaults
+        if hasattr(self, 'freq_min_hz') and hasattr(self, 'freq_max_hz'):
+            # Create dynamic frequency range strings for tooltips
+            device_min_str = f"{self.freq_min_hz/1e6:.3f} MHz" if self.freq_min_hz >= 1e6 else f"{self.freq_min_hz/1e3:.1f} kHz"
+            device_max_str = f"{self.freq_max_hz/1e9:.3f} GHz" if self.freq_max_hz >= 1e9 else f"{self.freq_max_hz/1e6:.1f} MHz"
+            
+            # Allow some flexibility beyond device limits but warn if way outside device range
+            extended_min = self.freq_min_hz * 0.5  # 50% below device minimum
+            extended_max = self.freq_max_hz * 1.5  # 50% above device maximum
 
-        # Stop Frequency check
-        if not (50_000 <= stop_val_hz <= 1_500_000_000):
-            self.stop_freq_input.blockSignals(True)
-            self.stop_freq_input.setValue(self.last_stop_value)
-            self.stop_freq_input.blockSignals(False)
-            QToolTip.showText(
-                self.stop_freq_input.mapToGlobal(self.stop_freq_input.rect().topRight()),
-                "Stop frequency must be between 50 kHz y 1.5 GHz"
-            )
+            # Start Frequency check with device-aware limits
+            if not (extended_min <= start_val_hz <= extended_max):
+                self.start_freq_input.blockSignals(True)
+                self.start_freq_input.setValue(self.last_start_value)
+                self.start_freq_input.blockSignals(False)
+                QToolTip.showText(
+                    self.start_freq_input.mapToGlobal(self.start_freq_input.rect().topRight()),
+                    f"Start frequency should be within device range: {device_min_str} - {device_max_str}\n"
+                    f"Extended range allows manual override but may not work optimally"
+                )
+            else:
+                self.last_start_value = self.start_freq_input.value()
+
+            # Stop Frequency check with device-aware limits  
+            if not (extended_min <= stop_val_hz <= extended_max):
+                self.stop_freq_input.blockSignals(True)
+                self.stop_freq_input.setValue(self.last_stop_value)
+                self.stop_freq_input.blockSignals(False)
+                QToolTip.showText(
+                    self.stop_freq_input.mapToGlobal(self.stop_freq_input.rect().topRight()),
+                    f"Stop frequency should be within device range: {device_min_str} - {device_max_str}\n"
+                    f"Extended range allows manual override but may not work optimally"
+                )
+            else:
+                self.last_stop_value = self.stop_freq_input.value()
         else:
-            # Aquí se guarda el último valor válido
-            self.last_stop_value = self.stop_freq_input.value()
+            # Fallback to hardcoded ranges if device limits not available
+            # Start Frequency check
+            if not (50_000 <= start_val_hz <= 1_500_000_000):
+                self.start_freq_input.blockSignals(True)
+                self.start_freq_input.setValue(self.last_start_value)
+                self.start_freq_input.blockSignals(False)
+                QToolTip.showText(
+                    self.start_freq_input.mapToGlobal(self.start_freq_input.rect().topRight()),
+                    "Start frequency must be between 50 kHz and 1.5 GHz"
+                )
+            else:
+                self.last_start_value = self.start_freq_input.value()
+
+            # Stop Frequency check
+            if not (50_000 <= stop_val_hz <= 1_500_000_000):
+                self.stop_freq_input.blockSignals(True)
+                self.stop_freq_input.setValue(self.last_stop_value)
+                self.stop_freq_input.blockSignals(False)
+                QToolTip.showText(
+                    self.stop_freq_input.mapToGlobal(self.stop_freq_input.rect().topRight()),
+                    "Stop frequency must be between 50 kHz and 1.5 GHz"
+                )
+            else:
+                self.last_stop_value = self.stop_freq_input.value()
 
 
     def update_spinbox_range(self, spinbox, unit):
-        """Actualiza el rango del spinbox según la unidad actual."""
-        if unit == "Hz":
-            spinbox.setRange(50_000, 1_500_000_000)
-        elif unit == "kHz":
-            spinbox.setRange(50, 1_500_000)
-        elif unit == "MHz":
-            spinbox.setRange(0.05, 1500)
-        elif unit == "GHz":
-            spinbox.setRange(0.00005, 1.5)
+        """Actualiza el rango del spinbox según la unidad actual y los límites del dispositivo."""
+        # Use device limits if available, otherwise fallback to defaults
+        if hasattr(self, 'freq_min_hz') and hasattr(self, 'freq_max_hz'):
+            # Convert device limits to the current unit
+            min_freq_in_unit = self.freq_min_hz / self.unit_multiplier(unit)
+            max_freq_in_unit = self.freq_max_hz / self.unit_multiplier(unit)
+            
+            # Set a more generous range that allows manual override but starts with device limits
+            extended_min = min_freq_in_unit * 0.5  # Allow going 50% below device minimum
+            extended_max = max_freq_in_unit * 1.5   # Allow going 50% above device maximum
+            
+            # Set the range with extended limits for manual override capability
+            spinbox.setRange(extended_min, extended_max)
+            
+            # Update tooltip to show device-specific limits
+            device_min_str = f"{self.freq_min_hz/1e6:.3f} MHz" if self.freq_min_hz >= 1e6 else f"{self.freq_min_hz/1e3:.1f} kHz"
+            device_max_str = f"{self.freq_max_hz/1e9:.3f} GHz" if self.freq_max_hz >= 1e9 else f"{self.freq_max_hz/1e6:.1f} MHz"
+            tooltip_text = f"Device range: {device_min_str} - {device_max_str}\nExtended range allows manual override"
+            spinbox.setToolTip(tooltip_text)
+            
+            logging.info(f"[CalibrationWizard] Set {unit} range: {extended_min:.6f} - {extended_max:.6f} (device: {min_freq_in_unit:.6f} - {max_freq_in_unit:.6f})")
+        else:
+            # Fallback to hardcoded ranges if device limits not available
+            if unit == "Hz":
+                spinbox.setRange(50_000, 1_500_000_000)
+            elif unit == "kHz":
+                spinbox.setRange(50, 1_500_000)
+            elif unit == "MHz":
+                spinbox.setRange(0.05, 1500)
+            elif unit == "GHz":
+                spinbox.setRange(0.00005, 1.5)
+            
+            spinbox.setToolTip("Default frequency range: 50 kHz - 1.5 GHz")
+            logging.info(f"[CalibrationWizard] Using default {unit} range (device limits not available)")
 
     def unit_multiplier(self, unit):
         return {"Hz": 1, "kHz": 1e3, "MHz": 1e6, "GHz": 1e9}[unit]
@@ -591,8 +654,8 @@ class CalibrationWizard(QMainWindow):
         
         sweep_layout.addRow("Stop Frequency:", stop_freq_layout)
         
-        # Number of steps
-        self.steps_input = QSpinBox()
+        # Number of steps (using smart datapoints spinbox)
+        self.steps_input = SmartDatapointsSpinBox()
         self.steps_input.setMinimum(1)
         self.steps_input.setMaximum(32000)  # Default maximum, will be updated based on device
         self.steps_input.setValue(101)
@@ -620,8 +683,13 @@ class CalibrationWizard(QMainWindow):
         self.stop_freq_input.editingFinished.connect(self.on_frequency_changed_range)
 
         
-        # Update initial values
+        # Update initial values and device limits
         self.update_sweep_config()
+        self.update_device_limits()  # Configure SmartDatapointsSpinBox with device limits
+        
+        # Get frequency limits from device and configure frequency spinboxes
+        self.freq_min_hz, self.freq_max_hz = self.get_frequency_limits()
+        self.update_frequency_ranges()  # Configure frequency ranges based on device limits
 
         self.content_layout.addLayout(top_container)
 
@@ -1205,16 +1273,44 @@ class CalibrationWizard(QMainWindow):
                     stop_freq = self.vna_device.sweep_max_freq_hz
                     logging.warning(f"[CalibrationWizard] Stop frequency limited to device max: {stop_freq/1e6:.3f} MHz")
             
-            if hasattr(self.vna_device, 'sweep_points_max'):
-                if num_points > self.vna_device.sweep_points_max:
-                    num_points = self.vna_device.sweep_points_max
-                    logging.warning(f"[CalibrationWizard] Number of points limited to device max: {num_points}")
+            # Check device limits for sweep points
+            device_max_points = None
+            if hasattr(self.vna_device, 'valid_datapoints') and self.vna_device.valid_datapoints:
+                device_max_points = max(self.vna_device.valid_datapoints)
+                logging.info(f"[CalibrationWizard] Using max from valid_datapoints: {device_max_points}")
+            elif hasattr(self.vna_device, 'sweep_points_max'):
+                device_max_points = self.vna_device.sweep_points_max
+                logging.info(f"[CalibrationWizard] Using sweep_points_max: {device_max_points}")
+            
+            if device_max_points and num_points > device_max_points:
+                num_points = device_max_points
+                logging.warning(f"[CalibrationWizard] Number of points limited to device max: {num_points}")
             
             logging.info(f"[CalibrationWizard] User Sweep config: {start_freq/1e6:.3f} - {stop_freq/1e6:.3f} MHz, {num_points} points")
             
-            # Configure sweep
+            # Configure sweep with datapoints verification
+            logging.info(f"[CalibrationWizard] Setting device datapoints to {num_points}")
             self.vna_device.datapoints = num_points
+            
+            # Verify datapoints were set correctly
+            actual_datapoints = getattr(self.vna_device, 'datapoints', 'unknown')
+            logging.info(f"[CalibrationWizard] Device datapoints after setting: {actual_datapoints}")
+            
+            if hasattr(self.vna_device, '_vna'):
+                actual_real_datapoints = getattr(self.vna_device._vna, 'datapoints', 'unknown')
+                logging.info(f"[CalibrationWizard] Real device (_vna) datapoints: {actual_real_datapoints}")
+            
+            # Configure sweep
             self.vna_device.setSweep(start_freq, stop_freq)
+            
+            # Final verification after setSweep
+            final_datapoints = getattr(self.vna_device, 'datapoints', 'unknown')
+            logging.info(f"[CalibrationWizard] Device datapoints after setSweep: {final_datapoints}")
+            
+            if final_datapoints != num_points:
+                logging.warning(f"[CalibrationWizard] Datapoints mismatch! Expected {num_points}, got {final_datapoints}")
+            else:
+                logging.info(f"[CalibrationWizard] Datapoints correctly configured: {final_datapoints}")
             
             # Perform measurements
             logging.info(f"[CalibrationWizard] Reading frequencies...")
@@ -1225,7 +1321,18 @@ class CalibrationWizard(QMainWindow):
             s11_data = self.vna_device.readValues("data 0")
             s11 = np.array(s11_data)
             
-            logging.info(f"[CalibrationWizard] Got {len(freqs)} points")
+            logging.info(f"[CalibrationWizard] Got {len(freqs)} frequency points and {len(s11)} S11 points")
+            
+            # Verify that we got the expected number of points
+            if len(freqs) != num_points:
+                logging.warning(f"[CalibrationWizard] Frequency points mismatch! Expected {num_points}, got {len(freqs)}")
+            if len(s11) != num_points:
+                logging.warning(f"[CalibrationWizard] S11 points mismatch! Expected {num_points}, got {len(s11)}")
+            
+            if len(freqs) == num_points and len(s11) == num_points:
+                logging.info(f"[CalibrationWizard] All data points match expected count: {num_points}")
+            else:
+                logging.error(f"[CalibrationWizard] Data count mismatch - this may indicate datapoints configuration issues")
 
             if standard_name == "OPEN" or standard_name == "SHORT" or standard_name == "MATCH":
                 
@@ -1259,10 +1366,26 @@ class CalibrationWizard(QMainWindow):
                 logging.info(f"[CalibrationWizard] Measurement for {standard_name} completed successfully")
 
             elif standard_name == "THRU":
+                logging.info(f"[CalibrationWizard] Reading S11 data for THRU...")
                 s11_data = self.vna_device.readValues("data 0")
                 s11 = np.array(s11_data)
+                
+                logging.info(f"[CalibrationWizard] Reading S21 data for THRU...")
                 s21_data = self.vna_device.readValues("data 1")
                 s21 = np.array(s21_data)
+                
+                logging.info(f"[CalibrationWizard] Got {len(freqs)} freq, {len(s11)} S11, and {len(s21)} S21 points")
+                
+                # Verify that we got the expected number of points for THRU
+                if len(s11) != num_points:
+                    logging.warning(f"[CalibrationWizard] THRU S11 points mismatch! Expected {num_points}, got {len(s11)}")
+                if len(s21) != num_points:
+                    logging.warning(f"[CalibrationWizard] THRU S21 points mismatch! Expected {num_points}, got {len(s21)}")
+                
+                if len(freqs) == num_points and len(s11) == num_points and len(s21) == num_points:
+                    logging.info(f"[CalibrationWizard] All THRU data points match expected count: {num_points}")
+                else:
+                    logging.error(f"[CalibrationWizard] THRU data count mismatch - this may indicate datapoints configuration issues")
 
                 # Save data in calibration structure
                 if self.thru_calibration:
@@ -1296,7 +1419,7 @@ class CalibrationWizard(QMainWindow):
             self.status_label.setText("Measurement failed!")
             self.status_label.setStyleSheet("font-size: 12px; padding: 4px; color: red;")
 
-        # ✅ Enable Next button after successful measurement
+        # Enable Next button after successful measurement
         self.next_button.setEnabled(True)
         logging.info(f"[CalibrationWizard] Next step unlocked after {standard_name} measurement")
 
@@ -1819,23 +1942,87 @@ class CalibrationWizard(QMainWindow):
     def update_device_limits(self):
         """Update step limits based on connected device"""
         try:
-            if hasattr(self, 'hardware') and self.hardware and hasattr(self.hardware, 'getDevice'):
+            # Try to get device from vna_device
+            device = None
+            if self.vna_device:
+                device = self.vna_device
+            elif hasattr(self, 'hardware') and self.hardware and hasattr(self.hardware, 'getDevice'):
                 device = self.hardware.getDevice()
-                if hasattr(device, 'valid_datapoints') and device.valid_datapoints:
-                    max_points = max(device.valid_datapoints)
-                    self.steps_input.setMaximum(max_points)
-                    self.steps_input.setToolTip(f"Maximum points for this device: {max_points}")
-                else:
-                    # Default VNA limits
-                    self.steps_input.setMaximum(32000)
-                    self.steps_input.setToolTip("Default maximum: 32000 points")
+            
+            if device and hasattr(device, 'valid_datapoints') and device.valid_datapoints:
+                # Configure SmartDatapointsSpinBox with device-specific valid points
+                self.steps_input.set_valid_datapoints(device.valid_datapoints)
+                max_points = max(device.valid_datapoints)
+                logging.info(f"[CalibrationWizard] Configured datapoints for device: {device.valid_datapoints}")
+                self.steps_input.setToolTip(f"Valid datapoints for this device: {device.valid_datapoints}")
             else:
-                self.steps_input.setMaximum(32000)
-                self.steps_input.setToolTip("Default maximum: 32000 points")
+                # Default valid datapoints for generic VNA
+                default_points = [11, 51, 101, 201, 301, 501, 1023]
+                self.steps_input.set_valid_datapoints(default_points)
+                logging.info(f"[CalibrationWizard] Using default datapoints: {default_points}")
+                self.steps_input.setToolTip(f"Default valid datapoints: {default_points}")
+                
         except Exception as e:
+            logging.error(f"[CalibrationWizard] Error updating device limits: {e}")
             # Fallback to default
-            self.steps_input.setMaximum(32000)
-            self.steps_input.setToolTip("Default maximum: 32000 points")
+            default_points = [11, 51, 101, 201, 301, 501, 1023]
+            self.steps_input.set_valid_datapoints(default_points)
+            self.steps_input.setToolTip(f"Default valid datapoints: {default_points}")
+
+    def get_frequency_limits(self):
+        """Get frequency limits from VNA device or use defaults."""
+        default_min_hz = 50000      # 50 kHz default minimum
+        default_max_hz = 1500000000 # 1.5 GHz default maximum
+        
+        logging.info("[CalibrationWizard] Getting frequency limits")
+        
+        if self.vna_device:
+            device_type = type(self.vna_device).__name__
+            logging.info(f"[CalibrationWizard] Checking device {device_type} for frequency limits")
+            
+            try:
+                # Check for device-specific frequency limits
+                min_freq_hz = getattr(self.vna_device, 'sweep_min_freq_hz', None)
+                max_freq_hz = getattr(self.vna_device, 'sweep_max_freq_hz', None)
+                
+                # Handle wrapped devices (like PatchedVNA)
+                if hasattr(self.vna_device, '_vna'):
+                    real_device = self.vna_device._vna
+                    min_freq_hz = min_freq_hz or getattr(real_device, 'sweep_min_freq_hz', None)
+                    max_freq_hz = max_freq_hz or getattr(real_device, 'sweep_max_freq_hz', None)
+                
+                if min_freq_hz is not None and max_freq_hz is not None:
+                    logging.info(f"[CalibrationWizard] Device frequency limits: {min_freq_hz/1e6:.3f} - {max_freq_hz/1e6:.3f} MHz")
+                    return int(min_freq_hz), int(max_freq_hz)
+                else:
+                    logging.warning(f"[CalibrationWizard] Device {device_type} has no frequency limit attributes")
+                    
+            except (AttributeError, ValueError, TypeError) as e:
+                logging.error(f"[CalibrationWizard] Error getting device frequency limits: {e}")
+        else:
+            logging.warning("[CalibrationWizard] No VNA device available")
+        
+        # Fallback to defaults if no device or device doesn't have limits
+        logging.info(f"[CalibrationWizard] Using default frequency limits: {default_min_hz/1e6:.3f} - {default_max_hz/1e6:.3f} MHz")
+        return default_min_hz, default_max_hz
+
+    def update_frequency_ranges(self):
+        """Update frequency spinbox ranges based on device limits."""
+        try:
+            # Update start frequency range
+            start_unit = self.start_freq_unit.currentText()
+            self.update_spinbox_range(self.start_freq_input, start_unit)
+            
+            # Update stop frequency range
+            stop_unit = self.stop_freq_unit.currentText()
+            self.update_spinbox_range(self.stop_freq_input, stop_unit)
+            
+            logging.info(f"[CalibrationWizard] Updated frequency ranges for device limits: {self.freq_min_hz/1e6:.3f} - {self.freq_max_hz/1e6:.3f} MHz")
+            
+        except Exception as e:
+            logging.error(f"[CalibrationWizard] Error updating frequency ranges: {e}")
+            # Use default behavior on error
+            pass
 
 
 if __name__ == "__main__":
