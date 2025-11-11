@@ -1282,54 +1282,106 @@ class NanoVNAGraphics(QMainWindow):
     def _clear_panel_labels(self, panel_side='left'):
         """Clear all labels for a specific panel (left or right)."""
         if panel_side == 'left' and hasattr(self, 'labels_left') and self.labels_left:
-            if panel_side == 'left' and hasattr(self, 'labels_left') and self.labels_left:
-                # allow "--" temporarily
-                self.labels_left.get("freq") and self.labels_left["freq"].setText("--")
-                self.labels_right["freq"].deselect()
-                self.labels_right["freq"].clearFocus()
-            self.labels_left.get("val") and self.labels_left["val"].setText(f"{self.left_s_param}: -- + j--")
-            self.labels_left.get("mag") and self.labels_left["mag"].setText(f"|{self.left_s_param}|: --")
-            self.labels_left.get("phase") and self.labels_left["phase"].setText("Phase: --")
-            self.labels_left.get("z") and self.labels_left["z"].setText("Zin (Z0): -- + j--")
-            self.labels_left.get("il") and self.labels_left["il"].setText("IL: --")
-            self.labels_left.get("vswr") and self.labels_left["vswr"].setText("VSWR: --")
+            # Clear left panel marker 1 labels
+            if "freq" in self.labels_left:
+                self.labels_left["freq"].setText("--")
+            if "val" in self.labels_left:
+                self.labels_left["val"].setText(f"{self.left_s_param}: -- + j--")
+            if "mag" in self.labels_left:
+                self.labels_left["mag"].setText(f"|{self.left_s_param}|: --")
+            if "phase" in self.labels_left:
+                self.labels_left["phase"].setText("Phase: --")
+            if "z" in self.labels_left:
+                self.labels_left["z"].setText("Zin (Z0): -- + j--")
+            if "il" in self.labels_left:
+                self.labels_left["il"].setText("IL: --")
+            if "vswr" in self.labels_left:
+                self.labels_left["vswr"].setText("VSWR: --")
+            # Clear focus from frequency field
+            if "freq" in self.labels_left:
+                try:
+                    self.labels_left["freq"].deselect()
+                    self.labels_left["freq"].clearFocus()
+                except Exception:
+                    pass  # Ignore if widget doesn't have these methods
         elif panel_side == 'right' and hasattr(self, 'labels_right') and self.labels_right:
-            if panel_side == 'left' and hasattr(self, 'labels_left') and self.labels_left:
-                # allow "--" temporarily
-                self.labels_left.get("freq") and self.labels_left["freq"].setText("--")
-                self.labels_right["freq"].deselect()
-                self.labels_right["freq"].clearFocus()
-            self.labels_right.get("val") and self.labels_right["val"].setText(f"{self.right_s_param}: -- + j--")
-            self.labels_right.get("mag") and self.labels_right["mag"].setText(f"|{self.right_s_param}|: --")
-            self.labels_right.get("phase") and self.labels_right["phase"].setText("Phase: --")
-            self.labels_right.get("z") and self.labels_right["z"].setText("Zin (Z0): -- + j--")
-            self.labels_right.get("il") and self.labels_right["il"].setText("IL: --")
-            self.labels_right.get("vswr") and self.labels_right["vswr"].setText("VSWR: --")
+            # Clear right panel marker 1 labels
+            if "freq" in self.labels_right:
+                self.labels_right["freq"].setText("--")
+            if "val" in self.labels_right:
+                self.labels_right["val"].setText(f"{self.right_s_param}: -- + j--")
+            if "mag" in self.labels_right:
+                self.labels_right["mag"].setText(f"|{self.right_s_param}|: --")
+            if "phase" in self.labels_right:
+                self.labels_right["phase"].setText("Phase: --")
+            if "z" in self.labels_right:
+                self.labels_right["z"].setText("Zin (Z0): -- + j--")
+            if "il" in self.labels_right:
+                self.labels_right["il"].setText("IL: --")
+            if "vswr" in self.labels_right:
+                self.labels_right["vswr"].setText("VSWR: --")
+            # Clear focus from frequency field
+            if "freq" in self.labels_right:
+                try:
+                    self.labels_right["freq"].deselect()
+                    self.labels_right["freq"].clearFocus()
+                except Exception:
+                    pass  # Ignore if widget doesn't have these methods
 
         if panel_side == 'left' and hasattr(self, 'labels_left_2') and self.labels_left_2:
-            if panel_side == 'left' and hasattr(self, 'labels_left_2') and self.labels_left_2:
-                # allow "--" temporarily
-                self.labels_left_2.get("freq") and self.labels_left_2["freq"].setText("--")
-                self.labels_right_2["freq"].deselect()
-                self.labels_right_2["freq"].clearFocus()
-            self.labels_left_2.get("val") and self.labels_left_2["val"].setText(f"{self.left_s_param}: -- + j--")
-            self.labels_left_2.get("mag") and self.labels_left_2["mag"].setText(f"|{self.left_s_param}|: --")
-            self.labels_left_2.get("phase") and self.labels_left_2["phase"].setText("Phase: --")
-            self.labels_left_2.get("z") and self.labels_left_2["z"].setText("Zin (Z0): -- + j--")
-            self.labels_left_2.get("il") and self.labels_left_2["il"].setText("IL: --")
-            self.labels_left_2.get("vswr") and self.labels_left_2["vswr"].setText("VSWR: --")
+            # Clear left panel marker 2 labels
+            if "freq" in self.labels_left_2:
+                self.labels_left_2["freq"].setText("--")
+            if "val" in self.labels_left_2:
+                self.labels_left_2["val"].setText(f"{self.left_s_param}: -- + j--")
+            if "mag" in self.labels_left_2:
+                self.labels_left_2["mag"].setText(f"|{self.left_s_param}|: --")
+            if "phase" in self.labels_left_2:
+                self.labels_left_2["phase"].setText("Phase: --")
+            if "z" in self.labels_left_2:
+                self.labels_left_2["z"].setText("Zin (Z0): -- + j--")
+            if "il" in self.labels_left_2:
+                self.labels_left_2["il"].setText("IL: --")
+            if "vswr" in self.labels_left_2:
+                self.labels_left_2["vswr"].setText("VSWR: --")
+            # Clear focus from frequency field
+            if "freq" in self.labels_left_2:
+                try:
+                    self.labels_left_2["freq"].deselect()
+                    self.labels_left_2["freq"].clearFocus()
+                except Exception:
+                    pass  # Ignore if widget doesn't have these methods
         elif panel_side == 'right' and hasattr(self, 'labels_right_2') and self.labels_right_2:
-            if panel_side == 'left' and hasattr(self, 'labels_left_2') and self.labels_left_2:
-                # allow "--" temporarily
-                self.labels_left_2.get("freq") and self.labels_left_2["freq"].setText("--")
-                self.labels_right_2["freq"].deselect()
-                self.labels_right_2["freq"].clearFocus()
-            self.labels_right_2.get("val") and self.labels_right_2["val"].setText(f"{self.right_s_param}: -- + j--")
-            self.labels_right_2.get("mag") and self.labels_right_2["mag"].setText(f"|{self.right_s_param}|: --")
-            self.labels_right_2.get("phase") and self.labels_right_2["phase"].setText("Phase: --")
-            self.labels_right_2.get("z") and self.labels_right_2["z"].setText("Zin (Z0): -- + j--")
-            self.labels_right_2.get("il") and self.labels_right_2["il"].setText("IL: --")
-            self.labels_right_2.get("vswr") and self.labels_right_2["vswr"].setText("VSWR: --")
+            # Clear right panel marker 2 labels
+            if "freq" in self.labels_right_2:
+                self.labels_right_2["freq"].setText("--")
+            if "val" in self.labels_right_2:
+                self.labels_right_2["val"].setText(f"{self.right_s_param}: -- + j--")
+            if "mag" in self.labels_right_2:
+                self.labels_right_2["mag"].setText(f"|{self.right_s_param}|: --")
+            if "phase" in self.labels_right_2:
+                self.labels_right_2["phase"].setText("Phase: --")
+            if "z" in self.labels_right_2:
+                self.labels_right_2["z"].setText("Zin (Z0): -- + j--")
+            if "il" in self.labels_right_2:
+                self.labels_right_2["il"].setText("IL: --")
+            if "vswr" in self.labels_right_2:
+                self.labels_right_2["vswr"].setText("VSWR: --")
+            # Clear focus from frequency field
+            if "freq" in self.labels_right_2:
+                try:
+                    self.labels_right_2["freq"].deselect()
+                    self.labels_right_2["freq"].clearFocus()
+                except Exception:
+                    pass  # Ignore if widget doesn't have these methods
+            self.labels_right_2.get("phase")
+            self.labels_right_2["phase"].setText("Phase: --")
+            self.labels_right_2.get("z")
+            self.labels_right_2["z"].setText("Zin (Z0): -- + j--")
+            self.labels_right_2.get("il")
+            self.labels_right_2["il"].setText("IL: --")
+            self.labels_right_2.get("vswr")
+            self.labels_right_2["vswr"].setText("VSWR: --")
 
     def _clear_axis_and_show_message(self, panel_side='right', message_pos=(0.5, 0.5)):
         """Clear axis and show waiting message for a specific panel."""
@@ -1472,7 +1524,7 @@ class NanoVNAGraphics(QMainWindow):
 
         try:
             if self.cursor_left and getattr(self.cursor_left, "ax", None):
-                fig = self.cursor_left.ax.get_figure()
+                fig = self.cursor_left.ax.get_figure() # type: ignore
                 # continue normal update
             else:
                 return  # cursor already removed or destroyed
