@@ -4655,7 +4655,7 @@ class NanoVNAGraphics(QMainWindow):
                     except Exception as e:
                         logging.error(f"[graphics_window.run_sweep] Error during device reconfiguration: {e}")
                 else:
-                    logging.info(f"[graphics_window.run_sweep] ✅ Frequency range matches configuration: {actual_start_freq/1e6:.3f} - {actual_stop_freq/1e6:.3f} MHz")
+                    logging.info(f"[graphics_window.run_sweep] Frequency range matches configuration: {actual_start_freq/1e6:.3f} - {actual_stop_freq/1e6:.3f} MHz")
             
             # Verify that we got the expected number of points
             if len(freqs) != self.segments:
@@ -5283,6 +5283,9 @@ class NanoVNAGraphics(QMainWindow):
                 
                 # Update data line styles
                 builder.update_data_line_styles(freqs, color=tracecolor, linewidth=linewidth)
+                
+                # Add starting point marker
+                builder.add_start_point_marker(s_data, color=tracecolor)
                         
             elif graph_type == "Magnitude":
                 # Plot magnitude

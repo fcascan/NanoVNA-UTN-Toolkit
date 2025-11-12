@@ -215,10 +215,33 @@ class SmithChartBuilder:
         color2 = color2 or self.config.marker_color
         size = size or self.config.markersize
         
-        cursor, = self.ax.plot([], [], 'o', markersize=size, color=color, visible=visible)
-        cursor_2, = self.ax.plot([], [], 'o', markersize=size, color=color2, visible=visible_2)
+        cursor, = self.ax.plot([], [], 'o', markersize=size, color=color, visible=visible, zorder=10)
+        cursor_2, = self.ax.plot([], [], 'o', markersize=size, color=color2, visible=visible_2, zorder=10)
 
         return cursor, cursor_2
+
+    def add_start_point_marker(self, s_data, color=None):
+        """Add a visual marker at the starting point of the trace."""
+        if self.ax is None or s_data is None or len(s_data) == 0:
+            return None
+            
+        start_point = s_data[0]
+        marker_color = color or self.config.trace_color
+        
+        # Add starting point marker with distinctive styling
+        start_marker = self.ax.plot(
+            np.real(start_point), np.imag(start_point),
+            marker='o', 
+            markersize=self.config.markersize + 1,  # Slightly larger
+            color=marker_color,
+            markeredgecolor=marker_color,
+            markeredgewidth=1.25,
+            zorder=2,  # Below cursors but above trace
+            linestyle='None',
+            picker=False  # Not interactive
+        )
+        
+        return start_marker[0] if start_marker else None
 
     def clear_and_redraw(self):
         """Clear axis and prepare for new plot."""
@@ -274,6 +297,9 @@ class SmithChartManager:
         # Update line styles for data
         self.builder.update_data_line_styles(freqs, color=trace_color)
         
+        # Add starting point marker
+        self.builder.add_start_point_marker(s_data, color=trace_color)
+        
         # Add legend
         self.builder.add_legend([s_param], colors=[trace_color or self.config.trace_color])
         
@@ -311,6 +337,9 @@ class SmithChartManager:
             color = color_map.get(standard_name.lower(), self.config.trace_color)
             ax.plot(np.real(s11_data), np.imag(s11_data), 'o-',
                    color=color, linewidth=self.config.linewidth, markersize=3)
+            
+            # Add starting point marker
+            self.builder.add_start_point_marker(s11_data, color=color)
             
             # Add legend
             legend_line = Line2D([0], [0], color=color)
