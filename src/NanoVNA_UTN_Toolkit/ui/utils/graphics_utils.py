@@ -82,6 +82,10 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
     brackground_color_graphics = settings.value("Graphic1/BackgroundColor", "red")
     text_color = settings.value("Graphic1/TextColor", "red")
     axis_color = settings.value("Graphic1/AxisColor", "red")
+    
+    # QGroupBox border styling based on dark/light mode
+    groupbox_border = settings.value("Dark_Light/QGroupBox/border", "1px solid #b0b0b0")
+    groupbox_style = f"QGroupBox {{ border: {groupbox_border}; border-radius: 5px; margin-top: 1ex; padding-top: 10px; }} QGroupBox::title {{ subcontrol-origin: margin; left: 10px; padding: 0 5px 0 5px; }}"
                       
     freqs = freqs if freqs is not None else np.linspace(1e6, 100e6, 101)
 
@@ -222,6 +226,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 
     # --- Top QGroupBox with title ---
     box_top = QGroupBox("S-Parameter Details")
+    box_top.setStyleSheet(groupbox_style)
     layout_top = QHBoxLayout(box_top)
     layout_top.setSpacing(20)
     layout_top.setContentsMargins(12, 8, 12, 8)  # márgenes equilibrados
@@ -338,6 +343,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 
     # --- Bottom QGroupBox ---
     box_bottom = QGroupBox("DUT Parameters")
+    box_bottom.setStyleSheet(groupbox_style)
     layout_bottom = QHBoxLayout(box_bottom)
     layout_bottom.setSpacing(40)  # aumenta separación entre labels
     layout_bottom.setContentsMargins(10, 8, 10, 8)
@@ -392,6 +398,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 
     # --- Top QGroupBox with title ---
     box_top_2 = QGroupBox("S-Parameter Details 2")
+    box_top_2.setStyleSheet(groupbox_style)
     layout_top_2 = QHBoxLayout(box_top_2)
     layout_top_2.setSpacing(20)
     layout_top_2.setContentsMargins(12, 8, 12, 8)
@@ -490,6 +497,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 
     # --- Bottom QGroupBox ---
     box_bottom_2 = QGroupBox("DUT Parameters 2")
+    box_bottom_2.setStyleSheet(groupbox_style)
     layout_bottom_2 = QHBoxLayout(box_bottom_2)
     layout_bottom_2.setSpacing(40)
     layout_bottom_2.setContentsMargins(10, 8, 10, 8)
@@ -1122,6 +1130,10 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
     brackground_color_graphics = settings.value("Graphic2/BackgroundColor", "red")
     text_color = settings.value("Graphic2/TextColor", "red")
     axis_color = settings.value("Graphic2/AxisColor", "red")
+    
+    # QGroupBox border styling based on dark/light mode
+    groupbox_border = settings.value("Dark_Light/QGroupBox/border", "1px solid #b0b0b0")
+    groupbox_style = f"QGroupBox {{ border: {groupbox_border}; border-radius: 5px; margin-top: 1ex; padding-top: 10px; }} QGroupBox::title {{ subcontrol-origin: margin; left: 10px; padding: 0 5px 0 5px; }}"
 
     freqs = freqs if freqs is not None else np.linspace(1e6, 100e6, 101)
     
@@ -1255,6 +1267,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
 
     # --- Top QGroupBox with title ---
     box_top = QGroupBox("S-Parameter Details")
+    box_top.setStyleSheet(groupbox_style)
     layout_top = QHBoxLayout(box_top)
     layout_top.setSpacing(20)
     layout_top.setContentsMargins(12, 8, 12, 8)  # márgenes equilibrados
@@ -1373,6 +1386,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
 
     # --- Bottom QGroupBox ---
     box_bottom = QGroupBox("DUT Parameters")
+    box_bottom.setStyleSheet(groupbox_style)
     layout_bottom = QHBoxLayout(box_bottom)
     layout_bottom.setSpacing(40) 
     layout_bottom.setContentsMargins(10, 8, 10, 8)
@@ -1426,6 +1440,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
 
     # --- Top QGroupBox with title ---
     box_top_2 = QGroupBox("S-Parameter Details 2")
+    box_top_2.setStyleSheet(groupbox_style)
     layout_top_2 = QHBoxLayout(box_top_2)
     layout_top_2.setSpacing(20)
     layout_top_2.setContentsMargins(12, 8, 12, 8)
@@ -1524,6 +1539,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
 
     # --- Bottom QGroupBox ---
     box_bottom_2 = QGroupBox("DUT Parameters 2")
+    box_bottom_2.setStyleSheet(groupbox_style)
     layout_bottom_2 = QHBoxLayout(box_bottom_2)
     layout_bottom_2.setSpacing(40)
     layout_bottom_2.setContentsMargins(10, 8, 10, 8)

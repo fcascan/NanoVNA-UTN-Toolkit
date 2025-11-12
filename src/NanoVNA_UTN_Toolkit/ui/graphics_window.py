@@ -533,6 +533,9 @@ class NanoVNAGraphics(QMainWindow):
 
                 # --- QGroupBox title ---
                 settings.setValue("Dark_Light/QGroupBox_title/color", "white")
+                
+                # --- QGroupBox border ---
+                settings.setValue("Dark_Light/QGroupBox/border", "1px solid #5f5f5f")
 
                 # --- QLabel ---
                 settings.setValue("Dark_Light/QLabel/color", "white")
@@ -745,6 +748,9 @@ class NanoVNAGraphics(QMainWindow):
 
                 # --- QGroupBox title ---
                 settings.setValue("Dark_Light/QGroupBox_title/color", "black")
+                
+                # --- QGroupBox border ---
+                settings.setValue("Dark_Light/QGroupBox/border", "1px solid #b0b0b0")
 
                 # --- QLabel ---
                 settings.setValue("Dark_Light/QLabel/color", "black")
