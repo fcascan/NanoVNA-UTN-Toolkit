@@ -28,6 +28,56 @@ class TouchstoneExporter:
         self.parent_widget = parent_widget
         self.logger = logging.getLogger(__name__)
     
+    def export_to_s1p(self, freqs, s11_data, device_name=None):
+        """
+        Export S-parameter data to Touchstone S1P format (S11 only).
+        
+        Args:
+            freqs: Frequency array in Hz
+            s11_data: S11 parameter data (complex array)
+            device_name: Optional device name for the file header
+            
+        Returns:
+            bool: True if export successful, False otherwise
+        """
+        self.logger.info("Starting Touchstone S1P export")
+        
+        # Validate input data for S1P
+        if not self._validate_s1p_data(freqs, s11_data):
+            return False
+        
+        # Get save file path from user
+        file_path, _ = QFileDialog.getSaveFileName(
+            self.parent_widget,
+            "Export Touchstone S1P Data",
+            "",
+            "Touchstone S1P Files (*.s1p);;All Files (*)"
+        )
+        
+        if not file_path:
+            self.logger.info("S1P Export cancelled by user")
+            return False
+        
+        # Ensure file has .s1p extension
+        if not file_path.lower().endswith('.s1p'):
+            file_path += '.s1p'
+        
+        try:
+            # Export the data
+            self._write_s1p_file(file_path, freqs, s11_data, device_name or "Unknown")
+            
+            # Success message
+            self._show_success_message(file_path, freqs, format_type="S1P")
+            self.logger.info(f"Successfully exported {len(freqs)} points to S1P file: {file_path}")
+            return True
+            
+        except Exception as e:
+            error_msg = f"Error exporting Touchstone S1P data:\\n{str(e)}"
+            self._show_error("Export Error", error_msg)
+            self.logger.error(f"S1P Export error: {e}")
+            self.logger.error(f"Exception details: {type(e).__name__}")
+            return False
+
     def export_to_s2p(self, freqs, s11_data, s21_data, device_name=None):
         """
         Export S-parameter data to Touchstone S2P format.
@@ -41,7 +91,7 @@ class TouchstoneExporter:
         Returns:
             bool: True if export successful, False otherwise
         """
-        self.logger.info("Starting Touchstone export")
+        self.logger.info("Starting Touchstone S2P export")
         
         # Validate input data
         if not self._validate_data(freqs, s11_data, s21_data):
@@ -50,13 +100,13 @@ class TouchstoneExporter:
         # Get save file path from user
         file_path, _ = QFileDialog.getSaveFileName(
             self.parent_widget,
-            "Export Touchstone Data",
+            "Export Touchstone S2P Data",
             "",
             "Touchstone S2P Files (*.s2p);;All Files (*)"
         )
         
         if not file_path:
-            self.logger.info("Export cancelled by user")
+            self.logger.info("S2P Export cancelled by user")
             return False
         
         # Ensure file has .s2p extension
@@ -68,17 +118,48 @@ class TouchstoneExporter:
             self._write_s2p_file(file_path, freqs, s11_data, s21_data, device_name or "Unknown")
             
             # Success message
-            self._show_success_message(file_path, freqs)
-            self.logger.info(f"Successfully exported {len(freqs)} points to {file_path}")
+            self._show_success_message(file_path, freqs, format_type="S2P")
+            self.logger.info(f"Successfully exported {len(freqs)} points to S2P file: {file_path}")
             return True
             
         except Exception as e:
-            error_msg = f"Error exporting Touchstone data:\\n{str(e)}"
+            error_msg = f"Error exporting Touchstone S2P data:\\n{str(e)}"
             self._show_error("Export Error", error_msg)
-            self.logger.error(f"Export error: {e}")
+            self.logger.error(f"S2P Export error: {e}")
             self.logger.error(f"Exception details: {type(e).__name__}")
             return False
     
+    def _validate_s1p_data(self, freqs, s11_data):
+        """
+        Validate input data for S1P export.
+        
+        Args:
+            freqs: Frequency array
+            s11_data: S11 data array
+            
+        Returns:
+            bool: True if data is valid, False otherwise
+        """
+        # Check if we have sweep data available
+        if freqs is None:
+            self._show_warning("No Data", "No sweep data available for export.\\nPlease run a sweep first.")
+            self.logger.warning("No frequency data available")
+            return False
+        
+        if s11_data is None:
+            self._show_warning("No Data", "No S11 data available for export.\\nPlease run a sweep first.")
+            self.logger.warning("No S11 data available")
+            return False
+        
+        # Check data consistency
+        if len(freqs) != len(s11_data):
+            error_msg = f"Data length mismatch detected.\\nFreqs: {len(freqs)}, S11: {len(s11_data)}"
+            self._show_error("Data Error", error_msg)
+            self.logger.error(error_msg)
+            return False
+        
+        return True
+
     def _validate_data(self, freqs, s11_data, s21_data):
         """
         Validate input data for export.
@@ -116,6 +197,44 @@ class TouchstoneExporter:
         
         return True
     
+    def _write_s1p_file(self, file_path, freqs, s11_data, device_name):
+        """
+        Write data to Touchstone S1P format file.
+        
+        Args:
+            file_path: Path where to save the S1P file
+            freqs: Frequency array in Hz
+            s11_data: S11 parameter data
+            device_name: Name of the measurement device
+        """
+        self.logger.info(f"Writing S1P file: {file_path}")
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
+            # Header
+            f.write(f"! Touchstone S1P file exported from NanoVNA UTN Toolkit\n")
+            f.write(f"! Device: {device_name}\n")
+            f.write(f"! Export date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"! Frequency range: {freqs[0]/1e6:.3f} - {freqs[-1]/1e6:.3f} MHz\n")
+            f.write(f"! Number of points: {len(freqs)}\n")
+            f.write(f"! Parameter: S11 (Reflection)\n")
+            f.write(f"!\n")
+            f.write("# Hz S RI R 50\n")
+            f.write("! f[Hz]  S11_real S11_imag\n")
+
+            for i in range(len(freqs)):
+                freq = freqs[i]
+                s11 = s11_data[i]
+
+                # Column-aligned formatting for S1P
+                line = "{:<12.6e} {:<12.6f} {:<12.6f}\n".format(
+                    freq,
+                    s11.real, 
+                    s11.imag
+                )
+                f.write(line)
+        
+        self.logger.info(f"Successfully wrote {len(freqs)} S1P data points")
+
     def _write_s2p_file(self, file_path, freqs, s11_data, s21_data, device_name):
         """
         Write data to Touchstone S2P format file.
@@ -131,11 +250,12 @@ class TouchstoneExporter:
         
         with open(file_path, 'w', encoding='utf-8') as f:
             # Header
-            f.write(f"! Touchstone file exported from NanoVNA UTN Toolkit\n")
+            f.write(f"! Touchstone S2P file exported from NanoVNA UTN Toolkit\n")
             f.write(f"! Device: {device_name}\n")
             f.write(f"! Export date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write(f"! Frequency range: {freqs[0]/1e6:.3f} - {freqs[-1]/1e6:.3f} MHz\n")
             f.write(f"! Number of points: {len(freqs)}\n")
+            f.write(f"! Parameters: S11, S21\n")
             f.write(f"!\n")
             f.write("# Hz S RI R 50\n")
             f.write("! f[Hz]  S11_real S11_imag S21_real S21_imag S12_real S12_imag S22_real S22_imag\n")
@@ -156,13 +276,13 @@ class TouchstoneExporter:
                 )
                 f.write(line)
         
-        self.logger.info(f"Successfully wrote {len(freqs)} data points")
+        self.logger.info(f"Successfully wrote {len(freqs)} S2P data points")
     
-    def _show_success_message(self, file_path, freqs):
+    def _show_success_message(self, file_path, freqs, format_type="Touchstone"):
         """Show success message to user."""
         num_points = len(freqs)
         freq_range = f"{freqs[0]/1e6:.3f} - {freqs[-1]/1e6:.3f} MHz"
-        success_msg = (f"Touchstone data exported successfully!\\n\\n"
+        success_msg = (f"{format_type} data exported successfully!\\n\\n"
                       f"File: {file_path}\\n"
                       f"Points: {num_points}\\n"
                       f"Frequency range: {freq_range}")
