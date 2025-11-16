@@ -289,14 +289,25 @@ def create_edit_tab1(self, tabs, nano_window):
     freqs = nano_window.freqs
     S_data = nano_window.s11 if s_param1 == "S11" else nano_window.s21
 
-    logging.info(f"[edit_graphics_utils] freqs type: {type(freqs)}, shape: {getattr(freqs, 'shape', 'N/A')}, first 5 values: {freqs[:5] if len(freqs) >= 5 else freqs}")
+    # Safely check freqs for logging - handle None case
+    if freqs is not None:
+        logging.info(f"[edit_graphics_utils] freqs type: {type(freqs)}, shape: {getattr(freqs, 'shape', 'N/A')}, first 5 values: {freqs[:5] if len(freqs) >= 5 else freqs}")
+    else:
+        logging.info(f"[edit_graphics_utils] freqs is None - no frequency data available")
 
     cursor_graph, = ax.plot([0], [0], 'o', markersize=marker_size1, color=marker_color1, visible=True)
     cursor_graph_2, = ax.plot([0], [0], 'o', markersize=marker_size2, color=marker_color2, visible=True)
 
     def update_graph(graph_type1):
         ax.clear()
-        ax.legend().remove()
+        # Safely remove legend if it exists
+        try:
+            legend = ax.get_legend()
+            if legend is not None:
+                legend.remove()
+        except (AttributeError, ValueError):
+            # No legend to remove or already removed
+            pass
         
         fig.patch.set_facecolor(f"{get_background_color()}")
         ax.set_facecolor(f"{get_background_color()}")
@@ -764,7 +775,14 @@ def create_edit_tab2(self, tabs, nano_window):
 
     def update_graph2(graph_type2):
         ax.clear()
-        ax.legend().remove()
+        # Safely remove legend if it exists
+        try:
+            legend = ax.get_legend()
+            if legend is not None:
+                legend.remove()
+        except (AttributeError, ValueError):
+            # No legend to remove or already removed
+            pass
 
         fig.patch.set_facecolor(f"{get_background_color2()}")
         ax.set_facecolor(f"{get_background_color2()}")
@@ -791,10 +809,10 @@ def create_edit_tab2(self, tabs, nano_window):
 
             # Cursor 
             cursor_graph2, = ax.plot([np.real(S_data[cursor_1_2])], [np.imag(S_data[cursor_1_2])], 'o',
-                                    markersize=get_marker_size2(), color=get_marker_color2(), visible=True)
+                                    markersize=get_marker1_size2(), color=get_marker1_color2(), visible=True)
 
             cursor_graph2_2, = ax.plot([np.real(S_data[cursor_2_2])], [np.imag(S_data[cursor_2_2])], 'o',
-                                    markersize=get_marker_size2(), color=get_marker_color2(), visible=True)
+                                    markersize=get_marker2_size2(), color=get_marker2_color2(), visible=True)
 
         elif graph_type2 == "Magnitude":  
             if np.any(S_data):
