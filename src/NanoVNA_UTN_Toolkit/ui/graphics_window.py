@@ -345,6 +345,9 @@ class NanoVNAGraphics(QMainWindow):
             QLabel {{
                 color: {label_color};  
             }}
+             QRadioButton{{
+                color: {label_color};
+            }}
             QLineEdit {{
                 background-color: {lineedit_bg};
                 color: {lineedit_color};
@@ -623,6 +626,9 @@ class NanoVNAGraphics(QMainWindow):
                     QLabel {
                         color: white;  
                     }
+                    QRadioButton {
+                        color: white;
+                    }
                     QTextEdit {
                         color: white;
                     }
@@ -822,6 +828,9 @@ class NanoVNAGraphics(QMainWindow):
                     }
                     QTabBar::tab:selected {
                         background-color: #c8c8c8;  
+                        color: black;
+                    }
+                    QRadioButton {
                         color: black;
                     }
                     QSpinBox {
@@ -2455,6 +2464,10 @@ class NanoVNAGraphics(QMainWindow):
                 self.cursor_left = new_cursor
                 logging.info(f"[graphics_window._force_marker_visibility] Created new left cursor at ({x_val}, {y_val})")
 
+                if self.cursor_left:
+                    self.cursor_left.set_visible(self.show_graphic1_marker1)
+                    self.fig_left.canvas.draw_idle()
+
                 # Also update in markers list if it exists
                 if hasattr(self, 'markers') and self.markers:
                     for i, marker in enumerate(self.markers):
@@ -2578,6 +2591,10 @@ class NanoVNAGraphics(QMainWindow):
                 new_cursor = self.ax_right.plot(x_val, y_val, 'o', color=marker_color_right, markersize=marker1_size_right, markeredgewidth=2)[0]
                 self.cursor_right = new_cursor
                 logging.info(f"[graphics_window._force_marker_visibility] Created new right cursor at ({x_val}, {y_val})")
+
+                if self.cursor_right:
+                    self.cursor_right.set_visible(self.show_graphic2_marker1)
+                    self.fig_right.canvas.draw_idle()
                 
                 if hasattr(self, 'slider_right') and self.slider_right:
                     self.slider_right.on_changed(lambda val: self.update_right_cursor(int(val), from_slider=True))
@@ -2666,7 +2683,7 @@ class NanoVNAGraphics(QMainWindow):
                             except:
                                 pass
                             self.slider_right.on_changed(self.right_slider_moved)
-                            self.right_slider_moved()
+                            #self.right_slider_moved()
                         
                         # Reconnect the slider to use our wrapper
                         if hasattr(self, 'slider_right') and self.slider_right:
@@ -3609,7 +3626,9 @@ class NanoVNAGraphics(QMainWindow):
         range_action = menu.addAction("Set range")
         #grid_action.setChecked(current_state)
 
-        smith_action = menu.addAction("Smith Normalized")
+        smith_action = None
+
+        #smith_action = menu.addAction("Smith Normalized")
 
         # --- Export ---
         menu.addSeparator()
@@ -5347,6 +5366,11 @@ class NanoVNAGraphics(QMainWindow):
                 # Plot phase
                 phase_deg = np.angle(s_data) * 180 / np.pi
 
+                cursor_graph.set_xdata([freqs[0] * 1e-6])
+                cursor_graph.set_ydata([phase_deg[0]])
+
+                fig.canvas.draw_idle()
+
                 ax.plot(freqs / 1e6, phase_deg, color=tracecolor, linewidth=linewidth)
 
                 ax.set_xlabel(r"$\mathrm{Frequency\ [MHz]}$", color=f"{text_color}")
@@ -5833,7 +5857,7 @@ class NanoVNAGraphics(QMainWindow):
         
         # Info label
         info_label = QLabel("S1P files contain only S11 reflection data.\nS2P files contain both S11 and S21 transmission data.")
-        info_label.setStyleSheet("font-size: 11px; color: #888888;")
+        info_label.setStyleSheet("font-size: 11px; color: #D0D0D0;")
         info_label.setWordWrap(True)
         layout.addWidget(info_label)
         

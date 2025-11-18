@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QPushButton, QTabWidget, QFrame, QSizePolicy, QApplication
 )
 from PySide6.QtCore import Qt, QSettings
+from PySide6.QtGui import QIcon, QTextCursor, QFont, QPen
 
 try:
     from NanoVNA_UTN_Toolkit.ui.utils.edit_graphics_utils import create_edit_tab1, create_edit_tab2
@@ -29,6 +30,21 @@ from NanoVNA_UTN_Toolkit.ui.graphics_window import NanoVNAGraphics
 class EditGraphics(QMainWindow):
     def __init__(self, nano_window: NanoVNAGraphics, freqs=None):
         super().__init__()
+
+        # --- Icon ---
+        icon_paths = [
+            os.path.join(os.path.dirname(__file__), 'icon.ico'),
+            os.path.join(os.path.dirname(__file__), '..', '..', 'icon.ico'),
+            'icon.ico'
+        ]
+        for icon_path in icon_paths:
+            icon_path = os.path.abspath(icon_path)
+            if os.path.exists(icon_path):
+                self.setWindowIcon(QIcon(icon_path))
+                break
+        else:
+            logger = logging.getLogger(__name__)
+            logger.warning("icon.ico not found in expected locations")
 
         ui_dir = os.path.dirname(os.path.dirname(__file__))  
         ruta_ini = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
