@@ -288,7 +288,7 @@ def create_edit_tab1(self, tabs, nano_window):
     # --- Datos dummy ---
     freqs = nano_window.freqs
     S_data = nano_window.s11 if s_param1 == "S11" else nano_window.s21
-
+    
     # Safely check freqs for logging - handle None case
     if freqs is not None:
         logging.info(f"[edit_graphics_utils] freqs type: {type(freqs)}, shape: {getattr(freqs, 'shape', 'N/A')}, first 5 values: {freqs[:5] if len(freqs) >= 5 else freqs}")
@@ -340,7 +340,7 @@ def create_edit_tab1(self, tabs, nano_window):
             cursor_graph, = ax.plot([np.real(S_data[cursor_1_1])], [np.imag(S_data[cursor_1_1])], 'o',
                                     markersize=get_marker1_size(), color=get_marker1_color(), visible=True)
 
-            cursor_graph_2_1, = ax.plot([np.real(S_data[cursor_2_1])], [np.imag(S_data[cursor_2_1])], 'o',
+            cursor_graph_2, = ax.plot([np.real(S_data[cursor_2_1])], [np.imag(S_data[cursor_2_1])], 'o',
                                     markersize=get_marker2_size(), color=get_marker2_color(), visible=True)
 
         elif graph_type1 == "Magnitude":  
@@ -410,6 +410,19 @@ def create_edit_tab1(self, tabs, nano_window):
 
             cursor_graph_2, = ax.plot([freqs[cursor_2_1]/1e-6], [np.angle(S_data[cursor_2_1])*180/np.pi], 'o',
                                     markersize=get_marker2_size(), color=get_marker2_color(), visible=True)
+
+        if nano_window.show_graphic1_marker1 and not nano_window.show_graphic1_marker2:
+            cursor_graph.set_visible(True)
+            cursor_graph_2.set_visible(False)
+        elif nano_window.show_graphic1_marker2 and not nano_window.show_graphic1_marker1:
+            cursor_graph.set_visible(False)
+            cursor_graph_2.set_visible(True)
+        elif nano_window.show_graphic1_marker1 and nano_window.show_graphic1_marker2:
+            cursor_graph.set_visible(True)
+            cursor_graph_2.set_visible(True)
+        elif not nano_window.show_graphic1_marker1 and not nano_window.show_graphic1_marker2:
+            cursor_graph.set_visible(False)
+            cursor_graph_2.set_visible(False)
 
         canvas.draw()
 
@@ -879,6 +892,19 @@ def create_edit_tab2(self, tabs, nano_window):
 
             cursor_graph2_2, = ax.plot([freqs[cursor_2_2]/1e-6], [np.angle(S_data[cursor_2_2]) * 180 / np.pi], 'o',
                                     markersize=get_marker2_size2(), color=get_marker2_color2(), visible=True)
+
+        if nano_window.show_graphic1_marker1 and not nano_window.show_graphic1_marker2:
+            cursor_graph2.set_visible(True)
+            cursor_graph2_2.set_visible(False)
+        elif nano_window.show_graphic1_marker2 and not nano_window.show_graphic1_marker1:
+            cursor_graph2.set_visible(False)
+            cursor_graph2_2.set_visible(True)
+        elif nano_window.show_graphic1_marker1 and nano_window.show_graphic1_marker2:
+            cursor_graph2.set_visible(True)
+            cursor_graph2_2.set_visible(True)
+        elif not nano_window.show_graphic1_marker1 and not nano_window.show_graphic1_marker2:
+            cursor_graph2.set_visible(False)
+            cursor_graph2_2.set_visible(False)
 
         canvas.draw()
 
