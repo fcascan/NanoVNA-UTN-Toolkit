@@ -3574,11 +3574,21 @@ class NanoVNAGraphics(QMainWindow):
 
         settings.beginGroup(tab_section)
         s_param = settings.value("SParameter", "S11")
+        graph_type = settings.value("GraphType1" if graph_number == 1 else "GraphType2", "Smith Diagram")
         settings.endGroup()
 
-        # --- Unit submenu ---
+        # Check if current graph is Smith Diagram
+        is_smith_diagram = graph_type == "Smith Diagram"
+
+        # --- Unit submenu (disabled for Smith Diagram) ---
         menu.addSeparator()
         unit_menu = QMenu(f"Unit", self)
+        unit_menu.setEnabled(not is_smith_diagram)
+        
+        # Initialize unit actions as None
+        voltage_action = None
+        db_action = None
+        
         if current_unit == "dB":
             voltage_action = unit_menu.addAction(f"Times ({s_param})")
         else:
@@ -3619,12 +3629,15 @@ class NanoVNAGraphics(QMainWindow):
             target_ax.grid(current_state)
             target_fig.canvas.draw_idle()
 
+        # --- Grid action (disabled for Smith Diagram) ---
         grid_action = menu.addAction("Grid ✓" if current_state else "Grid")
         grid_action.setCheckable(True)
         grid_action.setChecked(current_state)
+        grid_action.setEnabled(not is_smith_diagram)
 
+        # --- Range action (disabled for Smith Diagram) ---
         range_action = menu.addAction("Set range")
-        #grid_action.setChecked(current_state)
+        range_action.setEnabled(not is_smith_diagram)
 
         smith_action = None
 
@@ -3718,7 +3731,7 @@ class NanoVNAGraphics(QMainWindow):
 
         # --- Grid ---
           
-        elif selected_action == grid_action and target_ax and target_fig and target_attr:
+        elif selected_action == grid_action and target_ax and target_fig and target_attr and not is_smith_diagram:
             new_state = not getattr(self, target_attr, True)
             if target_attr is not None:
                 setattr(self, target_attr, new_state)
@@ -3728,13 +3741,13 @@ class NanoVNAGraphics(QMainWindow):
 
         # --- Range ---
 
-        elif selected_action == range_action:
+        elif selected_action == range_action and not is_smith_diagram:
             self.show_y_range_dialog(target_ax)
 
         # --- Smith Normalized ---
           
         # --- Toggle Smith Normalized ---
-        elif selected_action == smith_action and target_ax and target_fig:
+        elif smith_action is not None and selected_action == smith_action and target_ax and target_fig:
             # Determinar si el gráfico seleccionado es tipo Smith
 
             logging.info(f"selected_graph_name: {selected_graph_name}")
@@ -3774,11 +3787,11 @@ class NanoVNAGraphics(QMainWindow):
         elif selected_action == export_action:
             self.open_export_dialog(event)
 
-        # --- Handle unit change ---
-        elif current_unit == "dB":
+        # --- Handle unit change (disabled for Smith Diagram) ---
+        elif current_unit == "dB" and not is_smith_diagram:
             if selected_action == voltage_action:
                 self.toggle_db_times(event, "Voltage ratio")
-        elif current_unit in ("Power ratio", "Voltage ratio"):
+        elif current_unit in ("Power ratio", "Voltage ratio") and not is_smith_diagram:
             if selected_action == db_action:
                 self.toggle_db_times(event, "dB")
 
@@ -5139,7 +5152,7 @@ class NanoVNAGraphics(QMainWindow):
                 s_param=s_param_tab1,
                 tracecolor=trace_color1,
                 markercolor=marker_color1,
-                brackground_color_graphics=background_color1,
+                background_color_graphics=background_color1,
                 text_color=text_color1,
                 axis_color=axis_color1,
                 linewidth=trace_size1,
@@ -5161,7 +5174,7 @@ class NanoVNAGraphics(QMainWindow):
                 s_param=s_param_tab2,
                 tracecolor=trace_color2,
                 markercolor=marker_color2,
-                brackground_color_graphics=background_color2,
+                background_color_graphics=background_color2,
                 text_color=text_color2,
                 axis_color=axis_color2,
                 linewidth=trace_size2,
@@ -5266,7 +5279,7 @@ class NanoVNAGraphics(QMainWindow):
             logging.error(f"[graphics_window.update_plots_with_new_data] Error updating plots: {e}")
 
     def _recreate_single_plot(self, ax, fig, s_data, freqs, graph_type, s_param, 
-                            tracecolor, markercolor, brackground_color_graphics, text_color, axis_color, linewidth, markersize,
+                            tracecolor, markercolor, background_color_graphics, text_color, axis_color, linewidth, markersize,
                             unit="dB", cursor_graph=None, cursor_graph_2 = None):
         """Recreate a single plot with new data."""
         try:
@@ -5279,8 +5292,8 @@ class NanoVNAGraphics(QMainWindow):
 
             settings_calibration.setValue("Calibration/isImportDut", False)
 
-            fig.patch.set_facecolor(f"{brackground_color_graphics}")
-            ax.set_facecolor(f"{brackground_color_graphics}")
+            fig.patch.set_facecolor(f"{background_color_graphics}")
+            ax.set_facecolor(f"{background_color_graphics}")
 
             if graph_type == "Smith Diagram":
                 # Use consolidated Smith chart functionality
@@ -5288,7 +5301,7 @@ class NanoVNAGraphics(QMainWindow):
                 
                 # Create custom config to match original settings
                 config = SmithChartConfig()
-                config.background_color = brackground_color_graphics
+                config.background_color = background_color_graphics
                 config.axis_color = axis_color
                 config.text_color = axis_color
                 config.trace_color = tracecolor

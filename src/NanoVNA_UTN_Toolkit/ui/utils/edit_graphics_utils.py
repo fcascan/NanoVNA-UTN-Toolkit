@@ -57,7 +57,7 @@ def create_edit_tab1(self, tabs, nano_window):
     trace_color1 = settings.value("Graphic1/TraceColor", "blue")
     marker_color1 = settings.value("Graphic1/MarkerColor1", "blue")
     marker_color2 = settings.value("Graphic1/MarkerColor2", "blue")
-    brackground_color_graphics1 = settings.value("Graphic1/BackgroundColor", "red")
+    background_color_graphics1 = settings.value("Graphic1/BackgroundColor", "red")
     text_color = settings.value("Graphic1/TextColor", "red")
     axis_color = settings.value("Graphic1/AxisColor", "red")
 
@@ -217,7 +217,7 @@ def create_edit_tab1(self, tabs, nano_window):
     lbl_graphic_color.setStyleSheet("font-size: 11pt;")
     btn_graphic = QFrame()
     btn_graphic.setFixedSize(26, 26)
-    btn_graphic.setStyleSheet(f"background-color: {brackground_color_graphics1}; border: 1px solid white; border-radius: 6px;")
+    btn_graphic.setStyleSheet(f"background-color: {background_color_graphics1}; border: 1px solid white; border-radius: 6px;")
     graphic_brackground_color_layout.addWidget(lbl_graphic_color)
     graphic_brackground_color_layout.addWidget(btn_graphic, alignment=Qt.AlignVCenter)
     left_layout.addLayout(graphic_brackground_color_layout)
@@ -555,7 +555,7 @@ def create_edit_tab2(self, tabs, nano_window):
     trace_color2 = settings.value("Graphic2/TraceColor", "red")
     marker_color1 = settings.value("Graphic2/MarkerColor1", "red")
     marker_color2 = settings.value("Graphic2/MarkerColor2", "red")
-    brackground_color_graphics2 = settings.value("Graphic2/BackgroundColor", "red")
+    background_color_graphics2 = settings.value("Graphic2/BackgroundColor", "red")
     text_color2 = settings.value("Graphic2/TextColor", "red")
     axis_color2 = settings.value("Graphic2/AxisColor", "red")
 
@@ -714,7 +714,7 @@ def create_edit_tab2(self, tabs, nano_window):
     lbl_graphic_color.setStyleSheet("font-size: 11pt;")
     btn_graphic = QFrame()
     btn_graphic.setFixedSize(26, 26)
-    btn_graphic.setStyleSheet(f"background-color: {brackground_color_graphics2}; border: 1px solid white; border-radius: 6px;")
+    btn_graphic.setStyleSheet(f"background-color: {background_color_graphics2}; border: 1px solid white; border-radius: 6px;")
     graphic_brackground_color_layout.addWidget(lbl_graphic_color)
     graphic_brackground_color_layout.addWidget(btn_graphic, alignment=Qt.AlignVCenter)
     left_layout.addLayout(graphic_brackground_color_layout)
@@ -932,7 +932,7 @@ def create_edit_tab2(self, tabs, nano_window):
         cursor_graph2.set_color(color)
         canvas.draw()
 
-    def update_brackground_color_graphics2_event():
+    def update_background_color_graphics2_event():
         color = get_background_color2()
         cursor_graph2.set_color(color)
         canvas.draw()

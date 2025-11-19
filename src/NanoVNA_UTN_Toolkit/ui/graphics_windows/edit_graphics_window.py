@@ -229,8 +229,8 @@ class EditGraphics(QMainWindow):
         # --- Tabs setup ---
         tabs = QTabWidget()
 
-        tab1_widget, trace_color, marker_color, marker2_color, brackground_color_graphics, text_color, axis_color, line_width, marker_size, marker2_size = create_edit_tab1(self, tabs=tabs, nano_window=nano_window)
-        tab2_widget, trace_color2, marker_color2, marker2_color2, brackground_color_graphics2, text_color2, axis_color2, line_width2, marker_size2, marker2_size2 = create_edit_tab2(self, tabs=tabs, nano_window=nano_window)
+        tab1_widget, trace_color, marker_color, marker2_color, background_color_graphics, text_color, axis_color, line_width, marker_size, marker2_size = create_edit_tab1(self, tabs=tabs, nano_window=nano_window)
+        tab2_widget, trace_color2, marker_color2, marker2_color2, background_color_graphics2, text_color2, axis_color2, line_width2, marker_size2, marker2_size2 = create_edit_tab2(self, tabs=tabs, nano_window=nano_window)
 
         tabs.addTab(tab1_widget, "Graphic 1")
         tabs.addTab(tab2_widget, "Graphic 2")
@@ -244,7 +244,7 @@ class EditGraphics(QMainWindow):
         btn_apply = QPushButton("Apply")
         btn_cancel.clicked.connect(self.close)
         btn_apply.clicked.connect(lambda: self.on_apply_clicked(trace_color=trace_color(), trace_color2=trace_color2(), 
-                                                                brackground_color_graphics=brackground_color_graphics(), brackground_color_graphics2=brackground_color_graphics2(),
+                                                                background_color_graphics=background_color_graphics(), background_color_graphics2=background_color_graphics2(),
                                                                 marker_color=marker_color(), marker_color2=marker_color2(),
                                                                 marker2_color=marker2_color(), marker2_color2=marker2_color2(),
                                                                 text_color=text_color(), text_color2=text_color2(),
@@ -263,7 +263,7 @@ class EditGraphics(QMainWindow):
         #self.setStyleSheet("background-color: #7f7f7f;")
 
     def on_apply_clicked(self, settings, trace_color="blue", trace_color2="blue",
-                     brackground_color_graphics="blue", brackground_color_graphics2="blue",
+                     background_color_graphics="blue", background_color_graphics2="blue",
                      marker_color="blue", marker_color2="blue", 
                      marker2_color="blue", marker2_color2="blue", 
                      text_color="blue", text_color2="blue",
@@ -276,7 +276,7 @@ class EditGraphics(QMainWindow):
         settings.setValue("Graphic1/TraceColor", trace_color)
         settings.setValue("Graphic1/MarkerColor1", marker_color)
         settings.setValue("Graphic1/MarkerColor2", marker2_color)
-        settings.setValue("Graphic1/BackgroundColor", brackground_color_graphics)
+        settings.setValue("Graphic1/BackgroundColor", background_color_graphics)
         settings.setValue("Graphic1/TextColor", text_color)
         settings.setValue("Graphic1/AxisColor", axis_color)
         settings.setValue("Graphic1/TraceWidth", line_width)
@@ -286,7 +286,7 @@ class EditGraphics(QMainWindow):
         settings.setValue("Graphic2/TraceColor", trace_color2)
         settings.setValue("Graphic2/MarkerColor1", marker_color2)
         settings.setValue("Graphic2/MarkerColor2", marker2_color2)
-        settings.setValue("Graphic2/BackgroundColor", brackground_color_graphics2)
+        settings.setValue("Graphic2/BackgroundColor", background_color_graphics2)
         settings.setValue("Graphic2/TextColor", text_color2)
         settings.setValue("Graphic2/AxisColor", axis_color2)
         settings.setValue("Graphic2/TraceWidth", line_width2)
@@ -324,7 +324,7 @@ class EditGraphics(QMainWindow):
             s_param=s_param1,
             tracecolor=trace_color,
             markercolor=marker_color,
-            brackground_color_graphics=brackground_color_graphics,
+            background_color_graphics=background_color_graphics,
             text_color=text_color,
             axis_color=axis_color,
             linewidth=line_width,
@@ -343,7 +343,7 @@ class EditGraphics(QMainWindow):
             s_param=s_param2,
             tracecolor=trace_color2,
             markercolor=marker_color2,
-            brackground_color_graphics=brackground_color_graphics2,
+            background_color_graphics=background_color_graphics2,
             text_color=text_color2,
             axis_color=axis_color2,
             linewidth=line_width2,
