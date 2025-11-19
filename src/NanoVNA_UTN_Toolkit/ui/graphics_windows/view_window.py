@@ -259,11 +259,11 @@ class View(QMainWindow):
         from PySide6.QtCore import QSettings
 
         ui_dir = os.path.dirname(os.path.dirname(__file__))  
-        ruta_ini = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
+        ini_path = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
 
-        settings = QSettings(ruta_ini, QSettings.IniFormat)
+        settings = QSettings(ini_path, QSettings.IniFormat)
 
-        print(f"ini: {ruta_ini}")
+        print(f"ini: {ini_path}")
 
         graph_type_tab1 = settings.value("Tab1/GraphType1", "Smith Diagram")
         s_param_tab1    = settings.value("Tab1/SParameter", "S11")
@@ -314,7 +314,7 @@ class View(QMainWindow):
         unit_right = self.nano_window.get_graph_unit(2)
 
         if self.nano_window is not None:
-            # --- Guardar markers antes de recrear ---
+            # --- Save markers before recreating ---
             left_markers_data = []
             right_markers_data = []
 
@@ -326,7 +326,7 @@ class View(QMainWindow):
                 x, y = marker["cursor"].get_data()
                 right_markers_data.append((x, y))
 
-            # --- Reset del aspect solo si cambia tipo de gráfico ---
+            # --- Reset aspect only if graph type changes ---
             if self.nano_window.left_graph_type == "Smith Diagram" and self.current_graph_tab1 != "Smith Diagram":
                 self.nano_window.ax_left.remove()
                 self.nano_window.ax_left = self.nano_window.fig_left.add_subplot(111)
@@ -359,7 +359,7 @@ class View(QMainWindow):
                 s_param=self.current_s_tab1,
                 tracecolor=trace_color1,
                 markercolor=marker_color1,
-                brackground_color_graphics=background_color1,
+                background_color_graphics=background_color1,
                 text_color=text_color1,
                 axis_color=axis_color1,
                 linewidth=trace_size1,
@@ -378,7 +378,7 @@ class View(QMainWindow):
                 s_param=self.current_s_tab2,
                 tracecolor=trace_color2,
                 markercolor=marker_color2,
-                brackground_color_graphics=background_color2,
+                background_color_graphics=background_color2,
                 text_color=text_color2,
                 axis_color=axis_color2,
                 linewidth=trace_size2,
@@ -396,7 +396,7 @@ class View(QMainWindow):
             self.nano_window.fig_left.canvas.draw_idle()
             self.nano_window.fig_right.canvas.draw_idle()
 
-            # --- Actualizar estados ---
+            # --- Update states ---
             self.nano_window.s11 = self.s11
             self.nano_window.s21 = self.s21
             self.nano_window.freqs = self.freqs
@@ -404,6 +404,15 @@ class View(QMainWindow):
             self.nano_window.left_s_param = self.current_s_tab1
             self.nano_window.right_graph_type = self.current_graph_tab2
             self.nano_window.right_s_param = self.current_s_tab2
+
+            # --- Update s_param references in panel functions ---
+            if hasattr(self.nano_window, 'update_left_s_param') and callable(self.nano_window.update_left_s_param):
+                self.nano_window.update_left_s_param(self.current_s_tab1)
+            if hasattr(self.nano_window, 'update_right_s_param') and callable(self.nano_window.update_right_s_param):
+                self.nano_window.update_right_s_param(self.current_s_tab2)
+
+            # --- Reset sliders and update QGroupBox information ---
+            self.nano_window._reset_sliders_and_markers_for_graph_change()
 
             self.nano_window.show()
 

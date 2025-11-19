@@ -14,11 +14,11 @@ from matplotlib.lines import Line2D
 
 import matplotlib.pyplot as plt
 
-plt.rcParams['mathtext.fontset'] = 'cm'   # Fuente Computer Modern
-plt.rcParams['text.usetex'] = False       # No requiere LaTeX externo
+plt.rcParams['mathtext.fontset'] = 'cm'   # Computer Modern font
+plt.rcParams['text.usetex'] = False       # No external LaTeX required
 plt.rcParams['axes.labelsize'] = 12
-plt.rcParams['font.family'] = 'serif'     # Coincide con el estilo de LaTeX
-plt.rcParams['mathtext.rm'] = 'serif'     # Números y texto coherentes
+plt.rcParams['font.family'] = 'serif'     # Matches LaTeX style
+plt.rcParams['mathtext.rm'] = 'serif'     # Consistent numbers and text
  
 from PySide6.QtCore import QObject, QEvent, QSettings
 
@@ -79,7 +79,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
                       tracecolor="red", markercolor="red", marker2color="red", linewidth=2,
                       markersize=5, marker2size=5, marker_visible=True, marker_visible_2=False):
 
-    brackground_color_graphics = settings.value("Graphic1/BackgroundColor", "red")
+    background_color_graphics = settings.value("Graphic1/BackgroundColor", "red")
     text_color = settings.value("Graphic1/TextColor", "red")
     axis_color = settings.value("Graphic1/AxisColor", "red")
     
@@ -99,14 +99,14 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
     left_layout.setContentsMargins(10,10,10,10)
     left_layout.setSpacing(10)
 
-    # --- Figura ---
+    # --- Figure ---
     if graph_type == "Smith Diagram":
         # Use consolidated Smith chart functionality
         from ...utils.smith_chart_utils import SmithChartConfig, SmithChartManager
         
         # Create custom config to match original settings
         config = SmithChartConfig()
-        config.background_color = brackground_color_graphics
+        config.background_color = background_color_graphics
         config.axis_color = axis_color
         config.text_color = axis_color
         config.trace_color = tracecolor
@@ -134,8 +134,8 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
         fig, ax = plt.subplots(figsize=(4,3))
         fig.subplots_adjust(left=0.22, right=0.8, top=0.8, bottom=0.22)
 
-        fig.patch.set_facecolor(f"{brackground_color_graphics}")
-        ax.set_facecolor(f"{brackground_color_graphics}")
+        fig.patch.set_facecolor(f"{background_color_graphics}")
+        ax.set_facecolor(f"{background_color_graphics}")
 
         canvas = FigureCanvas(fig)
         canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -177,8 +177,8 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
         fig, ax = plt.subplots(figsize=(4,3))
         fig.subplots_adjust(left=0.22, right=0.8, top=0.8, bottom=0.22)
 
-        fig.patch.set_facecolor(f"{brackground_color_graphics}")
-        ax.set_facecolor(f"{brackground_color_graphics}")
+        fig.patch.set_facecolor(f"{background_color_graphics}")
+        ax.set_facecolor(f"{background_color_graphics}")
 
         canvas = FigureCanvas(fig)
         canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -229,12 +229,12 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
     box_top.setStyleSheet(groupbox_style)
     layout_top = QHBoxLayout(box_top)
     layout_top.setSpacing(20)
-    layout_top.setContentsMargins(12, 8, 12, 8)  # márgenes equilibrados
+    layout_top.setContentsMargins(12, 8, 12, 8)  # balanced margins
 
-    # --- Sub-layout centrado para los 4 bloques ---
+    # --- Centered sub-layout for the 4 blocks ---
     center_layout = QHBoxLayout()
-    center_layout.setSpacing(15)  # espacio entre columnas
-    center_layout.setAlignment(Qt.AlignCenter)  # todo centrado en el box
+    center_layout.setSpacing(15)  # space between columns
+    center_layout.setAlignment(Qt.AlignCenter)  # everything centered in the box
 
     # --- Column 1: Frequency ---
     col_left = QVBoxLayout()
@@ -320,7 +320,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
     col_phase.setAlignment(Qt.AlignVCenter)
     col_phase.addWidget(label_phase)
 
-    # --- Agregar columnas al layout centrado con separadores ---
+    # --- Add columns to centered layout with separators ---
     center_layout.addLayout(col_left)
     
     label_sep = QLabel("-")
@@ -338,16 +338,16 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 
     center_layout.addLayout(col_phase)
 
-    # --- Agregar layout centrado al top box ---
+    # --- Add centered layout to top box ---
     layout_top.addLayout(center_layout)
 
     # --- Bottom QGroupBox ---
     box_bottom = QGroupBox("DUT Parameters")
     box_bottom.setStyleSheet(groupbox_style)
     layout_bottom = QHBoxLayout(box_bottom)
-    layout_bottom.setSpacing(40)  # aumenta separación entre labels
+    layout_bottom.setSpacing(40)  # increase spacing between labels
     layout_bottom.setContentsMargins(10, 8, 10, 8)
-    layout_bottom.setAlignment(Qt.AlignCenter)  # centra todo el conjunto
+    layout_bottom.setAlignment(Qt.AlignCenter)  # center everything
 
     # --- Labels dentro del box_bottom ---
     label_z = QLabel("Zin (Z0): -- + j--")
@@ -371,7 +371,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
     label_vswr.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
     layout_bottom.addWidget(label_vswr)
 
-    # --- Agregar box_bottom al layout principal ---
+    # --- Add box_bottom to main layout ---
     info_layout.addWidget(box_top)
     info_layout.addWidget(box_bottom)  
 
@@ -475,7 +475,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
     col_phase_2.setAlignment(Qt.AlignVCenter)
     col_phase_2.addWidget(label_phase_2)
 
-    # --- Agregar columnas al layout centrado ---
+    # --- Add columns to centered layout ---
     center_layout_2.addLayout(col_left_2)
 
     label_sep_2 = QLabel("-")
@@ -524,7 +524,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
     label_vswr_2.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
     layout_bottom_2.addWidget(label_vswr_2)
 
-    # --- Agregar box_bottom al layout principal ---
+    # --- Add box_bottom to main layout ---
     info_layout_2.addWidget(box_top_2)
     info_layout_2.addWidget(box_bottom_2)
 
@@ -557,7 +557,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 
         settings = QSettings(ruta_ini, QSettings.IniFormat)
 
-        s_param = settings.value("Tab1/SParameter", "S11")
+        current_s_param = s_param
 
         unit_mode = settings.value("Graphic1/db_times", "dB")
 
@@ -567,7 +567,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
             cursor_graph.set_data([np.real(val_complex)], [np.imag(val_complex)])
 
         elif graph_type == "Magnitude":
-            if s_param == "S21":
+            if current_s_param == "S21":
                 if unit_mode == "dB":
                     mag_value = 20 * np.log10(magnitude)
                 elif unit_mode == "Power ratio":
@@ -577,7 +577,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
                 else:
                     mag_value = magnitude
 
-            elif s_param == "S11":
+            elif current_s_param == "S11":
                 if unit_mode_S11 == "dB":
                     mag_value = 20 * np.log10(magnitude)
                 elif unit_mode_S11 == "S11 (reflection coefficient)":
@@ -600,9 +600,9 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 
         labels_dict["unit"].setText(freq_unit)
         labels_dict["val"].setText(
-            f"{s_param}: {np.real(val_complex):.3f} {'+' if np.imag(val_complex) >= 0 else '-'} j{abs(np.imag(val_complex)):.3f}"
+            f"{current_s_param}: {np.real(val_complex):.3f} {'+' if np.imag(val_complex) >= 0 else '-'} j{abs(np.imag(val_complex)):.3f}"
         )
-        labels_dict["mag"].setText(f"|{s_param}|: {magnitude:.3f}")
+        labels_dict["mag"].setText(f"|{current_s_param}|: {magnitude:.3f}")
         labels_dict["phase"].setText(f"Phase: {phase_deg:.2f}°")
 
         z = (1 + val_complex) / (1 - val_complex)
@@ -650,6 +650,8 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
         ruta_ini = os.path.join(actual_dir, "graphics_windows", "ini", "config.ini")
         settings = QSettings(ruta_ini, QSettings.IniFormat)
 
+        current_s_param = s_param
+
         unit_mode = settings.value("Graphic1/db_times", "dB")
 
         unit_mode_S11 = settings.value("Graphic1/db_times_S11", "S11 (reflection coefficient)")
@@ -660,7 +662,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 
         elif graph_type == "Magnitude":
         
-            if s_param == "S21":
+            if current_s_param == "S21":
                 if unit_mode == "dB":
                     mag_value = 20 * np.log10(magnitude)
                 elif unit_mode == "Power ratio":
@@ -670,7 +672,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
                 else:
                     mag_value = magnitude
 
-            elif s_param == "S11":
+            elif current_s_param == "S11":
                 if unit_mode_S11 == "dB":
                     mag_value = 20 * np.log10(magnitude)
                 elif unit_mode_S11 == "S11 (reflection coefficient)":
@@ -692,9 +694,9 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 
         labels_dict_2["unit"].setText(freq_unit)
         labels_dict_2["val"].setText(
-            f"{s_param}: {np.real(val_complex):.3f} {'+' if np.imag(val_complex) >= 0 else '-'} j{abs(np.imag(val_complex)):.3f}"
+            f"{current_s_param}: {np.real(val_complex):.3f} {'+' if np.imag(val_complex) >= 0 else '-'} j{abs(np.imag(val_complex)):.3f}"
         )
-        labels_dict_2["mag"].setText(f"|{s_param}|: {magnitude:.3f}")
+        labels_dict_2["mag"].setText(f"|{current_s_param}|: {magnitude:.3f}")
         labels_dict_2["phase"].setText(f"Phase: {phase_deg:.2f}°")
 
         z = (1 + val_complex) / (1 - val_complex)
@@ -898,12 +900,14 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 
     def update_data_references(new_s_data, new_freqs, old_slider=None, old_slider_2=None, 
         canvas=None, fig=None, show_graphic1_marker1=False, show_graphic1_marker2=True, marker1=None, marker2=None,
-        info_panel=None, info_panel_2=None):
+        info_panel=None, info_panel_2=None, new_s_param=None):
 
         """Update S_data and freqs and recreate slider safely using remove_slider()."""
-        nonlocal S_data, freqs
+        nonlocal S_data, freqs, s_param
         S_data = new_s_data
         freqs = new_freqs
+        if new_s_param is not None:
+            s_param = new_s_param
 
         if old_slider is not None:
             try:
@@ -1118,7 +1122,12 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
         edit_value.editingFinished.disconnect()
         edit_value.editingFinished.connect(freq_edited)
 
-    return left_panel, info_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references, update_data_references_2
+
+    def update_s_param_only(new_s_param):
+        nonlocal s_param
+        s_param = new_s_param
+    
+    return left_panel, info_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references, update_data_references_2, update_s_param_only
 
 #############################################################################################
 # =================== RIGHT PANEL ========================================================= #
@@ -1127,7 +1136,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Smith Diagram", s_param="S11",
                        tracecolor="red", markercolor="red", marker2color="red", linewidth=2, markersize=5, marker2size=5, marker_visible=True):
 
-    brackground_color_graphics = settings.value("Graphic2/BackgroundColor", "red")
+    background_color_graphics = settings.value("Graphic2/BackgroundColor", "red")
     text_color = settings.value("Graphic2/TextColor", "red")
     axis_color = settings.value("Graphic2/AxisColor", "red")
     
@@ -1147,14 +1156,14 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
     right_layout.setContentsMargins(10,10,10,10)
     right_layout.setSpacing(10)
 
-    # --- Figura ---
+    # --- Figure ---
     if graph_type == "Smith Diagram":
         # Use consolidated Smith chart functionality
         from ...utils.smith_chart_utils import SmithChartConfig, SmithChartManager
         
         # Create custom config to match original settings
         config = SmithChartConfig()
-        config.background_color = brackground_color_graphics
+        config.background_color = background_color_graphics
         config.axis_color = axis_color
         config.text_color = axis_color
         config.trace_color = tracecolor
@@ -1179,8 +1188,8 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
         fig, ax = plt.subplots(figsize=(4,3))
         fig.subplots_adjust(left=0.22, right=0.8, top=0.8, bottom=0.22)
 
-        fig.patch.set_facecolor(f"{brackground_color_graphics}")
-        ax.set_facecolor(f"{brackground_color_graphics}")
+        fig.patch.set_facecolor(f"{background_color_graphics}")
+        ax.set_facecolor(f"{background_color_graphics}")
 
         canvas = FigureCanvas(fig)
         canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -1221,8 +1230,8 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
         fig, ax = plt.subplots(figsize=(4,3))
         fig.subplots_adjust(left=0.22, right=0.8, top=0.8, bottom=0.22)
 
-        fig.patch.set_facecolor(f"{brackground_color_graphics}")
-        ax.set_facecolor(f"{brackground_color_graphics}")
+        fig.patch.set_facecolor(f"{background_color_graphics}")
+        ax.set_facecolor(f"{background_color_graphics}")
 
         canvas = FigureCanvas(fig)
         canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -1270,12 +1279,12 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
     box_top.setStyleSheet(groupbox_style)
     layout_top = QHBoxLayout(box_top)
     layout_top.setSpacing(20)
-    layout_top.setContentsMargins(12, 8, 12, 8)  # márgenes equilibrados
+    layout_top.setContentsMargins(12, 8, 12, 8)  # balanced margins
 
-    # --- Sub-layout centrado para los 4 bloques ---
+    # --- Centered sub-layout for the 4 blocks ---
     center_layout = QHBoxLayout()
-    center_layout.setSpacing(15)  # espacio entre columnas
-    center_layout.setAlignment(Qt.AlignCenter)  # todo centrado en el box
+    center_layout.setSpacing(15)  # space between columns
+    center_layout.setAlignment(Qt.AlignCenter)  # everything centered in the box
 
     # --- Column 1: Frequency ---
     col_left = QVBoxLayout()
@@ -1363,7 +1372,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
     col_phase.setAlignment(Qt.AlignVCenter)
     col_phase.addWidget(label_phase)
 
-    # --- Agregar columnas al layout centrado con separadores ---
+    # --- Add columns to centered layout with separators ---
     center_layout.addLayout(col_left)
 
     label_sep = QLabel("-")
@@ -1517,7 +1526,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
     col_phase_2.setAlignment(Qt.AlignVCenter)
     col_phase_2.addWidget(label_phase_2)
 
-    # --- Agregar columnas al layout centrado ---
+    # --- Add columns to centered layout ---
     center_layout_2.addLayout(col_left_2)
 
     label_sep_2 = QLabel("-")
@@ -1595,7 +1604,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
 
         settings = QSettings(ruta_ini, QSettings.IniFormat)
 
-        s_param = settings.value("Tab1/SParameter", "S11")
+        current_s_param = s_param
 
         unit_mode = settings.value("Graphic1/db_times", "dB")
 
@@ -1604,7 +1613,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
         if graph_type == "Smith Diagram":
             cursor_graph.set_data([np.real(val_complex)], [np.imag(val_complex)])
         elif graph_type == "Magnitude":
-            if s_param == "S21":
+            if current_s_param == "S21":
                 if unit_mode == "dB":
                     mag_value = 20 * np.log10(magnitude)
                 elif unit_mode == "Power ratio":
@@ -1614,7 +1623,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
                 else:
                     mag_value = magnitude
 
-            elif s_param == "S11":
+            elif current_s_param == "S11":
                 if unit_mode_S11 == "dB":
                     mag_value = 20 * np.log10(magnitude)
                 elif unit_mode_S11 == "S11 (reflection coefficient)":
@@ -1636,8 +1645,8 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
         edit_value.setFixedWidth(min_width)
         labels_dict["unit"].setText(freq_unit)
 
-        labels_dict["val"].setText(f"{s_param}: {np.real(val_complex):.3f} {'+' if np.imag(val_complex)>=0 else '-'} j{abs(np.imag(val_complex)):.3f}")
-        labels_dict["mag"].setText(f"|{s_param}|: {magnitude:.3f}")
+        labels_dict["val"].setText(f"{current_s_param}: {np.real(val_complex):.3f} {'+' if np.imag(val_complex)>=0 else '-'} j{abs(np.imag(val_complex)):.3f}")
+        labels_dict["mag"].setText(f"|{current_s_param}|: {magnitude:.3f}")
         labels_dict["phase"].setText(f"Phase: {phase_deg:.2f}°")
         z = (1 + val_complex)/(1 - val_complex)
         labels_dict["z"].setText(f"Z: {np.real(z):.2f} + j{np.imag(z):.2f}")
@@ -1683,7 +1692,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
 
         settings = QSettings(ruta_ini, QSettings.IniFormat)
 
-        s_param = settings.value("Tab1/SParameter", "S11")
+        current_s_param = s_param
 
         unit_mode = settings.value("Graphic1/db_times", "dB")
 
@@ -1693,7 +1702,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
         if graph_type == "Smith Diagram":
             cursor_graph_2.set_data([np.real(val_complex)], [np.imag(val_complex)])
         elif graph_type == "Magnitude":
-            if s_param == "S21":
+            if current_s_param == "S21":
                 if unit_mode == "dB":
                     mag_value = 20 * np.log10(magnitude)
                 elif unit_mode == "Power ratio":
@@ -1703,7 +1712,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
                 else:
                     mag_value = magnitude
 
-            elif s_param == "S11":
+            elif current_s_param == "S11":
                 if unit_mode_S11 == "dB":
                     mag_value = 20 * np.log10(magnitude)
                 elif unit_mode_S11 == "S11 (reflection coefficient)":
@@ -1729,9 +1738,9 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
 
         labels_dict_2["unit"].setText(freq_unit)
         labels_dict_2["val"].setText(
-            f"{s_param}: {np.real(val_complex):.3f} {'+' if np.imag(val_complex) >= 0 else '-'} j{abs(np.imag(val_complex)):.3f}"
+            f"{current_s_param}: {np.real(val_complex):.3f} {'+' if np.imag(val_complex) >= 0 else '-'} j{abs(np.imag(val_complex)):.3f}"
         )
-        labels_dict_2["mag"].setText(f"|{s_param}|: {magnitude:.3f}")
+        labels_dict_2["mag"].setText(f"|{current_s_param}|: {magnitude:.3f}")
         labels_dict_2["phase"].setText(f"Phase: {phase_deg:.2f}°")
 
         z = (1 + val_complex) / (1 - val_complex)
@@ -1938,12 +1947,14 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
 
     def update_data_references(new_s_data, new_freqs, old_slider=None, old_slider_2=None, 
         canvas=None, fig=None, show_graphic2_marker1=False, show_graphic2_marker2=True, marker1=None, marker2=None,
-        info_panel=None, info_panel_2=None):
+        info_panel=None, info_panel_2=None, new_s_param=None):
 
         """Update S_data and freqs and recreate slider safely using remove_slider()."""
-        nonlocal S_data, freqs
+        nonlocal S_data, freqs, s_param
         S_data = new_s_data
         freqs = new_freqs
+        if new_s_param is not None:
+            s_param = new_s_param
 
         if old_slider is not None:
             try:
@@ -2139,4 +2150,9 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
 
         return new_slider, new_slider_2
 
-    return right_panel, info_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references
+
+    def update_s_param_only(new_s_param):
+        nonlocal s_param
+        s_param = new_s_param
+    
+    return right_panel, info_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references, update_s_param_only

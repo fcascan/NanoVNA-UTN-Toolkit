@@ -1115,7 +1115,7 @@ class NanoVNAGraphics(QMainWindow):
 
         # =================== LEFT PANEL (EMPTY) ===================
         self.left_panel, self.info_panel_left, self.info_panel_left_2, self.fig_left, self.ax_left, self.canvas_left, \
-        self.slider_left, self.slider_left_2, self.cursor_left, self.cursor_left_2, self.labels_left, self.labels_left_2, self.update_cursor, self.update_cursor_2, self.update_left_data, self.update_left_data_2 = \
+        self.slider_left, self.slider_left_2, self.cursor_left, self.cursor_left_2, self.labels_left, self.labels_left_2, self.update_cursor, self.update_cursor_2, self.update_left_data, self.update_left_data_2, self.update_left_s_param = \
             create_left_panel(
                 self,
                 S_data=None,  # Force empty 
@@ -1133,7 +1133,7 @@ class NanoVNAGraphics(QMainWindow):
 
         # =================== RIGHT PANEL (EMPTY) ===================
         self.right_panel, self.info_panel_right, self.info_panel_right_2, self.fig_right, self.ax_right, self.canvas_right, \
-        self.slider_right, self.slider_right_2, self.cursor_right, self.cursor_right_2, self.labels_right, self.labels_right_2, self.update_right_cursor, self.update_right_cursor_2, self.update_right_data = \
+        self.slider_right, self.slider_right_2, self.cursor_right, self.cursor_right_2, self.labels_right, self.labels_right_2, self.update_right_cursor, self.update_right_cursor_2, self.update_right_data, self.update_right_s_param = \
             create_right_panel(
                 self,
                 settings=settings,
