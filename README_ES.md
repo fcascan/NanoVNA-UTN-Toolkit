@@ -45,7 +45,7 @@ pip install -r requirements.txt
 
 **Alternativa (instalación manual):**
 ```bash
-pip install PySide6 numpy scipy pyserial matplotlib qtawesome pylatex
+pip install PySide6 numpy scipy pyserial matplotlib qtawesome pylatex scikit-rf
 ```
 
 ### 4. Ejecutar el programa
