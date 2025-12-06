@@ -57,6 +57,18 @@ class CalibrationWizard(QMainWindow):
     def __init__(self, vna_device=None, parent=None, caller="welcome"):
         super().__init__()
 
+        if getattr(sys, 'frozen', False):
+            base_path = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Measurements")
+            os.makedirs(base_path, exist_ok=True)
+            logging.info(f"[CalibrationWizard] Running as EXE, saving measurements in {base_path}")
+        else:
+            base_path = os.path.join(os.path.dirname(__file__))
+            os.makedirs(base_path, exist_ok=True)
+
+        # Inicializar el manager pasándole la ruta
+        self.osm_calibration = OSMCalibrationManager(base_path=base_path)
+        self.thru_calibration = THRUCalibrationManager(base_path=base_path)
+
         self.last_start_value = 50   
         self.last_stop_value  = 1.5   
 
@@ -64,10 +76,16 @@ class CalibrationWizard(QMainWindow):
 
         self.caller = caller
 
-        ui_dir = os.path.dirname(os.path.dirname(__file__))
-        ruta_ini = os.path.join(ui_dir, "ui", "graphics_windows", "ini", "config.ini")
+        # Load configuration for UI colors and styles
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")
+            base = os.path.join(appdata, "NanoVNA-UTN-Toolkit")
+            ruta_colors = os.path.join(base, "INI", "colors_config", "config.ini")
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            ruta_colors = os.path.join(ui_dir, "ui", "graphics_windows", "ini", "config.ini")
 
-        settings = QSettings(ruta_ini, QSettings.Format.IniFormat)
+        settings = QSettings(ruta_colors, QSettings.IniFormat)
 
         # QWidget
         background_color = settings.value("Dark_Light/QWidget/background-color", "#3a3a3a")
@@ -1183,28 +1201,43 @@ class CalibrationWizard(QMainWindow):
         """Finish calibration wizard by calculating OSM errors and opening graphics window."""
         logging.info("Calibration wizard completed - calculating OSM errors")
 
+        # Detect if running as .exe
+        if getattr(sys, 'frozen', False):
+            base_cal_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Measurements")
+        else:
+            base_cal_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)))
+
         if self.selected_method == "OSM (Open - Short - Match)":
-            cal_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Calibration", "osm_results")
+            cal_dir = os.path.join(base_cal_dir, "Calibration", "osm_results")
+            os.makedirs(cal_dir, exist_ok=True)
 
             # Create calibration error handler and compute OSM errors
             errors = CalibrationErrors(cal_dir, error_subfolder="osm_errors")
             errors.calculate_osm_errors()
 
         elif self.selected_method == "Normalization":
-            cal_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Calibration", "thru_results")
+            cal_dir = os.path.join(base_cal_dir, "Calibration", "thru_results")
+            os.makedirs(cal_dir, exist_ok=True)
 
             errors = CalibrationErrors(cal_dir, error_subfolder="normalization_errors")
             errors.calculate_normalization_errors()
 
         elif self.selected_method == "1-Port+N":
-            osm_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Calibration", "osm_results")
-            thru_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Calibration", "thru_results")
+            osm_dir = os.path.join(base_cal_dir, "Calibration", "osm_results")
+            thru_dir = os.path.join(base_cal_dir, "Calibration", "thru_results")
+
+            os.makedirs(osm_dir, exist_ok=True)
+            os.makedirs(thru_dir, exist_ok=True)
 
             errors = CalibrationErrors(thru_dir, error_subfolder="1-Port+N_errors")
             errors.calculate_1PortN_errors(osm_dir, thru_dir)
+
         elif self.selected_method == "Enhanced-Response":
-            osm_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Calibration", "osm_results")
-            thru_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Calibration", "thru_results")
+            osm_dir = os.path.join(base_cal_dir, "Calibration", "osm_results")
+            thru_dir = os.path.join(base_cal_dir, "Calibration", "thru_results")
+
+            os.makedirs(osm_dir, exist_ok=True)
+            os.makedirs(thru_dir, exist_ok=True)
 
             errors = CalibrationErrors(thru_dir, error_subfolder="enhanced_response_errors")
             errors.calculate_enhanced_response_errors(osm_dir, thru_dir)
@@ -1509,9 +1542,22 @@ class CalibrationWizard(QMainWindow):
 
                 # --- Read current calibration method ---
                 # Use new calibration structure
-                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                config_path = os.path.join(base_dir, "calibration", "config", "calibration_config.ini")
-                settings_calibration = QSettings(config_path, QSettings.Format.IniFormat)
+                # Load configuration for UI colors and styles
+                if getattr(sys, 'frozen', False):
+                    appdata = os.getenv("APPDATA")
+                    config_path = os.path.join(
+                        appdata,
+                        "NanoVNA-UTN-Toolkit",
+                        "INI",
+                        "calibration_config",
+                        "calibration_config.ini"
+                    )
+                    calibration_path = os.path.normpath(config_path)
+                else:
+                    ui_dir = os.path.dirname(os.path.dirname(__file__))
+                    calibration_path = os.path.join(ui_dir, "calibration", "config", "calibration_config.ini")
+
+                settings_calibration = QSettings(calibration_path, QSettings.IniFormat)
                 """
                 # --- If a kit was previously saved in this session, show its name ---
                 if getattr(self, 'last_saved_kit_id', None):
@@ -1715,13 +1761,22 @@ class CalibrationWizard(QMainWindow):
     def _save_calibration_config(self):
         """Save calibration configuration to config file"""
         try:
-            # Use new calibration structure
-            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            config_dir = os.path.join(base_dir, "calibration", "config")
-            os.makedirs(config_dir, exist_ok=True)
+            # Load configuration for UI colors and styles
+            if getattr(sys, 'frozen', False):
+                appdata = os.getenv("APPDATA")
+                calibration_path = os.path.join(
+                    appdata,
+                    "NanoVNA-UTN-Toolkit",
+                    "INI",
+                    "calibration_config",
+                    "calibration_config.ini"
+                )
+                calibration_path = os.path.normpath(calibration_path)
+            else:
+                ui_dir = os.path.dirname(os.path.dirname(__file__))
+                calibration_path = os.path.join(ui_dir, "calibration", "config", "calibration_config.ini")
 
-            config_path = os.path.join(config_dir, "calibration_config.ini")
-            settings = QSettings(config_path, QSettings.Format.IniFormat)
+            settings = QSettings(calibration_path, QSettings.IniFormat)
 
             current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
