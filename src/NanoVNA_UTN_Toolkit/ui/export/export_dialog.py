@@ -5,6 +5,7 @@ Provides functionality to export graph data and images in various formats.
 
 import io
 import os
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
@@ -32,10 +33,16 @@ class ExportDialog(QDialog):
         self.update_cursor_left = update_cursor_left
         self.update_cursor_right = update_cursor_right
 
-        ui_dir = os.path.dirname(os.path.dirname(__file__))  
-        ruta_ini = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
+        # Load configuration for UI colors and styles
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")
+            base = os.path.join(appdata, "NanoVNA-UTN-Toolkit")
+            ruta_colors = os.path.join(base, "INI", "colors_config", "config.ini")
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
 
-        settings = QSettings(ruta_ini, QSettings.IniFormat)
+        settings = QSettings(ruta_colors, QSettings.IniFormat)
 
         # QWidget
         background_color = settings.value("Dark_Light/QWidget/background-color", "#3a3a3a")
@@ -266,9 +273,15 @@ class ExportDialog(QDialog):
                 ax_sub.set_visible(False)
 
         # --- Load INI settings ---
-        ini_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                                "graphics_windows", "ini", "config.ini")
-        settings = QSettings(ini_path, QSettings.IniFormat)
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")
+            base = os.path.join(appdata, "NanoVNA-UTN-Toolkit")
+            ruta_colors = os.path.join(base, "INI", "colors_config", "config.ini")
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
+
+        settings = QSettings(ruta_colors, QSettings.IniFormat)
 
         # --- Determine active markers dynamically ---
         active_markers = []
@@ -428,6 +441,17 @@ class ExportDialog(QDialog):
                         if ax.get_position().height < 0.1 or ax.get_position().width < 0.1]
         for ax in axes_to_remove:
             fig_copy.delaxes(ax)
+
+        # Load configuration for UI colors and styles
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")
+            base = os.path.join(appdata, "NanoVNA-UTN-Toolkit")
+            ruta_colors = os.path.join(base, "INI", "colors_config", "config.ini")
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
+
+        settings = QSettings(ruta_colors, QSettings.IniFormat)
 
         # Detect active markers
         if self.figure == getattr(self.parent_window, 'fig_left', None):

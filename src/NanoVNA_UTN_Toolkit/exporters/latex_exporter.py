@@ -5,6 +5,7 @@ This module provides functionality to export S-parameter data to PDF using LaTeX
 """
 
 import os
+import sys
 import tempfile
 import subprocess
 import shutil
@@ -551,10 +552,19 @@ class LatexExporter:
     def _create_cover_page(self, doc, freqs, current_datetime, measurement_name, measurement_number, 
                           calibration_method, calibrated_parameter, vna_name):
 
-        # Use new calibration structure
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        config_path = os.path.join(base_dir, "calibration", "config", "calibration_config.ini")
-        settings_calibration = QSettings(config_path, QSettings.Format.IniFormat)
+        # Load configuration for UI colors and styles
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")  
+            base = os.path.join(appdata, "NanoVNA-UTN-Toolkit")
+
+            calibration_path = os.path.join(
+                base, "INI", "calibration_config", "calibration_config.ini"
+            )
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            calibration_path = os.path.join(ui_dir, "calibration", "config", "calibration_config.ini")
+
+        settings_calibration = QSettings(calibration_path, QSettings.IniFormat)
         
         kits_ok = settings_calibration.value("Calibration/Kits", False, type=bool)
         selected_kit = settings_calibration.value("Calibration/Name", "Normalization")
@@ -565,12 +575,20 @@ class LatexExporter:
         no_calibration = settings_calibration.value("Calibration/NoCalibration", False, type=bool)
         is_import_dut = settings_calibration.value("Calibration/DUT", False, type=bool)
 
-        actual_dir = os.path.dirname(os.path.dirname(__file__))
-        self.config_dir = os.path.join(actual_dir, "ui" ,"sweep_window", "config")
-        os.makedirs(self.config_dir, exist_ok=True)
-        self.config_path = os.path.join(self.config_dir, "config.ini")
-        
-        settings_sweep = QSettings(self.config_path, QSettings.Format.IniFormat)
+        # Load configuration for UI colors and styles
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")
+            base = os.path.join(appdata, "NanoVNA-UTN-Toolkit")
+
+            sweep_path = os.path.join(
+                base, "INI", "sweep_config", "config.ini"
+            )
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            os.makedirs(ui_dir, exist_ok=True)
+            sweep_path = os.path.join(ui_dir, "ui" ,"sweep_window", "config", "config.ini")
+
+        settings_sweep = QSettings(sweep_path, QSettings.IniFormat)
 
         start_unit = settings_sweep.value("Frequency/StartUnit", "MHz")
         stop_unit = settings_sweep.value("Frequency/StopUnit", "MHz")
@@ -664,19 +682,47 @@ class LatexExporter:
         try:
             # Note: This assumes a specific directory structure relative to UI
             # In a real application, you might want to make this configurable
-            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            config_dir = os.path.join(base_dir, "calibration", "config")
-            os.makedirs(config_dir, exist_ok=True)
+            # Load configuration for UI colors and styles
+            if getattr(sys, 'frozen', False):
+                appdata = os.getenv("APPDATA")
+                calibration_path = os.path.join(
+                    appdata,
+                    "NanoVNA-UTN-Toolkit",
+                    "INI",
+                    "calibration_config",
+                    "calibration_config.ini"
+                )
+                calibration_path = os.path.normpath(calibration_path)
+            else:
+                ui_dir = os.path.dirname(os.path.dirname(__file__))
+                os.makedirs(ui_dir, exist_ok=True)
+                calibration_path = os.path.join(ui_dir, "calibration", "config", "calibration_config.ini")
 
-            config_path = os.path.join(config_dir, "calibration_config.ini")
-            settings = QSettings(config_path, QSettings.Format.IniFormat)
+            settings = QSettings(calibration_path, QSettings.IniFormat)
+
             calibration_method = settings.value("Calibration/Method", "---")
             calibrated_parameter = settings.value("Calibration/Parameter", "---")
 
             # Handle measurement numbering with daily reset
             measurement_number = 1
-            tracking_file = os.path.join(base_dir, "calibration", "config", "measurement_numbers.ini")
-            tracking_settings = QSettings(tracking_file, QSettings.Format.IniFormat)
+            
+            # Load configuration for UI colors and styles
+            if getattr(sys, 'frozen', False):
+                appdata = os.getenv("APPDATA")
+                calibration_path = os.path.join(
+                    appdata,
+                    "NanoVNA-UTN-Toolkit",
+                    "INI",
+                    "measurement_numbers",
+                    "measurement_numbers.ini"
+                )
+                calibration_path = os.path.normpath(calibration_path)
+            else:
+                ui_dir = os.path.dirname(os.path.dirname(__file__))
+                os.makedirs(ui_dir, exist_ok=True)
+                calibration_path = os.path.join(ui_dir, "calibration", "config", "measurement_numbers.ini")
+
+            tracking_settings = QSettings(calibration_path, QSettings.IniFormat)
             
             # Get current date as string (YYYY-MM-DD format)
             current_date = datetime.now().strftime("%Y-%m-%d")

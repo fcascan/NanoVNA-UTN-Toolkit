@@ -18,8 +18,14 @@ class OSMCalibrationManager:
     
     def __init__(self, base_path: str = None):
         if base_path is None:
-            # Default to calibration directory in project
-            base_path = os.path.join(os.path.dirname(__file__))
+            if getattr(sys, 'frozen', False):
+                base_path = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Measurements")
+                os.makedirs(base_path, exist_ok=True)
+                logging.info(f"[CalibrationWizard] Running as EXE, saving measurements in {base_path}")
+            else:
+                base_path = os.path.join(os.path.dirname(__file__))
+                os.makedirs(base_path, exist_ok=True)
+                logging.info(f"[CalibrationWizard] Running as Python, saving measurements in {base_path}")
         
         self.base_path = base_path
         self.osm_results_path = os.path.join(base_path, "osm_results")
@@ -390,10 +396,10 @@ Handles THRU calibrations with persistent state and Touchstone export.
 import numpy as np
 import logging
 import os
+import sys
 from datetime import datetime
 from typing import Dict, Optional, Tuple, List
 import skrf as rf
-
 
 class THRUCalibrationManager:
     """
@@ -402,8 +408,14 @@ class THRUCalibrationManager:
 
     def __init__(self, base_path: str = None):
         if base_path is None:
-            # Default to calibration directory in project
-            base_path = os.path.join(os.path.dirname(__file__))
+            if getattr(sys, 'frozen', False):
+                base_path = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Measurements")
+                os.makedirs(base_path, exist_ok=True)
+                logging.info(f"[CalibrationWizard] Running as EXE, saving measurements in {base_path}")
+            else:
+                base_path = os.path.join(os.path.dirname(__file__))
+                os.makedirs(base_path, exist_ok=True)
+                logging.info(f"[CalibrationWizard] Running as Python, saving measurements in {base_path}")
 
         self.base_path = base_path
         self.thru_results_path = os.path.join(base_path, "thru_results")

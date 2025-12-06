@@ -5,6 +5,7 @@ Graphic view window for NanoVNA devices.
 import skrf as rf
 import numpy as np
 import os
+import sys
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.lines import Line2D
@@ -44,10 +45,16 @@ class View(QMainWindow):
             logger = logging.getLogger(__name__)
             logger.warning("icon.ico not found in expected locations")
 
-        ui_dir = os.path.dirname(os.path.dirname(__file__))  
-        ruta_ini = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
+        # Load configuration for UI colors and styles
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")
+            base = os.path.join(appdata, "NanoVNA-UTN-Toolkit")
+            ruta_colors = os.path.join(base, "INI", "colors_config", "config.ini")
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
 
-        settings = QSettings(ruta_ini, QSettings.IniFormat)
+        settings = QSettings(ruta_colors, QSettings.IniFormat)
 
         # QWidget
         background_color = settings.value("Dark_Light/QWidget/background-color", "#3a3a3a")
@@ -258,12 +265,16 @@ class View(QMainWindow):
         import os
         from PySide6.QtCore import QSettings
 
-        ui_dir = os.path.dirname(os.path.dirname(__file__))  
-        ini_path = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
+        # Load configuration for UI colors and styles
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")
+            base = os.path.join(appdata, "NanoVNA-UTN-Toolkit")
+            ruta_colors = os.path.join(base, "INI", "colors_config", "config.ini")
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
 
-        settings = QSettings(ini_path, QSettings.IniFormat)
-
-        print(f"ini: {ini_path}")
+        settings = QSettings(ruta_colors, QSettings.IniFormat)
 
         graph_type_tab1 = settings.value("Tab1/GraphType1", "Smith Diagram")
         s_param_tab1    = settings.value("Tab1/SParameter", "S11")

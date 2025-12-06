@@ -6,6 +6,7 @@ allows path selection, and validates the setup before proceeding with PDF export
 """
 
 import os
+import sys
 import logging
 from pathlib import Path
 from PySide6.QtWidgets import (
