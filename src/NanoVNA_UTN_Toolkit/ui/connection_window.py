@@ -31,10 +31,17 @@ class NanoVNAStatusApp(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        ui_dir = os.path.dirname(os.path.dirname(__file__))  
-        ruta_ini = os.path.join(ui_dir, "ui","graphics_windows", "ini", "config.ini")
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")
+            base = os.path.join(appdata, "NanoVNA-UTN-Toolkit")
+            ruta_colors = os.path.join(base, "INI", "colors_config", "config.ini")
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            ruta_colors = os.path.join(ui_dir, "ui", "graphics_windows", "ini", "config.ini")
 
-        settings = QSettings(ruta_ini, QSettings.IniFormat)
+        print(f"Leyendo ini en: {ruta_colors}")
+
+        settings = QSettings(ruta_colors, QSettings.IniFormat)
 
         # QWidget
         background_color = settings.value("Dark_Light/QWidget/background-color", "#3a3a3a")

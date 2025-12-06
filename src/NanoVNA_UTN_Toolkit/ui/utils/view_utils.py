@@ -2,6 +2,7 @@ import skrf as rf
 import numpy as np
 import os
 import logging
+import sys
 
 import matplotlib.pyplot as plt
 
@@ -29,10 +30,21 @@ from PySide6.QtCore import Qt, QSettings
 
 def create_tab1(self):
 
-    ui_dir = os.path.dirname(os.path.dirname(__file__))  
-    ruta_ini = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
+    # Load configuration for UI colors and styles
+    if getattr(sys, 'frozen', False):
+        appdata = os.getenv("APPDATA")
+        ruta_colors = os.path.join(
+            appdata,
+            "NanoVNA-UTN-Toolkit",
+            "INI",
+            "colors_config",
+            "config.ini"
+        )
+    else:
+        ui_dir = os.path.dirname(os.path.dirname(__file__))
+        ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
 
-    settings = QSettings(ruta_ini, QSettings.IniFormat)
+    settings = QSettings(ruta_colors, QSettings.IniFormat)
 
     # QTabWidget pane
     tabwidget_pane_bg = settings.value("Dark_Light/QTabWidget_pane/background-color", "#3b3b3b")
@@ -94,10 +106,21 @@ def create_tab1(self):
     menubar_item_padding = settings.value("Dark_Light/QMenuBar_item/padding", "4px 10px")
     menubar_item_selected_bg = settings.value("Dark_Light/QMenuBar_item_selected/background-color", "#4d4d4d")
 
-    ui_dir = os.path.dirname(os.path.dirname(__file__))  
-    ruta_ini = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
+    # Load configuration for UI colors and styles
+    if getattr(sys, 'frozen', False):
+        appdata = os.getenv("APPDATA")
+        ruta_colors = os.path.join(
+            appdata,
+            "NanoVNA-UTN-Toolkit",
+            "INI",
+            "colors_config",
+            "config.ini"
+        )
+    else:
+        ui_dir = os.path.dirname(os.path.dirname(__file__))
+        ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
 
-    settings = QSettings(ruta_ini, QSettings.IniFormat)
+    settings = QSettings(ruta_colors, QSettings.IniFormat)
 
     graph_type1 = settings.value("Tab1/GraphType1", "Smith Diagram")
     s_param1 = settings.value("Tab1/SParameter", "S11")
@@ -252,10 +275,21 @@ def create_tab1(self):
 
 def create_tab2(self):
 
-    ui_dir = os.path.dirname(os.path.dirname(__file__))  
-    ruta_ini = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
+    # Load configuration for UI colors and styles
+    if getattr(sys, 'frozen', False):
+        appdata = os.getenv("APPDATA")
+        ruta_colors = os.path.join(
+            appdata,
+            "NanoVNA-UTN-Toolkit",
+            "INI",
+            "colors_config",
+            "config.ini"
+        )
+    else:
+        ui_dir = os.path.dirname(os.path.dirname(__file__))
+        ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
 
-    settings = QSettings(ruta_ini, QSettings.IniFormat)
+    settings = QSettings(ruta_colors, QSettings.IniFormat)
 
     graph_type2 = settings.value("Tab2/GraphType2", "Smith Diagram")
     s_param2 = settings.value("Tab2/SParameter", "S11")

@@ -24,6 +24,7 @@ from matplotlib.ticker import ScalarFormatter
 import skrf as rf
 import numpy as np
 import os
+import sys
 import logging
 
 spin_style = """
@@ -49,10 +50,21 @@ groupbox_style = """
 
 def create_edit_tab1(self, tabs, nano_window):
 
-    ui_dir = os.path.dirname(os.path.dirname(__file__))  
-    ruta_ini = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
+    # Load configuration for UI colors and styles
+    if getattr(sys, 'frozen', False):
+        appdata = os.getenv("APPDATA")
+        ruta_colors = os.path.join(
+            appdata,
+            "NanoVNA-UTN-Toolkit",
+            "INI",
+            "colors_config",
+            "config.ini"
+        )
+    else:
+        ui_dir = os.path.dirname(os.path.dirname(__file__))
+        ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
 
-    settings = QSettings(ruta_ini, QSettings.IniFormat)
+    settings = QSettings(ruta_colors, QSettings.IniFormat)
 
     trace_color1 = settings.value("Graphic1/TraceColor", "blue")
     marker_color1 = settings.value("Graphic1/MarkerColor1", "blue")
@@ -547,10 +559,21 @@ def create_edit_tab1(self, tabs, nano_window):
 
 def create_edit_tab2(self, tabs, nano_window):
 
-    ui_dir = os.path.dirname(os.path.dirname(__file__))  
-    ruta_ini = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
+    # Load configuration for UI colors and styles
+    if getattr(sys, 'frozen', False):
+        appdata = os.getenv("APPDATA")
+        ruta_colors = os.path.join(
+            appdata,
+            "NanoVNA-UTN-Toolkit",
+            "INI",
+            "colors_config",
+            "config.ini"
+        )
+    else:
+        ui_dir = os.path.dirname(os.path.dirname(__file__))
+        ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
 
-    settings = QSettings(ruta_ini, QSettings.IniFormat)
+    settings = QSettings(ruta_colors, QSettings.IniFormat)
 
     trace_color2 = settings.value("Graphic2/TraceColor", "red")
     marker_color1 = settings.value("Graphic2/MarkerColor1", "red")
