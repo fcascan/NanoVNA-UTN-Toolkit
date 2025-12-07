@@ -58,7 +58,7 @@ class CalibrationWizard(QMainWindow):
         super().__init__()
 
         if getattr(sys, 'frozen', False):
-            base_path = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Measurements")
+            base_path = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Calibration")
             os.makedirs(base_path, exist_ok=True)
             logging.info(f"[CalibrationWizard] Running as EXE, saving measurements in {base_path}")
         else:
@@ -1203,7 +1203,7 @@ class CalibrationWizard(QMainWindow):
 
         # Detect if running as .exe
         if getattr(sys, 'frozen', False):
-            base_cal_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Measurements")
+            base_cal_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit")
         else:
             base_cal_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)))
 

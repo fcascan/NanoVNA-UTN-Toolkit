@@ -310,7 +310,7 @@ class NanoVNAWelcome(QMainWindow):
         """
         logging.info("[welcome_windows._create_measurements_group] Creating measurements group")
         
-        measurements_group = QGroupBox("Measurements")
+        measurements_group = QGroupBox("Calibration")
         measurements_group.setStyleSheet("QGroupBox { font-weight: bold; font-size: 16px; }")
         measurements_layout = QVBoxLayout(measurements_group)
         measurements_layout.setSpacing(15)

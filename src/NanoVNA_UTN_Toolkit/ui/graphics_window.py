@@ -3165,8 +3165,8 @@ class NanoVNAGraphics(QMainWindow):
             appdata = os.getenv("APPDATA")  
             base_dir = os.path.join(appdata, "NanoVNA-UTN-Toolkit")
 
-            osm_dir = os.path.join(base_dir, "Measurements", "osm_results")
-            thru_dir = os.path.join(base_dir, "Measurements", "thru_results")
+            osm_dir = os.path.join(base_dir, "Calibration", "osm_results")
+            thru_dir = os.path.join(base_dir, "Calibration", "thru_results")
 
         else:
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -3486,7 +3486,7 @@ class NanoVNAGraphics(QMainWindow):
                             base = os.path.join(appdata, "NanoVNA-UTN-Toolkit")
 
                             kit_path = os.path.join(
-                                base, "Measurements", "kits",
+                                base, "Calibration", "kits",
                             )
                         else:
                             ui_dir = os.path.dirname(os.path.dirname(__file__))
@@ -5017,7 +5017,7 @@ class NanoVNAGraphics(QMainWindow):
             logging.info(f"[graphics_window.run_sweep] calibration_method leído: '{calibration_method}'")
 
             if getattr(sys, 'frozen', False):
-                cal_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Measurements", "osm_results")
+                cal_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Calibration", "osm_results")
             else: 
                 # Cal_Directory
                 cal_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Calibration", "osm_results")
@@ -5044,7 +5044,7 @@ class NanoVNAGraphics(QMainWindow):
                 elif calibration_method == "Normalization":
                     # Cal_Directory
                     if getattr(sys, 'frozen', False):
-                        cal_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Measurements", "thru_results")
+                        cal_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Calibration", "thru_results")
                     else: 
                         # Cal_Directory
                         cal_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Calibration", "thru_results")
@@ -5056,7 +5056,7 @@ class NanoVNAGraphics(QMainWindow):
 
                     # Cal_Directory
                     if getattr(sys, 'frozen', False):
-                        cal_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Measurements", "osm_results")
+                        cal_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Calibration", "osm_results")
                     else: 
                         # Cal_Directory
                         cal_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Calibration", "osm_results")
@@ -5065,7 +5065,7 @@ class NanoVNAGraphics(QMainWindow):
                     s11 = methods.osm_calibrate_s11(s11_med)
 
                     if getattr(sys, 'frozen', False):
-                        cal_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Measurements", "thru_results")
+                        cal_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Calibration", "thru_results")
                     else: 
                         # Cal_Directory
                         cal_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Calibration", "thru_results")
@@ -5077,13 +5077,13 @@ class NanoVNAGraphics(QMainWindow):
 
                     # Cal_Directory
                     if getattr(sys, 'frozen', False):
-                        osm_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Measurements", "osm_results")
+                        osm_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Calibration", "osm_results")
                     else: 
                         # Cal_Directory
                         osm_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Calibration", "osm_results")
 
                     if getattr(sys, 'frozen', False):
-                        thru_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Measurements", "thru_results")
+                        thru_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Calibration", "thru_results")
                     else: 
                         # Cal_Directory
                         thru_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Calibration", "thru_results")
@@ -5096,7 +5096,7 @@ class NanoVNAGraphics(QMainWindow):
             elif kits_ok == True and no_calibration == False and not is_import_dut:
 
                 if getattr(sys, 'frozen', False):
-                    selected_kit_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Measurements", "kits")
+                    selected_kit_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Calibration", "kits")
                 else: 
                     # Cal_Directory
                     selected_kit_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Calibration", "kits")

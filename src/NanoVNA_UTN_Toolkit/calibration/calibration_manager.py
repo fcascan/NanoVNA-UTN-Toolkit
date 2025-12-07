@@ -19,7 +19,7 @@ class OSMCalibrationManager:
     def __init__(self, base_path: str = None):
         if base_path is None:
             if getattr(sys, 'frozen', False):
-                base_path = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Measurements")
+                base_path = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Calibration")
                 os.makedirs(base_path, exist_ok=True)
                 logging.info(f"[CalibrationWizard] Running as EXE, saving measurements in {base_path}")
             else:
@@ -409,7 +409,7 @@ class THRUCalibrationManager:
     def __init__(self, base_path: str = None):
         if base_path is None:
             if getattr(sys, 'frozen', False):
-                base_path = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Measurements")
+                base_path = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Calibration")
                 os.makedirs(base_path, exist_ok=True)
                 logging.info(f"[CalibrationWizard] Running as EXE, saving measurements in {base_path}")
             else:
