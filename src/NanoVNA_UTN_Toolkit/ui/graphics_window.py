@@ -3,6 +3,7 @@ Graphic view window for NanoVNA devices with dual info panels and cursors.
 """
 import os
 import sys
+import shutil
 import logging
 import webbrowser
 import numpy as np
@@ -462,6 +463,9 @@ class NanoVNAGraphics(QMainWindow):
 
         export_touchstone_action = file_menu.addAction("Export Touchstone Data")
         export_touchstone_action.triggered.connect(lambda: self.export_touchstone_data())
+
+        export_touchstone_action = file_menu.addAction("Export Errors")
+        export_touchstone_action.triggered.connect(lambda: self.export_errors())
 
         graphics_markers = edit_menu.addAction("Graphics/Markers")
         graphics_markers.triggered.connect(lambda: self.edit_graphics_markers())
@@ -6177,7 +6181,110 @@ class NanoVNAGraphics(QMainWindow):
                 s21_data=self.s21,
                 device_name=device_name
             )
-    
+
+    def export_errors(self):
+        """
+        Export errors.
+
+        """
+
+        # Load configuration for UI colors and styles
+
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")
+            config_path = os.path.join(
+                appdata,
+                "NanoVNA-UTN-Toolkit",
+                "INI",
+                "calibration_config",
+                "calibration_config.ini"
+            )
+            calibration_path = os.path.normpath(config_path)
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            calibration_path = os.path.join(ui_dir, "calibration", "config", "calibration_config.ini")
+
+        settings = QSettings(calibration_path, QSettings.IniFormat)
+
+        kit_ok = settings.value(f"Calibration/Kits", False, type=bool)
+        no_calibration = settings.value(f"Calibration/NoCalibration", False, type=bool)
+
+        method = settings.value(f"Calibration/Method", "Normalization")
+
+        if not no_calibration and not kit_ok:
+
+            if getattr(sys, 'frozen', False):
+
+                appdata = os.getenv("APPDATA")
+                base_path = os.path.join(
+                    appdata,
+                    "NanoVNA-UTN-Toolkit",
+                    "Calibration"
+                )
+
+                if method == "OSM (Open - Short - Match)":
+                    src_folder = os.path.join(base_path, "osm_results", "osm_errors")
+
+                elif method == "Normalization":
+                    src_folder = os.path.join(base_path, "thru_results", "normalization_errors")
+
+                elif method == "1-Port+N":
+                    src_folder = os.path.join(base_path, "thru_results", "1-Port+N_errors")
+
+                elif method == "Enhanced-Response":
+                    src_folder = os.path.join(base_path, "thru_results", "enhanced_response_errors")
+
+                else:
+                    return
+
+            else:
+                ui_dir = os.path.dirname(os.path.dirname(__file__))
+                base_path = os.path.join(ui_dir, "Calibration")
+
+                if method == "OSM (Open - Short - Match)":
+                    src_folder = os.path.join(base_path, "osm_results", "osm_errors")
+
+                elif method == "Normalization":
+                    src_folder = os.path.join(base_path, "thru_results", "normalization_errors")
+
+                elif method == "1-Port+N":
+                    src_folder = os.path.join(base_path, "thru_results", "1-Port+N_errors")
+
+                elif method == "Enhanced-Response":
+                    src_folder = os.path.join(base_path, "thru_results", "enhanced_response_errors")
+
+                else:
+                    return
+
+            # --- Copy ---
+            if os.path.exists(src_folder):
+
+                default_folder_name = os.path.basename(src_folder)
+
+                dest_path, _ = QFileDialog.getSaveFileName(
+                    self,
+                    "Save errors folder as",
+                    default_folder_name,
+                    "All Files (*)"
+                )
+
+                if not dest_path:
+                    return
+
+                shutil.copytree(src_folder, dest_path, dirs_exist_ok=True)
+            else:
+                return
+
+            QMessageBox.information(
+                self,
+                "Export completed",
+                "Errors were exported successfully."
+            )
+
+        elif not no_calibration and kit_ok: 
+            pass
+
+
     def _show_touchstone_format_dialog(self):
         """
         Show a simple dialog to choose between S1P and S2P export formats.
