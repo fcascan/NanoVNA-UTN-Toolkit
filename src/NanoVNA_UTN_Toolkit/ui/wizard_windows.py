@@ -1710,13 +1710,10 @@ class CalibrationWizard(QMainWindow):
             from NanoVNA_UTN_Toolkit.ui.welcome_windows import NanoVNAWelcome
             
             # Create welcome window with VNA device if available
-            if self.vna_device:
-                welcome_window = NanoVNAWelcome(vna_device=self.vna_device)
-            else:
-                welcome_window = NanoVNAWelcome()
+            self.welcome_window = NanoVNAWelcome(vna_device=self.vna_device) if self.vna_device else NanoVNAWelcome()
             
             # Show welcome window
-            welcome_window.show()
+            self.welcome_window.show()
             logging.info("Welcome window opened successfully")
             
             # Close wizard
@@ -1739,13 +1736,10 @@ class CalibrationWizard(QMainWindow):
             from NanoVNA_UTN_Toolkit.ui.graphics_window import NanoVNAGraphics
 
             # Create graphics window with VNA device if available
-            if self.vna_device:
-                graphics_window = NanoVNAGraphics(vna_device=self.vna_device)
-            else:
-                graphics_window = NanoVNAGraphics()
-
+            self.graphics_window = NanoVNAGraphics(vna_device=self.vna_device) if self.vna_device else NanoVNAGraphics()
+            
             # Show graphics window
-            graphics_window.show()
+            self.graphics_window.show()
             logging.info("Graphics window opened successfully")
 
             # Close wizard
