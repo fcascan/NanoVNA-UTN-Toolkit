@@ -4,6 +4,7 @@ Graphic view window for NanoVNA devices with dual info panels and cursors.
 import os
 import sys
 import shutil
+import re
 import logging
 import webbrowser
 import numpy as np
@@ -6188,7 +6189,7 @@ class NanoVNAGraphics(QMainWindow):
 
         """
 
-        # Load configuration for UI colors and styles
+        # Export error 
 
         if getattr(sys, 'frozen', False):
             appdata = os.getenv("APPDATA")
@@ -6282,7 +6283,78 @@ class NanoVNAGraphics(QMainWindow):
             )
 
         elif not no_calibration and kit_ok: 
-            pass
+            if getattr(sys, 'frozen', False):
+
+                appdata = os.getenv("APPDATA")
+                kits_path = os.path.join(
+                    appdata,
+                    "NanoVNA-UTN-Toolkit",
+                    "Calibration",
+                    "kits"
+                )
+
+                settings.beginGroup("Calibration")
+                kit_name = settings.value("Name")
+                settings.endGroup()
+
+                if not kit_name:
+                    return
+
+                base_name = re.sub(r'_\d+$', '', kit_name)
+
+                source_folder = os.path.join(kits_path, base_name)
+
+                if not os.path.exists(source_folder):
+                    QMessageBox.warning(
+                        self,
+                        "Kit not found",
+                        "The selected kit folder was not found."
+                    )
+                    return
+
+            else:
+                ui_dir = os.path.dirname(os.path.dirname(__file__))
+                kits_path = os.path.join(ui_dir, "Calibration", "kits")
+
+                settings.beginGroup("Calibration")
+                kit_name = settings.value("Name")
+                settings.endGroup()
+
+                if not kit_name:
+                    return
+
+                base_name = re.sub(r'_\d+$', '', kit_name)
+                source_folder = os.path.join(kits_path, base_name)
+
+                if not os.path.exists(source_folder):
+                    QMessageBox.warning(
+                        self,
+                        "Kit not found",
+                        "The selected kit folder was not found."
+                    )
+                    return
+
+            # --- Copy ---
+            default_folder_name = os.path.basename(source_folder)
+
+            dest_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "Save kit folder as",
+                default_folder_name,
+                "All Files (*)"
+            )
+
+            if not dest_path:
+                return
+
+            shutil.copytree(source_folder, dest_path, dirs_exist_ok=True)
+
+            QMessageBox.information(
+                self,
+                "Export completed",
+                "Kit was exported successfully."
+            )
+
 
 
     def _show_touchstone_format_dialog(self):
