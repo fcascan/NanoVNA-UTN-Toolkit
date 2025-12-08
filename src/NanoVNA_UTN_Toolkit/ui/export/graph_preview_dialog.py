@@ -313,6 +313,46 @@ class GraphPreviewExportDialog(QDialog):
         s11 = self.s11_data if self.s11_data is not None else np.exp(1j * np.linspace(0, 2*np.pi, 100))
         s21 = self.s21_data if self.s21_data is not None else 20 * np.log10(np.abs(np.sin(freqs / 1e8 * np.pi)))
 
+        f_min = np.min(freqs)
+        f_max = np.max(freqs)
+
+        def freq_unit_and_scale(f_min, f_max):
+            def order(f):
+                if f < 1e3:
+                    return 0      # Hz
+                elif f < 1e6:
+                    return 1      # kHz
+                elif f < 1e9:
+                    return 2      # MHz
+                else:
+                    return 3      # GHz
+
+            o_min = order(f_min)
+            o_max = order(f_max)
+
+            units = {
+                0: ("Hz", 1),
+                1: ("kHz", 1e3),
+                2: ("MHz", 1e6),
+                3: ("GHz", 1e9),
+            }
+
+            if o_min == 1 and o_max == 2:
+                target = 2
+            elif o_min == 2 and o_max == 3:
+                target = 3
+            elif o_min == 1 and o_max == 3:
+                target = 2
+            else:
+                target = max(o_min, o_max)
+
+            unit, scale = units[target]
+            return unit, scale
+
+        unit, scale = freq_unit_and_scale(f_min, f_max)
+
+        new_freqs = freqs / scale
+
         if index == 0:
             self.fig.subplots_adjust(left=0.05, right=0.95, top=0.9, bottom=0.1)
 
@@ -349,30 +389,30 @@ class GraphPreviewExportDialog(QDialog):
             )
             legend.set_draggable(True)
 
-
         elif index == 1:
-            self.ax.plot(freqs, 20 * np.log10(np.abs(s11)), color="red", linewidth=1.3)
+            self.ax.plot(new_freqs, 20 * np.log10(np.abs(s11)), color="red", linewidth=1.3)
+            self.ax.set_xlabel(f"Frequency ({unit})", fontsize=12)
             self.ax.set_title(r"Magnitude $|S_{11}|$ (dB)", fontsize=12, pad=12)
-            self.ax.set_xlabel(r"Frequency (Hz)", fontsize=12)
             self.ax.set_ylabel(r"$|S_{11}|$ (dB)")
             self.ax.grid(True, linestyle="--", alpha=0.6)
+
         elif index == 2:
-            self.ax.plot(freqs, np.angle(s11, deg=True), color="red", linewidth=1.3)
+            self.ax.plot(new_freqs, np.angle(s11, deg=True), color="red", linewidth=1.3)
             self.ax.set_title(r"Phase $S_{11}$ (°)", fontsize=12, pad=12)
-            self.ax.set_xlabel(r"Frequency (Hz)", fontsize=12)
+            self.ax.set_xlabel(f"Frequency ({unit})", fontsize=12)
             self.ax.set_ylabel(r"$ \phi_{S_{11}} $ (°)", fontsize=12)
             self.ax.grid(True, linestyle="--", alpha=0.6)
         elif index == 3:
-            self.ax.plot(freqs, 20*np.log10(np.abs(s21)), color="blue", linewidth=1.3)
+            self.ax.plot(new_freqs, 20*np.log10(np.abs(s21)), color="blue", linewidth=1.3)
             self.ax.set_title(r"Magnitude $|S_{21}|$ (dB)", fontsize=12, weight="bold", pad=12)
-            self.ax.set_xlabel(r"Frequency (Hz)", fontsize=12)
+            self.ax.set_xlabel(f"Frequency ({unit})", fontsize=12)
             self.ax.set_ylabel(r"$|S_{21}|$ (dB)")
             self.ax.grid(True, linestyle="--", alpha=0.6)
         elif index == 4:
             phase_s21 = np.angle(np.exp(1j * freqs / 1e7), deg=True)
-            self.ax.plot(freqs, phase_s21, color="blue", linewidth=1.3)
+            self.ax.plot(new_freqs, phase_s21, color="blue", linewidth=1.3)
             self.ax.set_title(r"Phase $S_{21}$ (°)", fontsize=12, pad=12)
-            self.ax.set_xlabel(r"Frequency (Hz)", fontsize=12)
+            self.ax.set_xlabel(f"Frequency ({unit})", fontsize=12)
             self.ax.set_ylabel(r"$ \phi_{S_{21}} $ (°)", fontsize=12)
             self.ax.grid(True, linestyle="--", alpha=0.6)
 
