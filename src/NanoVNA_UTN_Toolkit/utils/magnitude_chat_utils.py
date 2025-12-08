@@ -64,7 +64,7 @@ class MagnitudeChartBuilder:
         self.ax.set_facecolor(self.config.background_color)
         self.ax.grid(True, linestyle="--", alpha=0.5)
 
-        self.ax.set_xlabel(r"$\mathrm{Frequency\ (Hz)}$")
+        self.ax.set_xlabel(r"$\mathrm{Frequency\ (MHz)}$")
         self.ax.set_ylabel(r"$|S_{21}|\ (\mathrm{dB})$")
         self.ax.set_title(r"$\mathrm{Magnitude}$")
 
@@ -135,7 +135,48 @@ class MagnitudeChartManager:
         """Create magnitude chart for calibration wizard."""
         fig, ax = self.builder.setup_figure(figsize=figsize)
         freqs = np.linspace(start_freq, stop_freq, num_points)
-        ax.plot(freqs, np.zeros(num_points), color="white", alpha=0.3)
+
+        f_min = np.min(freqs)
+        f_max = np.max(freqs)
+
+        def freq_unit_and_scale(f_min, f_max):
+            def order(f):
+                if f < 1e3:
+                    return 0      # Hz
+                elif f < 1e6:
+                    return 1      # kHz
+                elif f < 1e9:
+                    return 2      # MHz
+                else:
+                    return 3      # GHz
+
+            o_min = order(f_min)
+            o_max = order(f_max)
+
+            units = {
+                0: ("Hz", 1),
+                1: ("kHz", 1e3),
+                2: ("MHz", 1e6),
+                3: ("GHz", 1e9),
+            }
+
+            if o_min == 1 and o_max == 2:
+                target = 2
+            elif o_min == 2 and o_max == 3:
+                target = 3
+            elif o_min == 1 and o_max == 3:
+                target = 2
+            else:
+                target = max(o_min, o_max)
+
+            unit, scale = units[target]
+            return unit, scale
+
+        unit, scale = freq_unit_and_scale(f_min, f_max)
+
+        new_freqs = freqs / scale
+
+        ax.plot(new_freqs, np.zeros(num_points), color="white", alpha=0.3)
         ax.tick_params(axis="x", colors="black")
         ax.tick_params(axis="y", colors="black")
         ax.xaxis.label.set_color("black")
@@ -161,13 +202,53 @@ class MagnitudeChartManager:
         if color_map is None:
             color_map = {'thru': 'blue', 'open': 'orange', 'short': 'red', 'load': 'green'}
 
+
+        f_min = np.min(freqs)
+        f_max = np.max(freqs)
+
+        def freq_unit_and_scale(f_min, f_max):
+            def order(f):
+                if f < 1e3:
+                    return 0      # Hz
+                elif f < 1e6:
+                    return 1      # kHz
+                elif f < 1e9:
+                    return 2      # MHz
+                else:
+                    return 3      # GHz
+
+            o_min = order(f_min)
+            o_max = order(f_max)
+
+            units = {
+                0: ("Hz", 1),
+                1: ("kHz", 1e3),
+                2: ("MHz", 1e6),
+                3: ("GHz", 1e9),
+            }
+
+            if o_min == 1 and o_max == 2:
+                target = 2
+            elif o_min == 2 and o_max == 3:
+                target = 3
+            elif o_min == 1 and o_max == 3:
+                target = 2
+            else:
+                target = max(o_min, o_max)
+
+            unit, scale = units[target]
+            return unit, scale
+
+        unit, scale = freq_unit_and_scale(f_min, f_max)
+
+        new_freqs = freqs / scale
+
         try:
-            ax.clear()  # borra todo
+            ax.clear() 
 
-            self.apply_axis_style(ax)  # reaplica estilos
+            self.apply_axis_style(ax) 
 
-            # Etiquetas y título dinámico
-            ax.set_xlabel(r"$\mathrm{Frequency\ (Hz)}$")
+            ax.set_xlabel(rf"$\mathrm{{Frequency\ ({unit})}}$")
             ax.set_ylabel(r"$|S_{21}|\ (\mathrm{dB})$")
             ax.set_title(rf"$\mathrm{{{standard_name.upper()}}}\ (\mathrm{{S21}})$")
 
@@ -175,7 +256,7 @@ class MagnitudeChartManager:
             magnitude = np.abs(s21_data)
             magnitude = 20 * np.log10(magnitude + 1e-12)
 
-            ax.plot(freqs, magnitude, '-', color=color, linewidth=self.config.linewidth)
+            ax.plot(new_freqs, magnitude, '-', color=color, linewidth=self.config.linewidth)
             legend_line = Line2D([0], [0], color=color)
             ax.legend([legend_line], [rf"$\mathrm{{{standard_name.upper()}}}$"], 
                 loc='upper left', frameon=True)
