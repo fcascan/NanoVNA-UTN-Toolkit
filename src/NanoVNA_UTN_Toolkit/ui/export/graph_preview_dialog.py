@@ -404,7 +404,7 @@ class GraphPreviewExportDialog(QDialog):
             self.ax.grid(True, linestyle="--", alpha=0.6)
         elif index == 3:
             self.ax.plot(new_freqs, 20*np.log10(np.abs(s21)), color="blue", linewidth=1.3)
-            self.ax.set_title(r"Magnitude $|S_{21}|$ (dB)", fontsize=12, weight="bold", pad=12)
+            self.ax.set_title(r"Magnitude $|S_{21}|$ (dB)", fontsize=12, pad=12)
             self.ax.set_xlabel(f"Frequency ({unit})", fontsize=12)
             self.ax.set_ylabel(r"$|S_{21}|$ (dB)")
             self.ax.grid(True, linestyle="--", alpha=0.6)
