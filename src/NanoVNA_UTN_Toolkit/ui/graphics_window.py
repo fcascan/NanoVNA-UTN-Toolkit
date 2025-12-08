@@ -350,6 +350,9 @@ class NanoVNAGraphics(QMainWindow):
             QGroupBox:title {{
                 color: {groupbox_title_color};  
             }}
+            QTextEdit {{
+                color: {label_color};  
+            }}
             QLabel {{
                 color: {label_color};  
             }}
