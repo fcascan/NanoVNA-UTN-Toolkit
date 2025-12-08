@@ -73,10 +73,10 @@ class Methods:
             logging.info(f"[Calibrator] Using first {min_points} points for calibration")
 
         # Compute delta_e (for 2-term calibration, source match is ignored)
-        delta_e = reflection_tracking * directivity - source_match
+        delta_e = source_match * directivity - reflection_tracking
 
         logging.info("[Calibrator] Calculating calibrated S11 using OSM formula...")
-        s11_cal = (s11_med - directivity) / (s11_med * reflection_tracking - delta_e)
+        s11_cal = (s11_med - directivity) / (s11_med * source_match - delta_e)
         
         # If we had to truncate, fill the remaining points with uncalibrated data
         if len(s11_cal) < sweep_points:
@@ -188,9 +188,9 @@ class Methods:
         directivity = rf.Network(directivity_file).s[:,0,0]
         reflection_tracking = rf.Network(reflection_tracking_file).s[:,0,0]
         source_match = rf.Network(source_match_file).s[:,0,0]
-        delta_e = reflection_tracking * directivity - source_match
+        delta_e = source_match * directivity - reflection_tracking
         
-        s11_cal = (s11_med - directivity) / (s11_med * reflection_tracking - delta_e)
+        s11_cal = (s11_med - directivity) / (s11_med * source_match - delta_e)
 
         # Calibrate S21 using normalization error from thru_dir
         error_dir_norm = os.path.join(thru_dir, "1-Port-N_errors")
@@ -228,7 +228,7 @@ class Methods:
         logging.info("[Calibrator] Calibrating S11 and S21 using 1-Port+N method...")
 
         # Calibrate S11 using OSM errors from osm_dir
-        error_dir_osm = os.path.join(osm_dir, "osm_errors")
+        error_dir_osm = os.path.join(thru_dir, "enhanced_response_errors")
         directivity_file = os.path.join(error_dir_osm, "directivity.s1p")
         reflection_tracking_file = os.path.join(error_dir_osm, "reflection_tracking.s1p")
         source_match_file = os.path.join(error_dir_osm, "source_match.s1p")
@@ -236,9 +236,9 @@ class Methods:
         directivity = rf.Network(directivity_file).s[:,0,0]
         reflection_tracking = rf.Network(reflection_tracking_file).s[:,0,0]
         source_match = rf.Network(source_match_file).s[:,0,0]
-        delta_e = reflection_tracking * directivity - source_match
+        delta_e = source_match * directivity - reflection_tracking
         
-        s11_cal = (s11_med - directivity) / (s11_med * reflection_tracking - delta_e)
+        s11_cal = (s11_med - directivity) / (s11_med * source_match - delta_e)
 
         # Calibrate S21 using normalization error from thru_dir
         error_dir_norm = os.path.join(thru_dir, "enhanced_response_errors")
@@ -248,6 +248,6 @@ class Methods:
         load_match_file = os.path.join(error_dir_norm, "load_match.s2p")
         load_match = rf.Network(load_match_file).s[:,0,0]
 
-        s21_cal = (s21_med / transmission_tracking) * (reflection_tracking/(source_match*s11_med - delta_e))
+        s21_cal = (s21_med / transmission_tracking) * (reflection_tracking/(source_match * s11_med - delta_e))
 
         return s11_cal, s21_cal

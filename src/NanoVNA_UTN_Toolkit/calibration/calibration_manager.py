@@ -225,9 +225,9 @@ class OSMCalibrationManager:
             freqs = open_s.f
             kit_name = filename
             self._save_osm_error_file(freqs, e00, "directivity.s1p", "Directivity", kit_name)
-            self._save_osm_error_file(freqs, e11, "reflection_tracking.s1p", "Reflection tracking", kit_name)
-            self._save_osm_error_file(freqs, e10e01, "source_match.s1p", "Source match", kit_name)
-
+            self._save_osm_error_file(freqs, e11, "source_match.s1p", "Source match", kit_name)
+            self._save_osm_error_file(freqs, e10e01, "reflection_tracking.s1p", "Reflection tracking", kit_name)
+            
             logging.info(f"[OSMCalibrationManager] OSM calibration errors saved: {self.error_dir}")
             return True
 
@@ -439,6 +439,32 @@ class THRUCalibrationManager:
     # ------------------- Measurement Handling -------------------
     def set_measurement(self, standard_name: str, freqs: np.ndarray, s11: np.ndarray, s21: np.ndarray) -> bool:
         """Store THRU measurement and save as Touchstone file."""
+        
+        import numpy as np
+
+        # ---- Entradas ----
+        freqs = freqs       
+        s21 = s21        
+
+        # ---- Parámetros físicos ----
+        delta_L = 0.0064   # m
+        c = 299792458.0
+
+        # ---- Búsqueda de er_eff ----
+        er_eff = 3.3
+
+        beta = 2.0 * np.pi * freqs * np.sqrt(er_eff) / c
+
+        phase_delta_L = beta * delta_L   
+
+        phase_s21 = np.angle(s21)
+
+        phase_s21_corr = phase_s21 - phase_delta_L
+
+        mag_s21 = np.abs(s21)
+
+        s21 = mag_s21 * np.exp(1j * phase_s21_corr)
+
         self.s11m = s11
         self.s21m = s21
 
@@ -587,7 +613,6 @@ class THRUCalibrationManager:
                         logging.error(f"[THRUCalibrationManager] Cannot compute Enhanced-Response: missing {', '.join(missing)}")
                         return False, {}
             else:
-                print("entre jejejejejejejej")
                 if selected_method == "Normalization":
                     s11, s21, freqs = self.read_thru_file(files[3])
                     errors['transmission_tracking'] = s21
@@ -604,7 +629,6 @@ class THRUCalibrationManager:
 
                 elif selected_method == "Enhanced-Response":
                     s11m, s21m, freqs = self.read_thru_file(files[3])
-                    print(f"s21m: {s11m}")
                     e00 = osm_instance.e00
                     e11 = osm_instance.e11
                     delta_e = osm_instance.delta_e
@@ -643,12 +667,16 @@ class THRUCalibrationManager:
                 # e10e32 = S21M * (1 - e11 * e22)
                 e10e32 = s21m * (1 - (e11 * e22))
 
-                e = np.zeros((len(freqs), 2, 2), dtype=complex)
-                e[:, 1, 0] = e10e32
+                e22_save = np.zeros((len(freqs), 2, 2), dtype=complex)
+                e22_save[:, 1, 0] = e22
+
+                e10e32_save = np.zeros((len(freqs), 2, 2), dtype=complex)
+                e10e32_save[:, 1, 0] = e10e32
 
                 logging.info(f"[CalibrationManager] Calculated e22 and e10e32 for Enhanced-Response: e22={e22}, e10e32={e10e32}")
 
-                self._save_thru_error_file(freqs, e, "transmission_tracking.s2p", "Transmission tracking", kit_subfolder)
+                self._save_thru_error_file(freqs, e22_save, "load_match.s2p", "Load Match", kit_subfolder)
+                self._save_thru_error_file(freqs, e10e32_save, "transmission_tracking.s2p", "Transmission tracking", kit_subfolder)
 
             logging.info(f"[CalibrationManager] Calibration kit saved in: {kit_path}")
             return True, errors

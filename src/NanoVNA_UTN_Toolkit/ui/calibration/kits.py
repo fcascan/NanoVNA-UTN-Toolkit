@@ -193,9 +193,9 @@ class KitsCalibrator:
         directivity = rf.Network(directivity_file).s[:,0,0]
         reflection_tracking = rf.Network(reflection_tracking_file).s[:,0,0]
         source_match = rf.Network(source_match_file).s[:,0,0]
-        delta_e = reflection_tracking * directivity - source_match
+        delta_e = source_match * directivity - reflection_tracking
         
-        s11_cal = (s11_med - directivity) / (s11_med * reflection_tracking - delta_e)
+        s11_cal = (s11_med - directivity) / (s11_med * source_match - delta_e)
 
         # Calibrate S21 using normalization error from thru_dir
         error_dir_norm = os.path.join(self.calibration_dir, selected_kit)
@@ -241,16 +241,16 @@ class KitsCalibrator:
         directivity = rf.Network(directivity_file).s[:,0,0]
         reflection_tracking = rf.Network(reflection_tracking_file).s[:,0,0]
         source_match = rf.Network(source_match_file).s[:,0,0]
-        delta_e = reflection_tracking * directivity - source_match
+        delta_e = source_match * directivity - reflection_tracking
         
-        s11_cal = (s11_med - directivity) / (s11_med * reflection_tracking - delta_e)
+        s11_cal = (s11_med - directivity) / (s11_med * source_match - delta_e)
 
         # Calibrate S21 using normalization error from thru_dir
         error_dir_norm = os.path.join(self.calibration_dir, selected_kit)
         transmission_tracking_file = os.path.join(error_dir_norm, "transmission_tracking.s2p")
         transmission_tracking = rf.Network(transmission_tracking_file).s[:,1,0]
 
-        s21_cal = (s21_med / transmission_tracking) * (reflection_tracking/(source_match*s11_med - delta_e))
+        s21_cal = (s21_med / transmission_tracking) * (reflection_tracking/(source_match * s11_med - delta_e))
 
         return s11_cal, s21_cal
 
@@ -268,7 +268,7 @@ class KitsCalibrator:
         method : str    
             The determined calibration method.
         """
-        
+
         if selected_method == "OSM (Open - Short - Match)":
             s11 = self.osm_calibrate_s11(s11_med, selected_kit)
             s21 = s21_med

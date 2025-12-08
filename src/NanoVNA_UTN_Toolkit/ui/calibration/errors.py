@@ -40,8 +40,8 @@ class CalibrationErrors:
 
         n_points = len(freq)
         e00 = np.zeros(n_points, dtype=complex)  # Directivity
-        e11 = np.zeros(n_points, dtype=complex)  # Reflection tracking
-        e10e01 = np.zeros(n_points, dtype=complex)  # Source match
+        e11 = np.zeros(n_points, dtype=complex)  # Source match
+        e10e01 = np.zeros(n_points, dtype=complex)  # Reflection tracking
 
         # Compute 3-term OSM error model
         for i in range(n_points):
@@ -51,13 +51,13 @@ class CalibrationErrors:
 
         # Save results as Touchstone S1P files
         self._save_osm_error_file(freq, e00, "directivity.s1p", "Directivity")
-        self._save_osm_error_file(freq, e11, "reflection_tracking.s1p", "Reflection tracking")
-        self._save_osm_error_file(freq, e10e01, "source_match.s1p", "Source match")
+        self._save_osm_error_file(freq, e11, "source_match.s1p", "Source match")
+        self._save_osm_error_file(freq, e10e01, "reflection_tracking.s1p", "Reflection tracking")
 
         # Store results for later access
         self.directivity = e00
-        self.reflection_tracking = e11
-        self.source_match = e10e01
+        self.reflection_tracking = e10e01
+        self.source_match = e11
 
         logging.info("[CalibrationErrors] OSM error calculation completed successfully")
 
@@ -139,8 +139,8 @@ class CalibrationErrors:
 
         n_points = len(freq)
         e00 = np.zeros(n_points, dtype=complex)  # Directivity
-        e11 = np.zeros(n_points, dtype=complex)  # Reflection tracking
-        e10e01 = np.zeros(n_points, dtype=complex)  # Source match
+        e11 = np.zeros(n_points, dtype=complex)  # Source match 
+        e10e01 = np.zeros(n_points, dtype=complex)  # Reflection tracking
 
         # Compute 3-term OSM error model
         for i in range(n_points):
@@ -165,14 +165,14 @@ class CalibrationErrors:
 
         # --- Save errors in the current error_dir ---
         self._save_osm_error_file(freq, e00, "directivity.s1p", "Directivity (1-Port+N)")
-        self._save_osm_error_file(freq, e11, "reflection_tracking.s1p", "Reflection Tracking (1-Port+N)")
-        self._save_osm_error_file(freq, e10e01, "source_match.s1p", "Source Match (1-Port+N)")
+        self._save_osm_error_file(freq, e11, "source_match.s1p", "Source Match (1-Port+N)")
+        self._save_osm_error_file(freq, e10e01, "reflection_tracking.s1p", "Reflection Tracking (1-Port+N)")
         self._save_normalization_error_file(thru_freq, e10e32, "transmission_tracking.s2p", "Transmission Tracking (1-Port+N)")
 
         # Store results for later access
         self.directivity_1PortN = e00
-        self.reflection_tracking_1PortN = e11
-        self.source_match_1PortN = e10e01
+        self.reflection_tracking_1PortN = e10e01
+        self.source_match_1PortN = e11
         self.transmission_tracking_1PortN = e10e32
 
         logging.info("[CalibrationErrors] 1-Port+N error calculation completed successfully")
@@ -193,7 +193,6 @@ class CalibrationErrors:
         self.calibration_dir = osm_dir
         
         open_s, short_s, match_s = self._load_osm_files()
-        self.calibration_dir = prev_dir
 
         freq = open_s.f
         s_open = open_s.s[:, 0, 0]
@@ -214,7 +213,6 @@ class CalibrationErrors:
         # --- THRU measurement ---
         self.calibration_dir = thru_dir
         thru_s = self._load_thru_file()
-        self.calibration_dir = prev_dir
 
         thru_freq = thru_s.f
         s11m = thru_s.s[:, 0, 0]  # S11 measured in THRU
@@ -232,8 +230,8 @@ class CalibrationErrors:
 
         # Save OSM errors
         self._save_osm_error_file(freq, e00, "directivity.s1p", "Directivity (Enhanced-Response)")
-        self._save_osm_error_file(freq, e11, "reflection_tracking.s1p", "Reflection Tracking (Enhanced-Response)")
-        self._save_osm_error_file(freq, e10e01, "source_match.s1p", "Source Match (Enhanced-Response)")
+        self._save_osm_error_file(freq, e11, "source_match.s1p", "Source Match (Enhanced-Response)")
+        self._save_osm_error_file(freq, e10e01, "reflection_tracking.s1p", "Reflection Tracking (Enhanced-Response)")
         # Save load match (e22)
         self._save_enhanced_response_error_file(thru_freq, e10e32, e22, "transmission_tracking.s2p", "load_match.s2p", "Transmission Tracking (Enhanced-Response)", "Load Match (Enhanced-Response)")
 
@@ -299,12 +297,12 @@ class CalibrationErrors:
         network.write_touchstone(filepath)
         logging.info(f"[CalibrationErrors] {label} error saved: {filepath}")
 
-    def _save_enhanced_response_error_file(self, freq, e10e31, e22, transmission_tracking, load_match, label1, label2):
+    def _save_enhanced_response_error_file(self, freq, e10e32, e22, transmission_tracking, load_match, label1, label2):
 
         network = rf.Network()
         network.frequency = rf.Frequency.from_f(freq, unit="Hz")
         s_matrix = np.zeros((len(freq), 2, 2), dtype=complex)
-        s_matrix[:, 1, 0] = e10e31  # S21
+        s_matrix[:, 1, 0] = e10e32  # S21
         network.s = s_matrix
         filepath = os.path.join(self.error_dir, transmission_tracking)
         network.write_touchstone(filepath)
