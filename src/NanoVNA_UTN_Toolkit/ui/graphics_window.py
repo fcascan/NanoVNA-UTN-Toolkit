@@ -1376,6 +1376,7 @@ class NanoVNAGraphics(QMainWindow):
             # Clear left panel marker 1 labels
             if "freq" in self.labels_left:
                 self.labels_left["freq"].setText("--")
+                QTimer.singleShot(0, lambda: self.labels_left["freq"].setSelection(0, 0))
             if "val" in self.labels_left:
                 self.labels_left["val"].setText(f"{self.left_s_param}: -- + j--")
             if "mag" in self.labels_left:
@@ -2848,9 +2849,11 @@ class NanoVNAGraphics(QMainWindow):
         if hasattr(self, 'labels_left') and self.labels_left:
             freq_left = self.labels_left.get("freq")
             if freq_left:
-                freq_left.setText("--")    # set "--"
-                freq_left.deselect()       # remove selection
-                freq_left.clearFocus()     # remove focus so it's not blue
+                freq_left.setText("--")
+                freq_left.setSelection(0, 0)  
+                freq_left.setCursorPosition(0) 
+                freq_left.deselect()
+                freq_left.clearFocus()
             self.labels_left.get("val") and self.labels_left["val"].setText("S11: -- + j--")
             self.labels_left.get("mag") and self.labels_left["mag"].setText("|S11|: --")
             self.labels_left.get("phase") and self.labels_left["phase"].setText("Phase: --")
@@ -2863,8 +2866,10 @@ class NanoVNAGraphics(QMainWindow):
             freq_right = self.labels_right.get("freq")
             if freq_right:
                 freq_right.setText("--")   # set "--"
-                freq_right.deselect()      # remove selection
-                freq_right.clearFocus()    # remove focus so it's not blue
+                freq_right.setSelection(0, 0)  
+                freq_right.setCursorPosition(0) 
+                freq_right.deselect()
+                freq_right.clearFocus()
             self.labels_right.get("val") and self.labels_right["val"].setText("S21: -- + j--")
             self.labels_right.get("mag") and self.labels_right["mag"].setText("|S21|: --")
             self.labels_right.get("phase") and self.labels_right["phase"].setText("Phase: --")
@@ -5018,7 +5023,7 @@ class NanoVNAGraphics(QMainWindow):
             s11_data = self.vna_device.readValues("data 0")
             s11_med = np.array(s11_data)
 
-            s11_med[0] = s11_med[1]  # Fix first point if needed
+            #s11_med[0] = s11_med[1]  # Fix first point if needed
 
             logging.info(f"[graphics_window.run_sweep] Got {len(s11_med)} S11 data points")
             if len(s11_med) != self.segments:
@@ -5088,7 +5093,6 @@ class NanoVNAGraphics(QMainWindow):
                 s21 = s21_med
 
             elif kits_ok == False and no_calibration == False and not is_import_dut:
-                print(f"kit_name calibrador: {kit_name}")
                 if calibration_method == "OSM (Open - Short - Match)":
                     s11 = methods.osm_calibrate_s11(s11_med)
                     s21 = s21_med  # S21 sin calibrar

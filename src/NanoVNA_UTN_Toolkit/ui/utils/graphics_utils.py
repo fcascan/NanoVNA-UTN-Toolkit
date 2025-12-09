@@ -253,6 +253,9 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
 
     initial_freq_value, initial_freq_unit = format_frequency_smart_split(freqs[0])
     edit_value = QLineEdit(initial_freq_value)
+    edit_value.setSelection(0, 0)
+    edit_value.setCursorPosition(0)
+    edit_value.clearFocus()
 
     def limit_frequency_input(text, max_digits=6, max_decimals=3, allow_dashes=False):
         if text == "--":   # allow placeholder
@@ -2188,3 +2191,13 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
         s_param = new_s_param
     
     return right_panel, info_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references, update_s_param_only
+
+class NoMouseSelectLineEdit(QLineEdit):
+    def mousePressEvent(self, event):
+        self.setCursorPosition(len(self.text()))
+
+    def mouseMoveEvent(self, event):
+        pass
+
+    def mouseDoubleClickEvent(self, event):
+        pass
