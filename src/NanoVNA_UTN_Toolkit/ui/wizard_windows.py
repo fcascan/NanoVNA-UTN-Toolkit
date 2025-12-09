@@ -436,6 +436,9 @@ class CalibrationWizard(QMainWindow):
         start_val_hz = self.start_freq_input.value() * self.unit_multiplier(self.start_freq_unit.currentText())
         stop_val_hz  = self.stop_freq_input.value()  * self.unit_multiplier(self.stop_freq_unit.currentText())
 
+        print(f"Start Frequency: {self.start_freq_input.value()}")
+        print(f"Stop Frequency: {self.stop_freq_input.value()}")
+
         # Use device limits if available, otherwise fallback to defaults
         if hasattr(self, 'freq_min_hz') and hasattr(self, 'freq_max_hz'):
             # Create dynamic frequency range strings for tooltips
@@ -685,7 +688,10 @@ class CalibrationWizard(QMainWindow):
         # Connect widgets to update sweep configuration
         self.start_freq_input.valueChanged.connect(self.update_sweep_config)
         self.start_freq_unit.currentTextChanged.connect(self.update_sweep_config)
+
+        self.stop_freq_input.valueChanged.connect(self.update_sweep_config)
         self.stop_freq_unit.currentTextChanged.connect(self.update_sweep_config)
+
         self.steps_input.valueChanged.connect(self.update_sweep_config)
 
         # Conectar rango dinámico según unidad
@@ -700,7 +706,6 @@ class CalibrationWizard(QMainWindow):
         self.start_freq_input.editingFinished.connect(self.on_frequency_changed_range)
         self.stop_freq_input.editingFinished.connect(self.on_frequency_changed_range)
 
-        
         # Update initial values and device limits
         self.update_sweep_config()
         self.update_device_limits()  # Configure SmartDatapointsSpinBox with device limits
