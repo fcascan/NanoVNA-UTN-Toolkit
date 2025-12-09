@@ -3742,7 +3742,6 @@ class NanoVNAGraphics(QMainWindow):
         self.sweep_options_window.show()
         self.sweep_options_window.raise_()
         self.sweep_options_window.activateWindow()
-
         
     def get_current_vna_device(self):
         """Try to get the current VNA device."""
@@ -4581,7 +4580,7 @@ class NanoVNAGraphics(QMainWindow):
                 start_freq_val = settings.value("Frequency/StartFreqHz", default_start_hz)
                 stop_freq_val = settings.value("Frequency/StopFreqHz", default_stop_hz)
                 segments_val = settings.value("Frequency/Segments", default_segments)
-                
+
                 # Debug: log what we read from file
                 logging.info(f"[graphics_window.load_sweep_configuration] Raw values from config: "
                             f"StartFreqHz={start_freq_val}, StopFreqHz={stop_freq_val}, Segments={segments_val}")
@@ -4945,6 +4944,12 @@ class NanoVNAGraphics(QMainWindow):
                 actual_stop_freq = freqs[-1]
                 expected_start_freq = self.start_freq_hz
                 expected_stop_freq = self.stop_freq_hz
+
+                expected_start_freq = self.start_freq_hz
+                expected_stop_freq  = self.stop_freq_hz
+                points = self.segments
+
+                freqs = np.linspace(expected_start_freq, expected_stop_freq, points)
                 
                 # Check if frequencies are within a reasonable tolerance (±5%)
                 start_tolerance = abs(actual_start_freq - expected_start_freq) / expected_start_freq
@@ -5727,12 +5732,14 @@ class NanoVNAGraphics(QMainWindow):
                 else:
                     ax.set_ylabel(r"$|%s|$" % s_param, color=f"{text_color}")
                     ax.set_title(r"$%s\ \mathrm{Magnitude}$" % s_param, color=text_color)
+
                 # Set X-axis limits with margins to match actual frequency range of the sweep
                 freq_start = freqs[0] / 1e6
                 freq_end = freqs[-1] / 1e6
                 freq_range = freq_end - freq_start
                 margin = freq_range * 0.05  # 5% margin on each side
                 ax.set_xlim(freq_start - margin, freq_end + margin)
+                
                 # Set Y-axis limits with margins to provide visual spacing
                 y_min = np.min(magnitude_db)
                 y_max = np.max(magnitude_db)

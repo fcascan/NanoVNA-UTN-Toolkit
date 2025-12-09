@@ -682,7 +682,6 @@ class SweepOptionsWindow(QMainWindow):
         self.stop_freq_unit.addItems(["Hz", "kHz", "MHz", "GHz"])
         self.stop_freq_unit.setCurrentText("GHz")
         self.stop_freq_unit.currentTextChanged.connect(self.on_frequency_changed)
-        self.stop_freq_unit.currentTextChanged.connect(self.on_frequency_changed_range)
 
         self.stop_freq_unit.currentTextChanged.connect(
             lambda unit: self.update_spinbox_range(self.stop_freq_edit, unit)
