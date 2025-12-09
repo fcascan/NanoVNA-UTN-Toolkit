@@ -826,6 +826,7 @@ class NanoVNAWelcome(QMainWindow):
 
                 settings_calibration.setValue("Calibration/Kits", True)
                 settings_calibration.setValue("Calibration/NoCalibration", False)
+                settings_calibration.setValue("Calibration/CalibrationWizard", False)
 
                 # Use new calibration structure
           
@@ -869,6 +870,7 @@ class NanoVNAWelcome(QMainWindow):
 
         settings_calibration.setValue("Calibration/Kits", False)
         settings_calibration.setValue("Calibration/NoCalibration", False)
+        settings_calibration.setValue("Calibration/CalibrationWizard", True)
         settings_calibration.sync()
 
         logging.info("[welcome_windows.open_calibration_wizard] Opening calibration wizard")
@@ -913,6 +915,7 @@ class NanoVNAWelcome(QMainWindow):
             # No calibration kit selected
             settings_calibration.setValue("Calibration/Kits", False)
             settings_calibration.setValue("Calibration/NoCalibration", True)
+            settings_calibration.setValue("Calibration/CalibrationWizard", False)
             settings_calibration.sync()
             logging.info("[welcome_windows.graphics_clicked] No calibration kit selected - proceeding without calibration")
 
@@ -978,6 +981,7 @@ class NanoVNAWelcome(QMainWindow):
             settings_calibration.setValue("Calibration/Parameter", parameter)
             settings_calibration.setValue("Calibration/Kits", True)
             settings_calibration.setValue("Calibration/NoCalibration", False)
+            settings_calibration.setValue("Calibration/CalibrationWizard", False)
             settings_calibration.sync()
 
             logging.info(f"[welcome_windows._apply_selected_kit_calibration] Applied calibration: {kit_name_with_id} (ID {matched_id}, Method {matched_method})")

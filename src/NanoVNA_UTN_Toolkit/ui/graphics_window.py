@@ -3542,6 +3542,12 @@ class NanoVNAGraphics(QMainWindow):
                 settings.setValue("DateTime_Kits", date_time_Kits)
                 settings.endGroup()
 
+            kits_ok = settings.value("Calibration/Kits", False, type=bool)
+            no_calibration = settings.value("Calibration/NoCalibration", False, type=bool)
+            calibration_wizard = settings.value("Calibration/CalibrationWizard", False, type=bool)
+
+            settings.sync()
+
             # --- Update [Calibration] Name and id ---
             if remaining_kits:
                 first_kit_name = remaining_kits[0][2]  # kit_name of first kit
@@ -3554,8 +3560,23 @@ class NanoVNAGraphics(QMainWindow):
 
                 was_current_deleted = deleted_current_kit
 
+            elif not no_calibration and calibration_wizard:
+                # If no kits remain, fallback to a safe state
 
-            else:
+                print(f"CalibrationWizard1: {calibration_wizard}")
+
+                settings.beginGroup("Calibration")
+                settings.setValue("Kits", False)
+                settings.setValue("NoCalibration", False)
+                settings.setValue("CalibrationWizard", True)
+                settings.remove("Name")
+                settings.remove("id")
+                settings.endGroup()
+                settings.sync()
+
+                was_current_deleted = "all"
+
+            elif not no_calibration and not calibration_wizard:
                 # No kits left, remove Name/id and reset flags
                 settings.beginGroup("Calibration")
                 settings.remove("Name")
@@ -3620,15 +3641,6 @@ class NanoVNAGraphics(QMainWindow):
             settings.setValue("id", 1)
             settings.endGroup()
 
-        else:
-            # If no kits remain, fallback to a safe state
-            settings.beginGroup("Calibration")
-            settings.setValue("Kits", False)
-            settings.setValue("NoCalibration", True)
-            settings.remove("Name")
-            settings.remove("id")
-            settings.endGroup()
-
         settings.sync()
 
         if self.vna_device:
@@ -3637,7 +3649,6 @@ class NanoVNAGraphics(QMainWindow):
             graphics_window = NanoVNAGraphics()
         graphics_window.show()
         self.close()
-
 
     def handle_all_kits_deleted(self):
         from PySide6.QtCore import QSettings
@@ -3655,23 +3666,47 @@ class NanoVNAGraphics(QMainWindow):
             calibration_path = os.path.join(ui_dir, "calibration", "config", "calibration_config.ini")
 
         settings = QSettings(calibration_path, QSettings.IniFormat)
+
+        kits_ok = settings.value("Calibration/Kits", False, type=bool)
+        no_calibration = settings.value("Calibration/NoCalibration", False, type=bool)
+        calibration_wizard = settings.value("Calibration/CalibrationWizard", False, type=bool)
+
         settings.sync()
 
-        # --- Set calibration state to NoCalibration ---
-        settings.beginGroup("Calibration")
-        settings.setValue("Kits", False)
-        settings.setValue("NoCalibration", True)
-        settings.remove("Name")
-        settings.remove("id")
-        settings.endGroup()
-        settings.sync()
+        if not no_calibration and calibration_wizard:
+            # If no kits remain, fallback to a safe state
+
+            print(f"CalibrationWizard1: {calibration_wizard}")
+
+            settings.beginGroup("Calibration")
+            settings.setValue("Kits", False)
+            settings.setValue("NoCalibration", False)
+            settings.setValue("CalibrationWizard", True)
+            settings.remove("Name")
+            settings.remove("id")
+            settings.endGroup()
+            settings.sync()
+
+        elif not no_calibration and not calibration_wizard:
+
+            # --- Set calibration state to NoCalibration ---
+            settings.beginGroup("Calibration")
+            settings.setValue("Kits", False)
+            settings.setValue("NoCalibration", True)
+            settings.setValue("CalibrationWizard", False)
+            settings.remove("Name")
+            settings.remove("id")
+            settings.endGroup()
+            settings.sync()
 
         # --- Reopen graphics window in no-calibration mode ---
         if self.vna_device:
             graphics_window = NanoVNAGraphics(vna_device=self.vna_device)
         else:
             graphics_window = NanoVNAGraphics()
+
         graphics_window.show()
+
         self.close()
 
     # =================== SWEEP OPTIONS FUNCTION ==================

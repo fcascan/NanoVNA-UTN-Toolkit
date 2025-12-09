@@ -1253,6 +1253,24 @@ class CalibrationWizard(QMainWindow):
         self.reflection_tracking = errors.reflection_tracking
         self.source_match = errors.source_match
 
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")
+            config_path = os.path.join(
+                appdata,
+                "NanoVNA-UTN-Toolkit",
+                "INI",
+                "calibration_config",
+                "calibration_config.ini"
+            )
+            calibration_path = os.path.normpath(config_path)
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            calibration_path = os.path.join(ui_dir, "calibration", "config", "calibration_config.ini")
+
+        settings_calibration = QSettings(calibration_path, QSettings.IniFormat)
+
+        settings_calibration.setValue("Calibration/CalibrationWizard", True)
+
         # Open graphics window
         self.open_graphics_window()
 

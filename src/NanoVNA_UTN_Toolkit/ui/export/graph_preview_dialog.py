@@ -337,7 +337,9 @@ class GraphPreviewExportDialog(QDialog):
                 3: ("GHz", 1e9),
             }
 
-            if o_min == 1 and o_max == 2:
+            if o_min == 1 and o_max == 1:
+                target = 1   # kHz
+            elif o_min == 1 and o_max == 2:
                 target = 2
             elif o_min == 2 and o_max == 3:
                 target = 3
