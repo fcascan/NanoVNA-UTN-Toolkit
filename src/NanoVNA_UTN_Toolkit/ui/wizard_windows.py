@@ -1271,6 +1271,31 @@ class CalibrationWizard(QMainWindow):
 
         settings_calibration.setValue("Calibration/CalibrationWizard", True)
 
+        # Load configuration for UI colors and styles
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")
+            sweep_config_path = os.path.join(
+                appdata,
+                "NanoVNA-UTN-Toolkit",
+                "INI",
+                "sweep_config",
+                "config.ini"
+            )
+            sweep_config_path = os.path.normpath(sweep_config_path)
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            sweep_config_path = os.path.join(ui_dir, "ui", "sweep_window", "config", "config.ini")
+            sweep_config_path = os.path.normpath(sweep_config_path)
+
+        # Debug: log the config path to verify it matches sweep_options_window.py
+        logging.info(f"[graphics_window.load_sweep_configuration] Config path: {sweep_config_path}")
+
+        settings = QSettings(sweep_config_path, QSettings.IniFormat)
+
+        settings.setValue("Frequency/StartFreqHz", self.get_sweep_start_frequency())
+        settings.setValue("Frequency/StopFreqHz", self.get_sweep_stop_frequency())
+        settings.setValue("Frequency/Segments", self.get_sweep_steps())
+
         # Open graphics window
         self.open_graphics_window()
 
