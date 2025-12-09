@@ -1163,7 +1163,7 @@ class NanoVNAGraphics(QMainWindow):
 
         # =================== LEFT PANEL (EMPTY) ===================
         self.left_panel, self.info_panel_left, self.info_panel_left_2, self.fig_left, self.ax_left, self.canvas_left, \
-        self.slider_left, self.slider_left_2, self.cursor_left, self.cursor_left_2, self.labels_left, self.labels_left_2, self.update_cursor, self.update_cursor_2, self.update_left_data, self.update_left_data_2, self.update_left_s_param = \
+        self.slider_left, self.slider_left_2, self.cursor_left, self.cursor_left_2, self.labels_left, self.labels_left_2, self.update_cursor, self.update_cursor_2, self.update_left_data, self.update_left_data_2, self.update_left_s_param, self.freqs_edit_left, self.freqs_edit_left_2 = \
             create_left_panel(
                 self,
                 S_data=None,  # Force empty 
@@ -1181,7 +1181,7 @@ class NanoVNAGraphics(QMainWindow):
 
         # =================== RIGHT PANEL (EMPTY) ===================
         self.right_panel, self.info_panel_right, self.info_panel_right_2, self.fig_right, self.ax_right, self.canvas_right, \
-        self.slider_right, self.slider_right_2, self.cursor_right, self.cursor_right_2, self.labels_right, self.labels_right_2, self.update_right_cursor, self.update_right_cursor_2, self.update_right_data, self.update_right_s_param = \
+        self.slider_right, self.slider_right_2, self.cursor_right, self.cursor_right_2, self.labels_right, self.labels_right_2, self.update_right_cursor, self.update_right_cursor_2, self.update_right_data, self.update_right_s_param, self.freqs_edit_right, self.freqs_edit_right_2 = \
             create_right_panel(
                 self,
                 settings=settings,
@@ -5594,6 +5594,26 @@ class NanoVNAGraphics(QMainWindow):
             # --- Recreate cursors for new graph types ---
             logging.info("[graphics_window.update_plots_with_new_data] Recreating cursors for new graph types")
 
+            if hasattr(self, 'freqs_edit_left') and self.freqs_edit_left:
+                self.labels_left["freq"].editingFinished.connect(
+                    lambda: self.freqs_edit_left(self.slider_left)
+                )
+
+            if hasattr(self, 'freqs_edit_right') and self.freqs_edit_right:
+                self.labels_right["freq"].editingFinished.connect(
+                    lambda: self.freqs_edit_right(self.slider_right)
+                )
+
+            if hasattr(self, 'freqs_edit_left_2') and callable(self.freqs_edit_left_2):
+                self.labels_left_2["freq"].editingFinished.connect(
+                    lambda s=self.slider_left_2: self.freqs_edit_left_2(s)
+                )
+
+            if hasattr(self, 'freqs_edit_right_2') and self.freqs_edit_right_2:
+                self.labels_right_2["freq"].editingFinished.connect(
+                    lambda: self.freqs_edit_right_2(self.slider_right_2)
+                )
+
             self._recreate_cursors_for_new_plots(
                 graph_type_1=graph_type_tab1,
                 graph_type_2=graph_type_tab2,
@@ -6406,8 +6426,6 @@ class NanoVNAGraphics(QMainWindow):
                 "Export completed",
                 "Kit was exported successfully."
             )
-
-
 
     def _show_touchstone_format_dialog(self):
         """

@@ -627,6 +627,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
         fig.canvas.draw_idle()
 
         if not from_slider:
+
             if new_slider is None or getattr(new_slider, "ax", None) is None or getattr(new_slider.ax, "get_figure", lambda: None)() is None:
                 logging.warning("Skipping cursor update: new slider or figure no longer exists")
                 return
@@ -765,16 +766,34 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
         slider_2.valtext.set_visible(False)  # Hide the value text
         slider_2.ax.set_visible(False)
     
-    def freq_edited():
+    def freq_edited(new_slider=None):
         try:
             freq_hz = parse_frequency_input(edit_value.text())
             if freq_hz is not None:
                 index = np.argmin(np.abs(freqs - freq_hz))
-                update_cursor(index)
+                update_cursor(index, from_slider=False, new_slider=new_slider)
             edit_value.clearFocus()
         except:
             pass
+
     edit_value.editingFinished.connect(freq_edited)
+
+    def freq_edited_2(new_slider=None):
+
+        if new_slider is None:
+            logging.warning("freq_edited_2 called with new_slider=None")
+        else:
+            logging.info("freq_edited_2 called with valid new_slider")
+
+        try:
+            freq_hz = parse_frequency_input(edit_value_2.text())
+            if freq_hz is not None:
+                index = np.argmin(np.abs(freqs - freq_hz))
+                update_cursor_2(index, from_slider=False, new_slider=new_slider)
+            edit_value_2.clearFocus()
+        except:
+            pass
+    edit_value_2.editingFinished.connect(freq_edited_2)
 
     # --- Cursor draggable ---
     dragging_1 = {"active": False}
@@ -1101,7 +1120,25 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
             edit_value.editingFinished.disconnect()
         except Exception:
             pass
+
         edit_value.editingFinished.connect(freq_edited_local)
+
+        def freq_edited_2_local():
+            try:
+                freq_hz = parse_frequency_input(edit_value_2.text())
+                if freq_hz is not None:
+                    index = np.argmin(np.abs(new_freqs - freq_hz))
+                    update_cursor_2(index)
+                edit_value_2.clearFocus()
+            except Exception as e:
+                print("Edit freq 2 error:", e)
+
+        try:
+            edit_value_2.editingFinished.disconnect()
+        except Exception:
+            pass
+
+        edit_value_2.editingFinished.connect(freq_edited_2_local)
 
         # Final redraw
         try:
@@ -1139,12 +1176,11 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
         edit_value.editingFinished.disconnect()
         edit_value.editingFinished.connect(freq_edited)
 
-
     def update_s_param_only(new_s_param):
         nonlocal s_param
         s_param = new_s_param
     
-    return left_panel, info_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references, update_data_references_2, update_s_param_only
+    return left_panel, info_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references, update_data_references_2, update_s_param_only, freq_edited, freq_edited_2
 
 #############################################################################################
 # =================== RIGHT PANEL ========================================================= #
@@ -1827,16 +1863,33 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
     slider_2.ax.set_visible(False)
 
     # --- Conectar edición manual ---
-    def freq_edited():
+    def freq_edited(new_slider=None):
         try:
             freq_hz = parse_frequency_input(edit_value.text())
             if freq_hz is not None:
                 index = np.argmin(np.abs(freqs - freq_hz))
-                update_cursor(index)
+                update_cursor(index, from_slider=False, new_slider=new_slider)
             edit_value.clearFocus()
         except:
             pass
     edit_value.editingFinished.connect(freq_edited)
+
+    def freq_edited_2(new_slider=None):
+
+        if new_slider == None:
+            logging.warning("freq_edited_2 called with new_slider=None")
+        else:
+            logging.info("freq_edited_2 called with valid new_slider")
+
+        try:
+            freq_hz = parse_frequency_input(edit_value_2.text())
+            if freq_hz is not None:
+                index = np.argmin(np.abs(freqs - freq_hz))
+                update_cursor_2(index, from_slider=False, new_slider=new_slider)
+            edit_value_2.clearFocus()
+        except:
+            pass
+    edit_value.editingFinished.connect(freq_edited_2)
 
     # --- Inicializar ---
     update_cursor(0)
@@ -2190,7 +2243,7 @@ def create_right_panel(window, settings, S_data=None, freqs=None, graph_type="Sm
         nonlocal s_param
         s_param = new_s_param
     
-    return right_panel, info_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references, update_s_param_only
+    return right_panel, info_panel, info_panel_2, fig, ax, canvas, slider, slider_2, cursor_graph, cursor_graph_2, labels_dict, labels_dict_2, update_cursor, update_cursor_2, update_data_references, update_s_param_only, freq_edited, freq_edited_2
 
 class NoMouseSelectLineEdit(QLineEdit):
     def mousePressEvent(self, event):
