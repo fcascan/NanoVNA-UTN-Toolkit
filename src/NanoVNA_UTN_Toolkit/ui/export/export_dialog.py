@@ -250,6 +250,7 @@ class ExportDialog(QDialog):
         """
         import copy
         import os
+        import logging
         from PySide6.QtWidgets import QWidget, QVBoxLayout
         from PySide6.QtCore import QSettings
         from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -320,13 +321,27 @@ class ExportDialog(QDialog):
         if active_markers:
             for cursor, marker_id, show_flag, color in active_markers:
                 x_data, y_data = cursor.get_data()
+                logging.info(f"x_data: {x_data}, y_data: {y_data}")
                 if len(x_data) == 0 or len(y_data) == 0:
                     continue
 
+                def format_frequency(freq_mhz):
+                    if freq_mhz >= 1000.0:
+                        return freq_mhz / 1000.0, "GHz"
+                    elif freq_mhz >= 1.0:
+                        return freq_mhz, "MHz"
+                    else:
+                        return freq_mhz * 1000.0, "KHz"
+
+                freq_val, freq_unit = format_frequency(x_data[0])
+
                 if graph == "Magnitude":
-                    text = f"Marker {marker_id}\nFreq: {x_data[0]:.2f}\n|S|: {y_data[0]:.3f}{unit}"
+                    if unit == "dB":
+                        text = f"Marker {marker_id}\nFreq: {freq_val:.2f} {freq_unit}\n|S|: {y_data[0]:.3f} {unit}"
+                    elif unit == "Voltage ratio":
+                        text = f"Marker {marker_id}\nFreq: {freq_val:.2f} {freq_unit}\n|S|: {y_data[0]:.3f}"
                 else:
-                    text = f"Marker {marker_id}\nFreq: {x_data[0]:.2f}\n\u03C6: {y_data[0]:.3f}°"
+                    text = f"Marker {marker_id}\nFreq: {freq_val:.2f} {freq_unit}\n\u03C6: {y_data[0]:.3f}°"
 
                 ann = ax.annotate(
                     text,
