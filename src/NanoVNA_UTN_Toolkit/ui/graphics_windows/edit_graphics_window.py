@@ -148,8 +148,8 @@ class EditGraphics(QMainWindow):
                 color: {tabbar_selected_color};
             }}
             QSpinBox {{
-                background-color: {spinbox_bg};
-                color: {spinbox_color};
+                background-color: white;
+                color: black;
                 border: {spinbox_border};
                 border-radius: {spinbox_border_radius};
             }}

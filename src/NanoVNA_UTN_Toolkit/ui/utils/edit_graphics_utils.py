@@ -37,13 +37,6 @@ spin_style = """
     }
 """
 
-groupbox_style = """
-    QGroupBox {
-        color: white;
-        font-weight: bold;
-    }
-"""
-
 ####################################################################################################
 #--------- Tab 1  ---------------------------------------------------------------------------------#
 ####################################################################################################
@@ -65,6 +58,9 @@ def create_edit_tab1(self, tabs, nano_window):
         ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
 
     settings = QSettings(ruta_colors, QSettings.IniFormat)
+
+    groupbox_border = settings.value("Dark_Light/QGroupBox/color", "1px solid #b0b0b0")
+    groupbox_style = f"QGroupBox {{ border: {groupbox_border}; border-radius: 5px; margin-top: 1.3ex; padding-top: 6px; }} QGroupBox::title {{ subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }}"
 
     trace_color1 = settings.value("Graphic1/TraceColor", "blue")
     marker_color1 = settings.value("Graphic1/MarkerColor1", "blue")
@@ -574,6 +570,9 @@ def create_edit_tab2(self, tabs, nano_window):
         ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
 
     settings = QSettings(ruta_colors, QSettings.IniFormat)
+
+    groupbox_border = settings.value("Dark_Light/QGroupBox/color", "1px solid #b0b0b0")
+    groupbox_style = f"QGroupBox {{ border: {groupbox_border}; border-radius: 5px; margin-top: 1.3ex; padding-top: 6px; }} QGroupBox::title {{ subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }}"
 
     trace_color2 = settings.value("Graphic2/TraceColor", "red")
     marker_color1 = settings.value("Graphic2/MarkerColor1", "red")

@@ -143,6 +143,9 @@ class NanoVNAStatusApp(QMainWindow):
             QLabel {{
                 color: {label_color};  
             }}
+            QProgressBar {{
+                color: {label_color};        
+            }}
             QTextEdit {{
                 color: {label_color};  
             }}
@@ -269,9 +272,30 @@ class NanoVNAStatusApp(QMainWindow):
         status_layout.addWidget(self.operation_label)
         
         layout.addWidget(status_frame)
+
+        # Load configuration for UI colors and styles
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")
+            ruta_colors = os.path.join(
+                appdata,
+                "NanoVNA-UTN-Toolkit",
+                "INI",
+                "colors_config",
+                "config.ini"
+            )
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
+
+        settings = QSettings(ruta_colors, QSettings.IniFormat)
+
+        groupbox_border = settings.value("Dark_Light/QGroupBox/color", "1px solid #b0b0b0")
+        color = groupbox_border.split()[-1]
+        groupbox_style = f"QGroupBox {{ border: 2px solid {color}; border-radius: 5px; margin-top: 1.3ex; padding-top: 6px; }} QGroupBox::title {{ subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; font-size: 30pt;}}"
         
         # Device information section
         self.device_group = QGroupBox("Device Information")
+        self.device_group.setStyleSheet(groupbox_style)
         
         device_layout = QGridLayout(self.device_group)
         

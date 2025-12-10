@@ -46,6 +46,9 @@ def create_tab1(self):
 
     settings = QSettings(ruta_colors, QSettings.IniFormat)
 
+    groupbox_border = settings.value("Dark_Light/QGroupBox/color", "1px solid #b0b0b0")
+    groupbox_style = f"QGroupBox {{ border: {groupbox_border}; border-radius: 5px; margin-top: 1.3ex; padding-top: 6px; }} QGroupBox::title {{ subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }}"
+
     # QTabWidget pane
     tabwidget_pane_bg = settings.value("Dark_Light/QTabWidget_pane/background-color", "#3b3b3b")
 
@@ -139,7 +142,7 @@ def create_tab1(self):
 
     # --- Selector for S parameter ---
     graphic_param_selector = QGroupBox(" Select Parameter ")
-    graphic_param_selector.setStyleSheet("color: white;")
+    graphic_param_selector.setStyleSheet(groupbox_style)
     param_layout = QVBoxLayout()
     self.radio_s_tab1 = {}  
     for option in ["S11", "S21"]:
@@ -153,7 +156,7 @@ def create_tab1(self):
 
     # --- Selector for graph type ---
     graphic_type_selector = QGroupBox(" Selector Graphic 1 ")
-    graphic_type_selector.setStyleSheet("color: white;")
+    graphic_type_selector.setStyleSheet(groupbox_style)
     type_layout = QVBoxLayout()
     self.radio_buttons_tab1 = {} 
     for option in ["Smith Diagram", "Magnitude", "Phase"]:
@@ -268,7 +271,6 @@ def create_tab1(self):
 
     return tab1_widget, fig, ax, canvas, left_panel, update_graph, self.current_s_tab1, self.current_graph_tab1
 
-
 #------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------------------------------------------#
@@ -290,6 +292,9 @@ def create_tab2(self):
         ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
 
     settings = QSettings(ruta_colors, QSettings.IniFormat)
+
+    groupbox_border = settings.value("Dark_Light/QGroupBox/color", "1px solid #b0b0b0")
+    groupbox_style = f"QGroupBox {{ border: {groupbox_border}; border-radius: 5px; margin-top: 1.3ex; padding-top: 6px; }} QGroupBox::title {{ subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }}"
 
     graph_type2 = settings.value("Tab2/GraphType2", "Smith Diagram")
     s_param2 = settings.value("Tab2/SParameter", "S11")
@@ -368,6 +373,7 @@ def create_tab2(self):
 
     # --- Selector for S parameter ---
     graphic_param_selector = QGroupBox(" Select Parameter ")
+    graphic_param_selector.setStyleSheet(groupbox_style)
     param_layout = QVBoxLayout()
     self.radio_s_tab2 = {}
     for option in ["S11", "S21"]:
@@ -381,6 +387,7 @@ def create_tab2(self):
 
     # --- Selector for graph type ---
     graphic_type_selector = QGroupBox(" Selector Graphic 2 ")
+    graphic_type_selector.setStyleSheet(groupbox_style)
     type_layout = QVBoxLayout()
     self.radio_buttons_tab2 = {}
     for option in ["Smith Diagram", "Magnitude", "Phase"]:

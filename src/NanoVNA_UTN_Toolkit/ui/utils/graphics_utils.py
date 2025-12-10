@@ -86,7 +86,7 @@ def create_left_panel(window, S_data, freqs, settings, graph_type="Smith Diagram
     
     # QGroupBox border styling based on dark/light mode
     groupbox_border = settings.value("Dark_Light/QGroupBox/color", "1px solid #b0b0b0")
-    groupbox_style = f"QGroupBox {{ border: {groupbox_border}; border-radius: 5px; margin-top: 1ex; padding-top: 10px; }} QGroupBox::title {{ subcontrol-origin: margin; left: 10px; padding: 0 5px 0 5px; }}"
+    groupbox_style = f"QGroupBox {{ border: {groupbox_border}; border-radius: 5px; margin-top: 1.3ex; padding-top: 10px; }} QGroupBox::title {{ subcontrol-origin: margin; left: 10px; padding: 0 5px 0 5px; }}"
                       
     freqs = freqs if freqs is not None else np.linspace(1e6, 100e6, 101)
 

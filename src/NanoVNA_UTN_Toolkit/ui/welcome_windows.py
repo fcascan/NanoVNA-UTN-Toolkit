@@ -253,7 +253,7 @@ class NanoVNAWelcome(QMainWindow):
             logging.warning("[CalibrationWizard] THRUCalibrationManager not available")
 
         self.setWindowTitle("NanoVNA UTN Toolkit - Welcome Window")
-        self.setGeometry(100, 100, 1000, 500)
+        self.setGeometry(100, 100, 1000, 460)
 
         # === Central widget and main layout ===
         central_widget = QWidget()
@@ -274,9 +274,28 @@ class NanoVNAWelcome(QMainWindow):
         Provides information about VNA calibration importance and wizard access.
         """
         logging.info("[welcome_windows._create_calibration_group] Creating calibration group")
+
+        # Load configuration for UI colors and styles
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")
+            ruta_colors = os.path.join(
+                appdata,
+                "NanoVNA-UTN-Toolkit",
+                "INI",
+                "colors_config",
+                "config.ini"
+            )
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
+
+        settings = QSettings(ruta_colors, QSettings.IniFormat)
+
+        groupbox_border = settings.value("Dark_Light/QGroupBox/color", "1px solid #b0b0b0")
+        groupbox_style = f"QGroupBox {{ border: {groupbox_border}; border-radius: 5px; margin-top: 1.3ex; padding-top: 6px; }} QGroupBox::title {{ subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; font-size: 30pt;}}"
         
         calibration_group = QGroupBox("Calibration Wizard")
-        calibration_group.setStyleSheet("QGroupBox { font-weight: bold; font-size: 16px; }")
+        calibration_group.setStyleSheet(groupbox_style)
         calibration_layout = QVBoxLayout(calibration_group)
         calibration_layout.setSpacing(15)
 
@@ -309,9 +328,28 @@ class NanoVNAWelcome(QMainWindow):
         Contains kit selection, graphics navigation, and calibration import functionality.
         """
         logging.info("[welcome_windows._create_measurements_group] Creating measurements group")
+
+        # Load configuration for UI colors and styles
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")
+            ruta_colors = os.path.join(
+                appdata,
+                "NanoVNA-UTN-Toolkit",
+                "INI",
+                "colors_config",
+                "config.ini"
+            )
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
+
+        settings = QSettings(ruta_colors, QSettings.IniFormat)
+
+        groupbox_border = settings.value("Dark_Light/QGroupBox/color", "1px solid #b0b0b0")
+        groupbox_style = f"QGroupBox {{ border: {groupbox_border}; border-radius: 5px; margin-top: 1.3ex; padding-top: 6px; }} QGroupBox::title {{ subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }}"
         
         measurements_group = QGroupBox("Calibration")
-        measurements_group.setStyleSheet("QGroupBox { font-weight: bold; font-size: 16px; }")
+        measurements_group.setStyleSheet(groupbox_style)
         measurements_layout = QVBoxLayout(measurements_group)
         measurements_layout.setSpacing(15)
 

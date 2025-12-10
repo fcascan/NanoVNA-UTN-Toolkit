@@ -152,6 +152,7 @@ class CalibrationWizard(QMainWindow):
 
         # QCombo
 
+        color_bg_text_QCombo = settings.value("Dark_Light/QComboBox/background-color", "#3b3b3b")
         color_text_QCombo = settings.value("Dark_Light/QComboBox/color", "white")
 
         self.setStyleSheet(f"""
@@ -174,54 +175,54 @@ class CalibrationWizard(QMainWindow):
                 color: {tabbar_selected_color};
             }}
             QSpinBox {{
-                background-color: #3b3b3b;
-                color: white;
-                border: 2px solid white;
+                background-color: {spinbox_bg};
+                color: {spinbox_color};
+                border: 2px solid {spinbox_color};
                 border-radius: 6px;
                 padding: 8px;
                 font-size: 14px;
                 min-width: 150px;
             }}
             QSpinBox:hover {{
-                background-color: #4d4d4d;
+                background-color: {spinbox_bg};
             }}
             QSpinBox:focus {{
-                background-color: #4d4d4d;
-                border: 2px solid #4CAF50;
+                background-color: {spinbox_bg};
+                border: 2px solid {spinbox_color};
             }}
             QSpinBox::up-button, QSpinBox::down-button {{
-                background-color: #4d4d4d;
-                border: 1px solid white;
+                background-color: {spinbox_bg};
+                border: 1px solid {spinbox_color};
                 border-radius: 3px;
                 width: 16px;
             }}
             QSpinBox::up-button:hover, QSpinBox::down-button:hover {{
-                background-color: #5d5d5d;
+                background-color: {spinbox_bg};
             }}
             QDoubleSpinBox {{
-                background-color: #3b3b3b;
-                color: white;
-                border: 2px solid white;
+                background-color: {spinbox_bg};
+                color: {spinbox_color};
+                border: 2px solid {spinbox_color};
                 border-radius: 6px;
                 padding: 8px;
                 font-size: 14px;
                 min-width: 150px;
             }}
             QDoubleSpinBox:hover {{
-                background-color: #4d4d4d;
+                background-color: {spinbox_bg};
             }}
             QDoubleSpinBox:focus {{
-                background-color: #4d4d4d;
-                border: 2px solid #4CAF50;
+                background-color: {spinbox_bg};
+                border: 2px solid {spinbox_color};
             }}
             QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {{
-                background-color: #4d4d4d;
-                border: 1px solid white;
+                background-color: {spinbox_bg};
+                border: 1px solid {spinbox_color};
                 border-radius: 3px;
                 width: 16px;
             }}
             QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {{
-                background-color: #5d5d5d;
+                background-color: {spinbox_bg};
             }}
             QGroupBox:title {{
                 color: {groupbox_title_color};  
@@ -274,16 +275,16 @@ class CalibrationWizard(QMainWindow):
                 background-color: {menu_item_color};
             }}
             QComboBox {{
-                background-color: #3b3b3b;
-                color: white;
-                border: 2px solid white;
+                background-color: {color_bg_text_QCombo};
+                color: {color_text_QCombo};
+                border: 2px solid {color_text_QCombo};
                 border-radius: 6px;
                 padding: 8px;
                 font-size: 14px;
                 min-width: 200px;
             }}
             QComboBox:hover {{
-                background-color: #4d4d4d;
+                background-color: {color_bg_text_QCombo};
             }}
             QComboBox::drop-down {{
                 width: 0px;
@@ -296,9 +297,9 @@ class CalibrationWizard(QMainWindow):
                 height: 0px;
             }}
             QComboBox QAbstractItemView {{
-                background-color: #3b3b3b;
-                color: white;
-                selection-background-color: #4d4d4d;
+                background-color: {color_bg_text_QCombo};
+                color: {color_text_QCombo};
+                selection-background-color: {color_bg_text_QCombo};
                 selection-color: white;
                 border: 1px solid white;
             }}
@@ -561,7 +562,7 @@ class CalibrationWizard(QMainWindow):
         # Container que mantiene el contenido arriba
         top_container = QVBoxLayout()
         top_container.setAlignment(Qt.AlignTop)
-        top_container.addSpacing(30)
+        top_container.addSpacing(20)
 
         label = QLabel("Calibration Methods:")
         label.setStyleSheet("font-size: 16px; font-weight: bold;")
@@ -587,10 +588,36 @@ class CalibrationWizard(QMainWindow):
         self.freq_dropdown.activated.connect(self.on_method_activated)
 
         top_container.addWidget(label)
+        
+        top_container.addSpacing(10)
+
         top_container.addWidget(self.freq_dropdown)
+
+        top_container.addSpacing(10)
         
         # Add sweep configuration section
+
+        # Load configuration for UI colors and styles
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv("APPDATA")
+            ruta_colors = os.path.join(
+                appdata,
+                "NanoVNA-UTN-Toolkit",
+                "INI",
+                "colors_config",
+                "config.ini"
+            )
+        else:
+            ui_dir = os.path.dirname(os.path.dirname(__file__))
+            ruta_colors = os.path.join(ui_dir, "graphics_windows", "ini", "config.ini")
+
+        settings = QSettings(ruta_colors, QSettings.IniFormat)
+
+        groupbox_border = settings.value("Dark_Light/QGroupBox/color", "1px solid #b0b0b0")
+        groupbox_style = f"QGroupBox {{ border: {groupbox_border}; border-radius: 5px; margin-top: 1.3ex; padding-top: 6px; }} QGroupBox::title {{ subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }}"
+
         sweep_group = QGroupBox("Sweep Configuration")
+        sweep_group.setStyleSheet(groupbox_style)
         sweep_layout = QFormLayout()
         
         # Start frequency
@@ -676,10 +703,37 @@ class CalibrationWizard(QMainWindow):
         sweep_layout.addRow("Stop Frequency:", stop_freq_layout)
         
         # Number of steps (using smart datapoints spinbox)
-        self.steps_input = SmartDatapointsSpinBox()
+        self.steps_input = SmartDatapointsSpinBox()  # Asumo que sigue siendo un QSpinBox
         self.steps_input.setMinimum(1)
         self.steps_input.setMaximum(32000)  # Default maximum, will be updated based on device
         self.steps_input.setValue(101)
+        self.steps_input.setStyleSheet("""
+            QSpinBox {
+                background-color: #3b3b3b;
+                color: white;
+                border: 2px solid white;
+                border-radius: 6px;
+                padding: 8px;
+                font-size: 14px;
+                min-width: 150px;
+            }
+            QSpinBox:hover {
+                background-color: #4d4d4d;
+            }
+            QSpinBox:focus {
+                background-color: #4d4d4d;
+                border: 2px solid #4CAF50;
+            }
+            QSpinBox::up-button, QSpinBox::down-button {
+                background-color: #4d4d4d;
+                border: 1px solid white;
+                border-radius: 3px;
+                width: 16px;
+            }
+            QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+                background-color: #5d5d5d;
+            }
+        """)
         sweep_layout.addRow("Number of Steps:", self.steps_input)
         
         sweep_group.setLayout(sweep_layout)
