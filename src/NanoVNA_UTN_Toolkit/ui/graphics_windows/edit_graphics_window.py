@@ -6,6 +6,8 @@ import skrf as rf
 import numpy as np
 import os
 import sys
+import logging
+import shutil
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.lines import Line2D
@@ -32,20 +34,32 @@ class EditGraphics(QMainWindow):
     def __init__(self, nano_window: NanoVNAGraphics, freqs=None):
         super().__init__()
 
-        # --- Icon ---
-        icon_paths = [
-            os.path.join(os.path.dirname(__file__), 'icon.ico'),
-            os.path.join(os.path.dirname(__file__), '..', '..', 'icon.ico'),
-            'icon.ico'
-        ]
-        for icon_path in icon_paths:
-            icon_path = os.path.abspath(icon_path)
+        # Try to set application icon
+        if getattr(sys, 'frozen', False):
+            # ---- MODO EXE ----
+            base_path = sys._MEIPASS
+            icon_path = os.path.join(base_path, 'icon.ico')
+
             if os.path.exists(icon_path):
                 self.setWindowIcon(QIcon(icon_path))
-                break
+            else:
+                logging.getLogger(__name__).warning(f"icon.ico not found in exe: {icon_path}")
+
         else:
-            logger = logging.getLogger(__name__)
-            logger.warning("icon.ico not found in expected locations")
+            # ---- MODO PYTHON NORMAL ----
+            base_path = os.path.dirname(__file__)
+
+            icon_paths = [
+                os.path.join(base_path, '..', '..', '..', 'icon.ico'),
+                'icon.ico'
+            ]
+
+            for path in icon_paths:
+                if os.path.exists(path):
+                    self.setWindowIcon(QIcon(path))
+                    break
+            else:
+                logging.getLogger(__name__).warning("icon.ico not found in dev mode")
 
         # Load configuration for UI colors and styles
         if getattr(sys, 'frozen', False):

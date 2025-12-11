@@ -72,10 +72,10 @@ class KitsCalibrator:
             logging.info(f"[Calibrator] Using first {min_points} points for kit calibration")
 
         # Compute delta_e (for 2-term calibration, source match is ignored)
-        delta_e = reflection_tracking * directivity - source_match
+        delta_e = source_match * directivity - reflection_tracking
 
         logging.info("[Calibrator] Calculating calibrated S11 using OSM formula...")
-        s11_cal = (s11_med - directivity) / (s11_med * reflection_tracking - delta_e)
+        s11_cal = (s11_med - directivity) / (s11_med * source_match - delta_e)
         
         # If we had to truncate, fill the remaining points with uncalibrated data
         if len(s11_cal) < sweep_points:

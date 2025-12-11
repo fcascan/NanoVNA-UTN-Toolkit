@@ -523,10 +523,12 @@ class ExportDialog(QDialog):
             
             # Generate HIGH RESOLUTION capture preserving all original styling
             buf_clipboard = io.BytesIO()
+
+            fig_copy.subplots_adjust(right=0.85)
+
             fig_copy.savefig(buf_clipboard, 
                            format='png', 
                            dpi=300,  # Force high DPI
-                           bbox_inches='tight', 
                            edgecolor='none')
             buf_clipboard.seek(0)
             
@@ -569,7 +571,7 @@ class ExportDialog(QDialog):
             return
 
         try:
-            self.preview_canvas.figure.savefig(file_path, bbox_inches='tight', dpi=300)
+            self.preview_canvas.figure.savefig(file_path, dpi=300)
             QMessageBox.information(self, "Save", f"Graph saved as: {file_path}")
         except Exception as e:
             QMessageBox.critical(self, "Save Error", f"Failed to save image: {str(e)}")

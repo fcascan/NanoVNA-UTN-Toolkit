@@ -89,7 +89,8 @@ Test
                 [compiler_path, "-interaction=nonstopmode", "test.tex"],
                 cwd=temp_dir,
                 capture_output=True,
-                timeout=30
+                timeout=30, 
+                creationflags=subprocess.CREATE_NO_WINDOW
             )
             return result.returncode == 0
     except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
@@ -593,10 +594,31 @@ class LatexExporter:
         start_unit = settings_sweep.value("Frequency/StartUnit", "MHz")
         stop_unit = settings_sweep.value("Frequency/StopUnit", "MHz")
 
+        def unit_and_scale_per_value(f_hz):
+            if f_hz < 1e3:
+                return "Hz", 1
+            elif f_hz < 1e6:
+                return "kHz", 1e3
+            elif f_hz < 1e9:
+                return "MHz", 1e6
+            else:
+                return "GHz", 1e9
+        
+        scaled_freqs = []
+        units = []
+
+        u, s = unit_and_scale_per_value(freqs[0])
+        scaled_freqs.append(freqs[0] / s)
+        units.append(u)
+
+        u, s = unit_and_scale_per_value(freqs[-1])
+        scaled_freqs.append(freqs[-1] / s)
+        units.append(u)
+
         if freqs is not None:
             start_freq = freqs[0]
             stop_freq = freqs[-1]
-            if start_unit == "kHz":
+            if start_unit == "KHz":
                 start_freq /= 1e3
             elif start_unit == "MHz":
                 start_freq /= 1e6
@@ -661,7 +683,7 @@ class LatexExporter:
         doc.append(NoEscape(r'\normalsize'))
         doc.append(NoEscape(r'\begin{itemize}')) 
         doc.append(NoEscape(rf'\item \textbf{{VNA:}} {vna_name}'))
-        doc.append(NoEscape(rf'\item \textbf{{Frequency Range:}} {start_freq} {start_unit} - {stop_freq} {stop_unit}'))
+        doc.append(NoEscape(rf'\item \textbf{{Frequency Range:}} {scaled_freqs[0]} {units[0]} - {scaled_freqs[-1]} {units[-1]}'))
         doc.append(NoEscape(rf'\item \textbf{{Normalization Impedance:}} 50 \textohm'))
         doc.append(NoEscape(r'\end{itemize}')) 
         doc.append(NoEscape(r'\end{flushleft}'))

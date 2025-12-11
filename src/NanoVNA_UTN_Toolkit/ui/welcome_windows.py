@@ -222,17 +222,32 @@ class NanoVNAWelcome(QMainWindow):
         self.vna_device = vna_device
         logging.info("[welcome_windows.__init__] Initializing welcome window")
 
-        # === Set application icon ===
-        icon_paths = [
-            os.path.join(os.path.dirname(__file__), 'icon.ico'),
-            os.path.join(os.path.dirname(__file__), '..', '..', 'icon.ico'),
-            'icon.ico'
-        ]
-        for icon_path in icon_paths:
-            icon_path = os.path.abspath(icon_path)
+        # Try to set application icon
+        if getattr(sys, 'frozen', False):
+            # ---- MODO EXE ----
+            base_path = sys._MEIPASS
+            icon_path = os.path.join(base_path, 'icon.ico')
+
             if os.path.exists(icon_path):
                 self.setWindowIcon(QIcon(icon_path))
-                break
+            else:
+                logging.getLogger(__name__).warning(f"icon.ico not found in exe: {icon_path}")
+
+        else:
+            # ---- MODO PYTHON NORMAL ----
+            base_path = os.path.dirname(__file__)
+
+            icon_paths = [
+                os.path.join(base_path, '..', '..', '..', 'icon.ico'),
+                'icon.ico'
+            ]
+
+            for path in icon_paths:
+                if os.path.exists(path):
+                    self.setWindowIcon(QIcon(path))
+                    break
+            else:
+                logging.getLogger(__name__).warning("icon.ico not found in dev mode")
 
         if OSMCalibrationManager:
             self.osm_calibration = OSMCalibrationManager()
@@ -253,7 +268,7 @@ class NanoVNAWelcome(QMainWindow):
             logging.warning("[CalibrationWizard] THRUCalibrationManager not available")
 
         self.setWindowTitle("NanoVNA UTN Toolkit - Welcome Window")
-        self.setGeometry(100, 100, 1000, 460)
+        self.setGeometry(100, 100, 1000, 480)
 
         # === Central widget and main layout ===
         central_widget = QWidget()

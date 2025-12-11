@@ -152,10 +152,14 @@ class AboutDialog(QDialog):
     
     def _load_readme(self):
         """Load and display the appropriate README file based on language."""
+        
         try:
             # Get the project root directory (go up from ui/graphics_window.py to project root)
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+            if hasattr(sys, '_MEIPASS'):
+                project_root = sys._MEIPASS
+            else:
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
             
             if self.language == 'es':
                 readme_path = os.path.join(project_root, "README_ES.md")
@@ -1087,20 +1091,32 @@ class NanoVNAGraphics(QMainWindow):
         delete_calibration = calibration_menu.addAction("Delete Calibration (Kit)")
         delete_calibration.triggered.connect(lambda: self.delete_kit_dialog())
 
-        # --- Icon ---
-        icon_paths = [
-            os.path.join(os.path.dirname(__file__), 'icon.ico'),
-            os.path.join(os.path.dirname(__file__), '..', '..', 'icon.ico'),
-            'icon.ico'
-        ]
-        for icon_path in icon_paths:
-            icon_path = os.path.abspath(icon_path)
+        # Try to set application icon
+        if getattr(sys, 'frozen', False):
+            # ---- MODO EXE ----
+            base_path = sys._MEIPASS
+            icon_path = os.path.join(base_path, 'icon.ico')
+
             if os.path.exists(icon_path):
                 self.setWindowIcon(QIcon(icon_path))
-                break
+            else:
+                logging.getLogger(__name__).warning(f"icon.ico not found in exe: {icon_path}")
+
         else:
-            logger = logging.getLogger(__name__)
-            logger.warning("icon.ico not found in expected locations")
+            # ---- MODO PYTHON NORMAL ----
+            base_path = os.path.dirname(__file__)
+
+            icon_paths = [
+                os.path.join(base_path, '..', '..', '..', 'icon.ico'),
+                'icon.ico'
+            ]
+
+            for path in icon_paths:
+                if os.path.exists(path):
+                    self.setWindowIcon(QIcon(path))
+                    break
+            else:
+                logging.getLogger(__name__).warning("icon.ico not found in dev mode")
 
         
         if OSMCalibrationManager:

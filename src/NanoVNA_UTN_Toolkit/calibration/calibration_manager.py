@@ -30,7 +30,7 @@ class OSMCalibrationManager:
         self.base_path = base_path
         self.osm_results_path = os.path.join(base_path, "osm_results")
         self.thru_results_path = os.path.join(base_path, "thru_results")
-        self.kits_path = os.path.join(base_path, "kits")
+        self.kits_path = os.path.join(base_path, "Kits")
         
         # Ensure directories exist
         os.makedirs(self.osm_results_path, exist_ok=True)
@@ -80,7 +80,8 @@ class OSMCalibrationManager:
             
             # Save as Touchstone file
             touchstone_path = os.path.join(self.osm_results_path, f"{standard_name}.s1p")
-            self._save_as_touchstone(freqs, s11, touchstone_path)
+
+            self._save_as_touchstone(freqs, s11, touchstone_path, None)
             
             # Check if calibration is complete
             self._check_completion()
@@ -94,7 +95,7 @@ class OSMCalibrationManager:
             logging.error(f"[OSMCalibrationManager] Error saving {standard_name}: {e}")
             return False
     
-    def _save_as_touchstone(self, freqs: np.ndarray, s11: np.ndarray, filepath: str):
+    def _save_as_touchstone(self, freqs: np.ndarray, s11: np.ndarray, filepath: str, filepath_kit: str):
         """Save measurement as Touchstone .s1p file."""
         try:
             # Create scikit-rf Network
@@ -103,6 +104,11 @@ class OSMCalibrationManager:
             
             # Write Touchstone file
             network.write_touchstone(filepath)
+
+            # Save also to KIT path (if provided)
+            if filepath_kit:
+                network.write_touchstone(filepath_kit)
+                logging.info(f"[OSMCalibrationManager] Touchstone file saved (KIT): {filepath_kit}")
             
             logging.info(f"[OSMCalibrationManager] Touchstone file saved: {filepath}")
             
@@ -174,10 +180,22 @@ class OSMCalibrationManager:
             if not self.is_complete:
                 logging.warning("[OSMCalibrationManager] Cannot save incomplete calibration")
                 return False
+            
+            if getattr(sys, 'frozen', False):
+                # Modo EXE (PyInstaller)
+                base_dir = os.path.join(os.getenv('APPDATA'), "NanoVNA-UTN-Toolkit", "Calibration")
+            else:
+                # Modo Python
+                base_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Calibration")
 
-            cal_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Calibration", "osm_results")
+            cal_dir = os.path.join(base_dir, "osm_results")
             self.calibration_dir = cal_dir
             os.makedirs(self.calibration_dir, exist_ok=True)
+
+            kit_subfolder = filename
+            kit_path = os.path.join(self.kits_path, kit_subfolder)
+            os.makedirs(kit_path, exist_ok=True)
+            logging.info(f"[CalibrationManager] Created calibration kit folder: {kit_path}")
 
             # --- Compute 3-term OSM error model ---
 
@@ -690,7 +708,6 @@ class THRUCalibrationManager:
         Save S-parameter data as a Touchstone file inside Kits/<kit_subfolder>.
         Assumes self.kits_path already exists.
         """
-        
         save_dir = self.kits_path
         if kit_subfolder:
             save_dir = os.path.join(self.kits_path, kit_subfolder)
@@ -708,7 +725,6 @@ class THRUCalibrationManager:
 
         logging.info(f"[CalibrationErrors] {label} error saved: {filepath}")
         print(f"[DEBUG] Saved {label} in: {filepath}")
-
 
     def load_calibration_file(self, filename: str) -> bool:
         """Load THRU calibration data from .cal file."""

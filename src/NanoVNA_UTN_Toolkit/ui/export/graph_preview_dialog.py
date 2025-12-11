@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QLocale
 from PySide6.QtGui import QDoubleValidator
+from PySide6.QtGui import QGuiApplication
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
@@ -58,7 +59,14 @@ class GraphPreviewExportDialog(QDialog):
 
         self.setWindowTitle("Export Graph Preview")
         self.setModal(True)
-        self.setMinimumSize(700, 450)
+        screen = QGuiApplication.primaryScreen()
+        geometry = screen.availableGeometry()
+        screen_height = geometry.height()
+        screen_width = geometry.width()
+
+        # Ajustar solo la altura, no el ancho
+        self.resize(800, int(screen_height * 0.7))
+        self.setMaximumSize(screen_width, screen_height)
 
         main_layout = QVBoxLayout(self)
 
@@ -71,11 +79,12 @@ class GraphPreviewExportDialog(QDialog):
         main_layout.addWidget(label)
 
         # --- Create figure and canvas ---
-        self.fig, self.ax = plt.subplots(figsize=(6, 5))
+        self.fig, self.ax = plt.subplots()
         self.fig.patch.set_facecolor("white")
         self.ax.set_facecolor("white")
         self.fig.subplots_adjust(left=0.15, right=0.95, top=0.9, bottom=0.18)
         self.canvas = FigureCanvas(self.fig)
+        self.canvas.resizeEvent = self._on_canvas_resize
 
         # --- Previous / Next buttons ---
         self.prev_button = NoEnterButton("← Previous")
@@ -186,7 +195,6 @@ class GraphPreviewExportDialog(QDialog):
             # --- Store marker input references ---
             self.marker_freq_edits[i] = (edit1, combo1, edit2, combo2)
 
-
         # --- Layout for markers and their inputs ---
         self.marker_layout = QHBoxLayout()
         self.marker_layout.setContentsMargins(0, 0, 0, 0)
@@ -213,7 +221,7 @@ class GraphPreviewExportDialog(QDialog):
         self.overlay_widget = QWidget(self.canvas)
         self.overlay_widget.setAttribute(Qt.WA_TransparentForMouseEvents, False)
         self.overlay_widget.setStyleSheet("background: transparent;")
-        self.overlay_widget.setGeometry(0, self.canvas.height() - 62  , self.canvas.width(), 40)
+        self.overlay_widget.setGeometry(0, 0, self.canvas.width(), 40)
 
         # Layout for navigation buttons inside overlay
         overlay_layout = QHBoxLayout(self.overlay_widget)
@@ -259,6 +267,44 @@ class GraphPreviewExportDialog(QDialog):
         self._update_markers()
         self._update_nav_buttons()
 
+    def _on_canvas_resize(self, event):
+        w = self.canvas.width()
+        h = self.canvas.height()
+
+        # Ajustar márgenes proporcionalmente al tamaño real del canvas
+        margin = max(0.10, min(0.20, 0.15 * (600 / max(w, h))))
+        self.fig.subplots_adjust(
+            left=margin,
+            right=1 - margin,
+            top=1 - margin,
+            bottom=margin
+        )
+
+        # Ajustar escala del texto (se vuelve muy grande en pantallas chicas)
+        scale = (w / 800)
+        scale = max(0.6, min(1.0, scale))   # clamp entre 0.6 y 1.0
+
+        self.ax.title.set_fontsize(12 * scale)
+        self.ax.xaxis.label.set_fontsize(11 * scale)
+        self.ax.yaxis.label.set_fontsize(11 * scale)
+        for tick in self.ax.get_xticklabels() + self.ax.get_yticklabels():
+            tick.set_fontsize(9 * scale)
+
+        if hasattr(self, "current_graph_index") and self.current_graph_index == 0:
+            self.ax.set_aspect("equal", adjustable="box")
+            self.ax.set_xlim(-1.1, 1.1)
+            self.ax.set_ylim(-1.1, 1.1)
+
+        # Reposicionar overlay de botones
+        overlay_height = int(40 * scale)
+        self.overlay_widget.setGeometry(
+            0,
+            self.canvas.height() - overlay_height - 5,
+            self.canvas.width(),
+            overlay_height
+        )
+
+        self.canvas.draw_idle()
 
     def _on_marker_input_changed(self):
         """Update markers for the current graph only, without changing graphs."""
@@ -520,6 +566,34 @@ class GraphPreviewExportDialog(QDialog):
         s11 = self.s11_data if self.s11_data is not None else np.exp(1j * np.linspace(0, 2*np.pi, 100))
         s21 = self.s21_data if self.s21_data is not None else 20 * np.log10(np.abs(np.sin(freqs / 1e8 * np.pi)))
 
+        # --- MISMA ESCALA QUE EL EJE ---
+        f_min = np.min(freqs)
+        f_max = np.max(freqs)
+
+        def freq_unit_and_scale(f_min, f_max):
+            def order(f):
+                if f < 1e3: return 0
+                elif f < 1e6: return 1
+                elif f < 1e9: return 2
+                else: return 3
+
+            o_min = order(f_min)
+            o_max = order(f_max)
+
+            units = {
+                0: ("Hz", 1),
+                1: ("kHz", 1e3),
+                2: ("MHz", 1e6),
+                3: ("GHz", 1e9),
+            }
+
+            target = max(o_min, o_max)
+            unit, scale = units[target]
+            return unit, scale
+
+        unit_x, scale_x = freq_unit_and_scale(f_min, f_max)
+        scaled_freqs = freqs / scale_x
+
         marker1, marker2 = self.marker_checkboxes[graph_index]
         self.marker_active[graph_index] = [marker1.isChecked(), marker2.isChecked()]
 
@@ -527,6 +601,7 @@ class GraphPreviewExportDialog(QDialog):
             ann.set_visible(False)
         for mk in getattr(self, "markers", []):
             mk.set_visible(False)
+
         self.annotations = []
         self.markers = []
 
@@ -535,6 +610,7 @@ class GraphPreviewExportDialog(QDialog):
 
         for i, active in enumerate(self.marker_active[graph_index]):
             edit, combo = (edits[0], edits[1]) if i == 0 else (edits[2], edits[3])
+
             if active:
                 edit.setEnabled(True)
                 combo.setEnabled(True)
@@ -549,25 +625,29 @@ class GraphPreviewExportDialog(QDialog):
                     freq_val = freq_val_hz / 1e3
 
                 idx = (np.abs(freqs - freq_val_hz)).argmin()
-
                 nearest_freq_hz = freqs[idx]
 
-                # --- Update the text field with the exact closest frequency ---
-                unit_factor = {"kHz": 1e3, "MHz": 1e6, "GHz": 1e9}[combo.currentText()]
+                # Actualizar input con el valor real más cercano
                 nearest_val = nearest_freq_hz / unit_factor
                 edit.setText(f"{nearest_val:.2f}")
 
+                # --- USAR X ESCALADO ---
                 if graph_index == 0:
-                    x, y = np.real(s11[idx]), np.imag(s11[idx])
+                    x = np.real(s11[idx])
+                    y = np.imag(s11[idx])
                 elif graph_index == 1:
-                    x, y = freqs[idx], 20*np.log10(np.abs(s11[idx]))
+                    x = scaled_freqs[idx]
+                    y = 20*np.log10(np.abs(s11[idx]))
                 elif graph_index == 2:
-                    x, y = freqs[idx], np.angle(s11[idx], deg=True)
+                    x = scaled_freqs[idx]
+                    y = np.angle(s11[idx], deg=True)
                 elif graph_index == 3:
-                    x, y = freqs[idx], 20*np.log10(np.abs(s21[idx]))
+                    x = scaled_freqs[idx]
+                    y = 20*np.log10(np.abs(s21[idx]))
                 elif graph_index == 4:
                     phase_s21 = np.angle(np.exp(1j * freqs / 1e7), deg=True)
-                    x, y = freqs[idx], phase_s21[idx]
+                    x = scaled_freqs[idx]
+                    y = phase_s21[idx]
 
                 mk_line, = ax.plot(x, y, marker='o', color=colors[i], markersize=8)
 
@@ -619,9 +699,9 @@ class GraphPreviewExportDialog(QDialog):
                 edit.setEnabled(False)
                 combo.setEnabled(False)
                 edit.setStyleSheet("background-color: lightgray; color: darkgray;")
-                
+
                 unit_factor = {"kHz": 1e3, "MHz": 1e6, "GHz": 1e9}[combo.currentText()]
-                default_val = self.freqs[0] / unit_factor
+                default_val = freqs[0] / unit_factor
                 edit.setText(f"{default_val:.2f}")
 
         self._enable_drag_annotations()
